@@ -237,6 +237,17 @@ def update_tree(tree, window):
         updated = _update_tree(tree, tree[window[0].major][minor], window[1:])
         if updated: return
 
+def make_prediction(graph, window):
+    twindow = []
+    for cs in window:
+        twindow.append(_assigned[cs])
+
+    # TODO: It has to follow the graph over the path with more probabilities
+    # then return the next most probable callstack
+    prediction = None
+
+    
+    return prediction
 
 def main(argc, argv):
     cstackinfo = argv[1]
@@ -268,14 +279,18 @@ def main(argc, argv):
 
         update_tree(prob_tree, window)
 
-    print "Graph data done..."
+    print "-> Graph data done..."
     
-    #generate_graph(prob_tree)
+    generate_graph(prob_tree)
+    print "-> Graph image generated... " + _graph_image
     #show_graph()
 
 
-    print "Performing the prediction..."
-    print window4prediction
+    print "-> Performing prediction..."
+    print " - Next callstack for windows: " + str(window4prediction)
+    prediction = make_prediction(prob_tree, window4prediction)
+
+    print " - " + str(prediction)
     #print json.dumps(prob_tree, sort_keys=True,indent=4, separators=(',', ': '))
        
     return 0
