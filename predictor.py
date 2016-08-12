@@ -59,6 +59,13 @@ def generateid(string):
 
     return _assigned[string]
 
+def get_cs(id):
+    for cs, cs_id in _assigned.iteritems():
+        if id == cs_id:
+            return cs
+
+    assert(False)
+
 def calls(window):
     res = []
     for cs in window:
@@ -237,6 +244,51 @@ def update_tree(tree, window):
         updated = _update_tree(tree, tree[window[0].major][minor], window[1:])
         if updated: return
 
+def _get_most_probable_son(graph, root_id, root, window):
+    assert(root != None)
+
+    major_dst = window[0]
+
+    # If the len of the window is 0 it means that all path
+    # has been followed, now is time to prediction.
+    # The prediction will consist on get the next callstack that
+    # have a highest "times" attribute
+    if len(window) == 0:
+        max_times = 0
+        for minor,data in root,iteritems():
+
+
+    else:
+        last_node = False
+
+    # The path that has been observed more times is the
+    # most probable path,
+    max_times = 0
+    max_path = []
+    total_success = False
+
+    for minor, data in root.iteritems():
+        if minor == "instances": continue
+        print minor
+        print data
+        if major_dst in data["to"]:
+            minor_dst = data["to"][major_dst]
+            path, times, success = _get_most_probable_son(graph,
+                    major_dst,
+                    graph[major_dst], 
+                    window[1:])
+
+            if times > max_times:
+                max_times = times
+                max_path = path
+                total_success = success
+
+    max_path[:0] = root_id
+    aggregated_times = graph[root_id]["instances"] + max_times
+    aggregated_success = (last_node or total_success)
+
+    return max_path, aggregated_times, aggregated_success 
+
 def make_prediction(graph, window):
     twindow = []
     for cs in window:
@@ -246,8 +298,12 @@ def make_prediction(graph, window):
     # then return the next most probable callstack
     prediction = None
 
+    prediction, times, success = _get_most_probable_son(graph, 
+            twindow[0],
+            graph[twindow[0]], 
+            twindow[1:])
     
-    return prediction
+    return get_cs(prediction), times, success
 
 def main(argc, argv):
     cstackinfo = argv[1]
@@ -288,9 +344,11 @@ def main(argc, argv):
 
     print "-> Performing prediction..."
     print " - Next callstack for windows: " + str(window4prediction)
-    prediction = make_prediction(prob_tree, window4prediction)
-
-    print " - " + str(prediction)
+    prediction,times,success = make_prediction(prob_tree, window4prediction)
+    if success:
+        print " - SUCCESS." + str(prediction) + ", times detected: " + str(times)
+    else:
+        print " - UNSUCCESS. The learning has not been enough"
     #print json.dumps(prob_tree, sort_keys=True,indent=4, separators=(',', ': '))
        
     return 0
