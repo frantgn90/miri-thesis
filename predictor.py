@@ -13,6 +13,8 @@ _graph_image="./graph.png"
 _graph_command=["dot", "-Tpng", _graph_outfile, "-o", _graph_image]
 _graph_display=["display",_graph_image]
 
+_output="./model.data"
+
 ## structures ##
 prob_tree={}
 key_directory={}
@@ -64,6 +66,7 @@ def get_cs(id):
         if id == cs_id:
             return cs
 
+    print id
     assert(False)
 
 def calls(window):
@@ -247,19 +250,31 @@ def update_tree(tree, window):
 def _get_most_probable_son(graph, root_id, root, window):
     assert(root != None)
 
-    major_dst = window[0]
-
-    # If the len of the window is 0 it means that all path
+    # If length of the window is 0 it means that all path
     # has been followed, now is time to prediction.
     # The prediction will consist on get the next callstack that
     # have a highest "times" attribute
     if len(window) == 0:
         max_times = 0
-        for minor,data in root,iteritems():
+        prediction_major = None
+        prediction_minor = None
+        for minor,data in root.iteritems():
+            if minor == "instances": continue
+            for major, minor in data["to"].iteritems():
+                times = graph[major][minor]["times"]
+                if times > max_times:
+                    max_times = times
+                    prediction_major = major
+                    prediction_minor = minor
 
-
+        ###############################################################
+        # TODO: Why the algorithm arrives here more than one time???? #
+        ###############################################################
+        return [prediction_major], max_times, True
     else:
         last_node = False
+
+    major_dst = window[0]
 
     # The path that has been observed more times is the
     # most probable path,
@@ -269,8 +284,6 @@ def _get_most_probable_son(graph, root_id, root, window):
 
     for minor, data in root.iteritems():
         if minor == "instances": continue
-        print minor
-        print data
         if major_dst in data["to"]:
             minor_dst = data["to"][major_dst]
             path, times, success = _get_most_probable_son(graph,
@@ -278,16 +291,16 @@ def _get_most_probable_son(graph, root_id, root, window):
                     graph[major_dst], 
                     window[1:])
 
-            if times > max_times:
+            if times > max_times and success:
                 max_times = times
                 max_path = path
                 total_success = success
 
-    max_path[:0] = root_id
+    aggregated_path = [root_id]; aggregated_path.extend(max_path)
     aggregated_times = graph[root_id]["instances"] + max_times
     aggregated_success = (last_node or total_success)
 
-    return max_path, aggregated_times, aggregated_success 
+    return aggregated_path, aggregated_times, aggregated_success 
 
 def make_prediction(graph, window):
     twindow = []
@@ -303,13 +316,15 @@ def make_prediction(graph, window):
             graph[twindow[0]], 
             twindow[1:])
     
-    return get_cs(prediction), times, success
+    return get_cs(prediction[-1]), times, success
 
 def main(argc, argv):
     cstackinfo = argv[1]
     wsize = int(argv[2])
     window4prediction = list(argv[3:])
     wstackinfo = windowfy(cstackinfo, wsize)
+
+    # TODO: Detect if the file with the graph data exists
 
     # NOTE: The first window have only one single node 
     wstackinfo.slide()
@@ -336,17 +351,22 @@ def main(argc, argv):
         update_tree(prob_tree, window)
 
     print "-> Graph data done..."
-    
-    generate_graph(prob_tree)
-    print "-> Graph image generated... " + _graph_image
+    #generate_graph(prob_tree)
+    #print "-> Graph image generated... " + _graph_image
     #show_graph()
 
+    print "->Saving ..."
+    foutput = open(_output+"."+str(wsize), "w")
+    foutput.write(json.dumps(prob_tree))
+    foutput.close()
+    print " - Done!"
 
     print "-> Performing prediction..."
     print " - Next callstack for windows: " + str(window4prediction)
     prediction,times,success = make_prediction(prob_tree, window4prediction)
+
     if success:
-        print " - SUCCESS." + str(prediction) + ", times detected: " + str(times)
+        print " - SUCCESS. [" + str(prediction) + "], times detected: " + str(times)
     else:
         print " - UNSUCCESS. The learning has not been enough"
     #print json.dumps(prob_tree, sort_keys=True,indent=4, separators=(',', ': '))
