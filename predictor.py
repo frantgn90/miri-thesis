@@ -12,6 +12,7 @@ _graph_outfile="/tmp/graph.gv"
 _graph_image="./graph.png"
 _graph_command=["dot", "-Tpng", _graph_outfile, "-o", _graph_image]
 _graph_display=["display",_graph_image]
+_graph_display=["xdg-open",_graph_image]
 
 _output="./model.data"
 
@@ -21,24 +22,26 @@ key_directory={}
 
 ## graph ##
 
-def generate_graph(graph):
+def generate_graph(graph, window, prediction):
     graph_fd = open(_graph_outfile, "w")
     graph_fd.write("digraph G {\n")
     
-    for major, data in graph.iteritems():
-        for minor, data_minor in data.iteritems():
+    # This is the predicted value
+    graph_fd.write("{0} [style=filled,shape=box];\n".format(prediction))
+
+    for major, data in graph.items():
+        for minor, data_minor in data.items():
             if minor == "instances": continue
-            for dest_major, dest_minor in data_minor["to"].iteritems():
+            for dest_major, dest_minor in data_minor["to"].items():
                 node_name="{0}.{1}".format(major,str(minor))
+                node_namex="{0}\\n({1})".format(node_name, get_cs(major)) #str(data_minor["times"]))
+
                 node_name_dest="{0}.{1}".format(dest_major,str(dest_minor))
-                node_namex="{0}\\n({1})".format(node_name, str(data_minor["times"]))
-                node_namex_dest="{0}\\n({1})".format(node_name_dest, str(graph[dest_major][dest_minor]["times"]))
+                node_namex_dest="{0}\\n({1})".format(node_name_dest, get_cs(dest_major)) #str(graph[dest_major][dest_minor]["times"]))
 
                 graph_fd.write("{0} -> {1}\n".format(node_name,node_name_dest))
                 graph_fd.write("{0} [label=\"{1}\"]\n".format(node_name,node_namex))
                 graph_fd.write("{0} [label=\"{1}\"]\n".format(node_name_dest,node_namex_dest))
-
-
  
     graph_fd.write("}\n")
     graph_fd.close()
@@ -62,11 +65,10 @@ def generateid(string):
     return _assigned[string]
 
 def get_cs(id):
-    for cs, cs_id in _assigned.iteritems():
+    for cs, cs_id in _assigned.items():
         if id == cs_id:
             return cs
 
-    print id
     assert(False)
 
 def calls(window):
@@ -240,7 +242,7 @@ def _update_tree(tree, node, window):
 def update_tree(tree, window):
     # In the root node, we can follow any path
     root_node = tree[window[0].major]
-    for minor, data in root_node.iteritems():
+    for minor, data in root_node.items():
         if minor == "instances": continue
 
         #if window[0].major in data["to"]:
@@ -258,9 +260,9 @@ def _get_most_probable_son(graph, root_id, root, window):
         max_times = 0
         prediction_major = None
         prediction_minor = None
-        for minor,data in root.iteritems():
+        for minor,data in root.items():
             if minor == "instances": continue
-            for major, minor in data["to"].iteritems():
+            for major, minor in data["to"].items():
                 times = graph[major][minor]["times"]
                 if times > max_times:
                     max_times = times
@@ -270,7 +272,8 @@ def _get_most_probable_son(graph, root_id, root, window):
         ###############################################################
         # TODO: Why the algorithm arrives here more than one time???? #
         ###############################################################
-        return [prediction_major], max_times, True
+        prediction = "{0}.{1}".format(prediction_major, prediction_minor)
+        return [prediction], max_times, True
     else:
         last_node = False
 
@@ -282,7 +285,7 @@ def _get_most_probable_son(graph, root_id, root, window):
     max_path = []
     total_success = False
 
-    for minor, data in root.iteritems():
+    for minor, data in root.items():
         if minor == "instances": continue
         if major_dst in data["to"]:
             minor_dst = data["to"][major_dst]
@@ -297,7 +300,8 @@ def _get_most_probable_son(graph, root_id, root, window):
                 total_success = success
 
     aggregated_path = [root_id]; aggregated_path.extend(max_path)
-    aggregated_times = graph[root_id]["instances"] + max_times
+    #aggregated_times = graph[root_id]["instances"] + max_times
+    aggregated_times = max_times
     aggregated_success = (last_node or total_success)
 
     return aggregated_path, aggregated_times, aggregated_success 
@@ -315,8 +319,8 @@ def make_prediction(graph, window):
             twindow[0],
             graph[twindow[0]], 
             twindow[1:])
-    
-    return get_cs(prediction[-1]), times, success
+    print(prediction)
+    return prediction[-1], times, success
 
 def main(argc, argv):
     cstackinfo = argv[1]
@@ -350,27 +354,35 @@ def main(argc, argv):
 
         update_tree(prob_tree, window)
 
-    print "-> Graph data done..."
-    #generate_graph(prob_tree)
-    #print "-> Graph image generated... " + _graph_image
-    #show_graph()
+        #print(calls(window))
+        #generate_graph(prob_tree)
+        #show_graph()
+        #
+        #input("Press Enter to continue...")
 
-    print "->Saving ..."
+    print("->Saving ...")
     foutput = open(_output+"."+str(wsize), "w")
     foutput.write(json.dumps(prob_tree))
     foutput.close()
-    print " - Done!"
+    print(" - Done!")
 
-    print "-> Performing prediction..."
-    print " - Next callstack for windows: " + str(window4prediction)
+    print("-> Performing prediction...")
+    print(" - Next callstack for windows: " + str(window4prediction))
     prediction,times,success = make_prediction(prob_tree, window4prediction)
 
     if success:
-        print " - SUCCESS. [" + str(prediction) + "], times detected: " + str(times)
+        predicted_callstack = get_cs(prediction.split(".")[0])
+        print(" - SUCCESS. [{0}], times detected: {1}".format(predicted_callstack, str(times)))
     else:
-        print " - UNSUCCESS. The learning has not been enough"
+        print(" - UNSUCCESS. The learning has not been enough")
+    
+    print("-> Graph data done...")
+    generate_graph(prob_tree, window4prediction, prediction)
+    print("-> Graph image generated... " + _graph_image)
+    show_graph()
+      
     #print json.dumps(prob_tree, sort_keys=True,indent=4, separators=(',', ': '))
-       
+
     return 0
 
 if __name__ == "__main__":

@@ -48,9 +48,9 @@ def ltostack(lista):
 
 def get_complete_stack(stack, old_stack):
 				
-				print stack
-				print old_stack
-				print ".."
+				#print(stack)
+				#print(old_stack)
+				#print("..")
 				max_count = 0
 				candidate = None
 				
@@ -88,14 +88,14 @@ def diff_ops(lstack, lstack_old):
 								#return ["xxx"]
 
 				# It is possible that the call level is so deph that
-				# in our 5-level callstack there are not the first levels.
+				# in our n-level callstack there are not the first levels.
 				# Therefore, in this cases we have to add them.
 				# e.g.
-				#				AA | AZ B  E ---+
-				#          +----------+ |
-				#				 J    H V  AZ | (B E)
-				#          +----------+
-				#				AA | AZ B  E
+				#   AA | AZ B  E ---+
+				#      +----------+ |
+				#	 J    H V  AZ | (B E)
+				#      +----------+
+				#   AA | AZ B  E
 				#
 
 				done=False
@@ -135,59 +135,59 @@ def diff_ops(lstack, lstack_old):
 				return result,lstack
 
 def parse(infile, outfile):
-				outfile = open(outfile, "w")
-				with open(infile, "r") as infi:
-								
+    outfile = open(outfile, "w")
+    last_time = 0
+    with open(infile, "r") as infi:
+        last_stack=[]
+        first_stack=infi.readline()
+        first_stack_time = first_stack.split("#")[0]
+        first_stack = first_stack.split("#")[-1]
 
-								last_stack=[]
-								first_stack=infi.readline()
-								first_stack_time = first_stack.split("#")[0]
-								first_stack = "".join(first_stack.split("#")[1:])
+        for call in clean_list(first_stack.split("|")):
+            last_stack.append(call)
+        last_stack.reverse()
+        for call in last_stack:
+            outfile.write(first_stack_time + TIME_SEPARATOR + ENTRY_STR + call + "\n")
+        last_stack.reverse()
 
-								for call in clean_list(first_stack.split("|")):
-												last_stack.append(call)
-	
-								last_stack.reverse()
-								for call in last_stack:
-												outfile.write(first_stack_time + TIME_SEPARATOR + ENTRY_STR + call + "\n")
-								last_stack.reverse()
+        stack_line=infi.readline()
+        while stack_line != "":
+            time = last_time = stack_line.split("#")[0]
+            stack_line = stack_line.split("#")[-1]
+            stack = clean_list(stack_line.split("|"))
+            ops, stack = diff_ops(stack, last_stack)
 
-								stack_line=infi.readline()
-								while stack_line != "":
-												time = stack_line.split("#")[0]
-												stack_line = "".join(stack_line.split("#")[1:])
-												stack = clean_list(stack_line.split("|"))
-												ops, stack = diff_ops(stack, last_stack)
-												
-												#outfile.write("OLD:"+str(last_stack)+"\n")
-												#outfile.write("NEW:"+str(stack)+"\n")
+            for op in ops:
+                #outfile.write(op + "\n")
+                outfile.write(time+ TIME_SEPARATOR + op + "\n")
 
-												#outfile.write(stack_line)
-												for op in ops:
-																outfile.write(time+ TIME_SEPARATOR + op + "\n")
+            last_stack = stack
+            stack_line=infi.readline()
 
-												last_stack = stack
-												stack_line=infi.readline()
+    # Lastly, all the remaining entries must be exited
+    # TODO: Revise...
+    for call in last_stack:
+        outfile.write("{0} {1}{2}\n".format(str(last_time),EXIT_STR,call))
+    outfile.close()
 
-								# Lastly, all the remaining entries must be exited
-								# TODO: Revise...
-								for call in last_stack:
-												outfile.write(EXIT_STR + call + "\n")
-
-				outfile.close()
+def Usage(name):
+    print("Usage: {0} function.0.raw[,...,function.N.raw] cstacks-count-file".format(name))
 
 def main(argc, argv):
 
-	global CSTACKS_COUNT
-	cstackf = open(argv[-1], "r")
-	CSTACKS_COUNT = json.load(cstackf)
-	cstackf.close()
+    if argc < 2:
+        Usage(argv[0])
 
-	for infile in argv[1:-1]:
-		outfile = ".".join(infile.split(".")[:-1]) + ".parsed"
+    global CSTACKS_COUNT
+    cstackf = open(argv[-1], "r")
+    CSTACKS_COUNT = json.load(cstackf)
+    cstackf.close()
 
-		print "Parsing " + infile + " to " + outfile
-		parse(infile, outfile)			
+    for infile in argv[1:-1]:
+        outfile = ".".join(infile.split(".")[:-1]) + ".parsed"
+
+        print("Parsing {0} to {1}".format(infile, outfile))
+        parse(infile, outfile)			
 
 if __name__ == "__main__":
 	main(len(sys.argv), sys.argv)

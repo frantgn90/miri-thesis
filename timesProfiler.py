@@ -10,7 +10,7 @@ def init_structure(function_map):
     fmap = open(function_map, "r")
     FUNCS_INFO = json.load(fmap)
 
-    for k,v in FUNCS_INFO.iteritems():
+    for k,v in FUNCS_INFO.items():
         FUNCS_TIME.update({
             v["letter"]:{
                 "name":v["name"],
@@ -46,7 +46,13 @@ def main(argc, argv):
     init_structure(function_map)
     get_times(function_par)
 
-    print json.dumps(FUNCS_TIME, sort_keys=True, indent=4, separators=(',', ': '))
+    #print(json.dumps(FUNCS_TIME, sort_keys=True, indent=4, separators=(',', ': ')))
+    
+    for func, data in FUNCS_TIME.items():
+        if data["counter"] > 0:
+            mean = sum(data["times"])/float(data["counter"])
+            print("{0} : {1}".format(data["name"], str(mean)))
+
     return 0
 
 if __name__ == "__main__":

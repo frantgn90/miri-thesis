@@ -80,16 +80,16 @@ for line in cstacks:
 fgraph = open(GRAPH_DOT_FILE,"w")
 fgraph.write("digraph G {\n")
 
-for k,v in CSTACKS_COUNT.iteritems():
+for k,v in CSTACKS_COUNT.items():
     total = v["times"]
 			
     if total > 50:
-	    for k1,v1 in v["probs"].iteritems():
-		    percent = "{:.3f}".format(float(v1)*100/total) 
-			fgraph.write("\"" + k + "\" [style=filled];")
-
-			if float(percent) >= 5:
-			    fgraph.write("\"" + k + "\" -> \"" + k1 + "\" [label=\"" + percent + "% \\n(" + str(v1) + ")\"];\n")
+        for k1,v1 in v["probs"].items():
+            percent = "{:.3f}".format(float(v1)*100/total) 
+            fgraph.write("\"" + k + "\" [style=filled];")
+            
+            if float(percent) >= 5:
+                fgraph.write("\"" + k + "\" -> \"" + k1 + "\" [label=\"" + percent + "% \\n(" + str(v1) + ")\"];\n")
                 fgraph.write("\"" + k + "\" [label=\"" + k + "\\n(" + str(total) + ")\"];\n")
                 fgraph.write("\"" + k1 + "\" [label=\"" + k1 + "\\n(" + str(CSTACKS_COUNT[k1]["times"]) + ")\"];\n")
 

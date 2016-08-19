@@ -10,6 +10,8 @@ This scripts is the responsible to
 import sys
 import json,re
 
+CALLSTACK_SIZE=10
+
 FIELD_SEPARATOR="#"
 
 CALLER_EVENT=""
@@ -204,21 +206,19 @@ def display_caller_structure(trace, level, image_filter):
 
             imgs=[]
             cnt=0
-            for k,v in IMAGES.iteritems():
+            for k,v in IMAGES.items():
                 if v["image"] == "En": continue # avoid End
                 if not v["image"] in imgs and v["line"] != "0":
                     imgs.append(v["image"])
     
-            print "Images detected during the execution"
-            print "------------------------------------"
+            print("Images detected during the execution")
+            print("------------------------------------")
             for im in imgs:
                 if im in image_filter: 
-                    print "> "+im
+                    print("> {0}".format(im))
                 else: 
-                    print "  "+im
+                    print("  {0}".format(im))
 
-            #print json.dumps(imgs,sort_keys=True,indent=2, separators=(',', ': '))
-            print
 
             TASK_OUTFILES = [None]*total_threads
 
@@ -242,11 +242,10 @@ def display_caller_structure(trace, level, image_filter):
                     time = int(line_fields[5])
                     events = line_fields[6:]
 
-                    # NOTE:_Assuming 6 as maximum nested level
-                    tmp_call_stack=[""]*6
-                    tmp_image_stack=[""]*6
-                    tmp_line_stack=[""]*6
-                    tmp_file_stack=[""]*6
+                    tmp_call_stack=[""]*CALLSTACK_SIZE
+                    tmp_image_stack=[""]*CALLSTACK_SIZE
+                    tmp_line_stack=[""]*CALLSTACK_SIZE
+                    tmp_file_stack=[""]*CALLSTACK_SIZE
                     ncalls=0
                     nimags=0
                     last_time = 0
@@ -299,7 +298,7 @@ def display_caller_structure(trace, level, image_filter):
 
 def main(argc, argv):
     if argc < 2:
-        print "Usage(): " + argv[0] + " [-l call_level] [-f img1[,img2,...]] <trace>"
+        print("Usage(): {0} [-l call_level] [-f img1[,img2,...]] <trace>".format(argv[0]))
         print 
         return -1
 
@@ -318,15 +317,15 @@ def main(argc, argv):
     if level != "0":
         clevels=str(level)
 
-    print argv[0] + " : Calls level=" + clevels + "; Image filter=" + str(image_filter) + "; Trace=[.../]" + trace.split("/")[-1] + "\n\n"
+    print("{0} : Calls level={1}; Image filter={2}; Trace=[../]{3}\n\n".format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
     display_caller_structure(trace, level, image_filter)
 
-    print "Generating function to letter mapping file"
+    print("Generating function to letter mapping file")
     ofile = open(FUNC_MAP_FILE, "w")
     json.dump(CALL_NAMES, ofile)
     ofile.close()
 
-    print "Done"
+    print("Done")
     return 0
 
 if __name__ == "__main__":
