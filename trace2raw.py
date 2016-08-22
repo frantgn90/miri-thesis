@@ -20,6 +20,9 @@ CALLIN_EVENT=""
 CALLER_EVENT_BASE ="3000000"
 CALLIN_EVENT_BASE ="3000010"
 
+MPICAL_EVENT_BASE ="7000000"
+MPILIN_EVENT_BASE ="8000000"
+
 COUNTER_CALLS = None
 COUNTER_TYPE_CALLS = None
 
@@ -33,110 +36,102 @@ FUNC_MAP_FILE="functions.map"
 def next_letter(letter):
     letter = list(letter)
 
-    if letter[-1] == "Z":
+    if letter[-1] == "z":
         for i in range(len(letter)-2,-1,-1):
-            if letter[i] != "Z":
+            if letter[i] != "z":
                 letter[i]=chr(ord(letter[i])+1)
-                letter[i+1:len(letter)-1]="A"*(len(letter)-(i+2))
+                letter[i+1:len(letter)-1]="a"*(len(letter)-(i+2))
                 return "".join(letter)
 
-        return "A"*(len(letter)+1)
+        return "a"*(len(letter)+1)
     else:
         letter[-1]=chr(ord(letter[-1])+1)
 
     return "".join(letter)
 
-def get_line_info(trace):
-    global IMAGES
+def get_pcf_info(event_type, trace):
     pcf_file = trace.replace(".prv", ".pcf")
 
-    in_event_type = False
-    in_line_events = False
-    in_event_values = True
+    in_event_types=False
+    in_event_values=False
+    in_target_events=False
 
+
+    values=[]
     with open(pcf_file) as pcfile:
         for line in pcfile:
-            if "\n" == line:
-                continue
+            if line == "\n": continue
             if "EVENT_TYPE" in line:
-                in_event_type=True
+                in_event_types=True
                 in_event_values=False
-                in_line_events = False
-            elif in_event_type and CALLIN_EVENT_BASE in line:
-                in_line_events= True
+                in_target_events=False
             elif "VALUES" in line:
-                in_event_type=False
+                in_event_types=False
                 in_event_values=True
-            elif in_line_events and in_event_values:
-                if "[" in line:
-                    line = line[0:line.find(" ")]+" "+line[line.find("[")+1:-1]
+            elif in_event_types:
+                in_target_events = (event_type in line) or in_target_events
+            elif in_event_values and in_target_events:
+                values.append(line)
 
-                info = line.split(" ")
-                l = info[1]
+    return values
 
-                if len(info) < 4:
-                    file = image = info[2][1:-1]
-                else:
-                    file = info[2]
-                    image = info[3]
+def get_line_info(trace):
+    global IMAGES
 
-                    if len(file) > 0:
-                        file = file[1:-1]
-                    if len(image) > 0:
-                        image = image[:-2]
+    values = get_pcf_info(CALLIN_EVENT_BASE, trace)
 
-                IMAGES.update({
-                    info[0]: {
-                    "line" : l,
-                    "file" : file,
-                    "image": image
-                    }})
+    for line in values:
+        if "[" in line:
+            line = line[0:line.find(" ")]+" "+line[line.find("[")+1:-1]
+        info = line.split(" ")
+        l = info[1]
 
+        if len(info) < 4:
+            file = image = info[2][1:-1]
+        else:
+            file = info[2]
+            image = info[3]
+
+            if len(file) > 0:
+                file = file[1:-1]
+            if len(image) > 0:
+                image = image[:-2]
+
+        IMAGES.update({
+            info[0]: {
+                "line" : l,
+                "file" : file,
+                "image": image
+            }})
 
 def get_call_names(trace):
     global CALL_NAMES
-    pcf_file = trace.replace(".prv", ".pcf")
 
-    in_event_type = False
-    in_caller_events = False
-    in_event_values = True
-    letter="A"
-    
-    with open(pcf_file) as pcfile:
-        for line in pcfile:
-            if "\n" == line:
-                continue
-            if "EVENT_TYPE" in line:
-                in_event_type=True
-                in_event_values=False
-                in_caller_events = False
-            elif in_event_type and CALLER_EVENT_BASE in line:
-                in_caller_events= True
-            elif "VALUES" in line:
-                in_event_type=False
-                in_event_values=True
-            elif in_caller_events and in_event_values:
-                info = line.split(" ")
-                name=" ".join(info[1:])
+    values = get_pcf_info(CALLER_EVENT_BASE, trace)
 
-                if "[" in name:
-                    entireName=name[name.find("[")+1:-2]
-                else:
-                    entireName=name[:-1]
+    letter="a"   
+    for line in values:
+        info = line.split(" ")
+        name=" ".join(info[1:])
 
-                CALL_NAMES.update({
-                    info[0]: {
-                        "name":entireName,
-                        "letter":letter
-                        }})
-                letter = next_letter(letter)
+        if "[" in name:
+            entireName=name[name.find("[")+1:-2]
+        else:
+            entireName=name[:-1]
+
+        CALL_NAMES.update({
+            info[0]: {
+                "name":entireName,
+                "letter":letter
+                }})
+        letter = next_letter(letter)
 
 def get_app_description(header):
 
     header = header.split(":")[3:]
     apps_description = []
 
-    # TODO: Support for mode than one task
+    # TODO: Support for more than one task
     napps = int(header[1])
     header = ":".join(header[2:])
     ntasks = int(header.split("(")[0])
@@ -178,9 +173,13 @@ def display_caller_structure(trace, level, image_filter):
     if level == "0":
         CALLER_EVENT=re.compile(CALLER_EVENT_BASE + ".")
         CALLIN_EVENT=re.compile(CALLIN_EVENT_BASE + ".")
+        MPICAL_EVENT=re.compile(MPICAL_EVENT_BASE + ".")
+        MPILIN_EVENT=re.compile(MPILIN_EVENT_BASE + ".")
     else:
         CALLER_EVENT=re.compile(CALLER_EVENT_BASE + str(level))
         CALLIN_EVENT=re.compile(CALLIN_EVENT_BASE + str(level))
+        MPICAL_EVENT=re.compile(MPICAL_EVENT_BASE + str(level))
+        MPILIN_EVENT=re.compile(MPILIN_EVENT_BASE + str(level))
 
     with open(trace) as tr:
         # read header
@@ -214,7 +213,7 @@ def display_caller_structure(trace, level, image_filter):
             print("Images detected during the execution")
             print("------------------------------------")
             for im in imgs:
-                if im in image_filter: 
+                if im in image_filter or image_filter == ["ALL"]: 
                     print("> {0}".format(im))
                 else: 
                     print("  {0}".format(im))
@@ -227,6 +226,8 @@ def display_caller_structure(trace, level, image_filter):
 
             # NOTE: Assuming one app
 
+            # NOTE: Two consecutive callstacks must not be equal. If it is, it does not
+            # apport any information.
 
             last_callstack=[""]*total_threads
 
@@ -242,54 +243,66 @@ def display_caller_structure(trace, level, image_filter):
                     time = int(line_fields[5])
                     events = line_fields[6:]
 
-                    tmp_call_stack=[""]*CALLSTACK_SIZE
-                    tmp_image_stack=[""]*CALLSTACK_SIZE
-                    tmp_line_stack=[""]*CALLSTACK_SIZE
-                    tmp_file_stack=[""]*CALLSTACK_SIZE
-                    ncalls=0
-                    nimags=0
-                    last_time = 0
+                    tmp_call_stack=[""]*CALLSTACK_SIZE; tmp_image_stack=[""]*CALLSTACK_SIZE
+                    tmp_line_stack=[""]*CALLSTACK_SIZE; tmp_file_stack=[""]*CALLSTACK_SIZE
+                    ncalls_s=0; nimags_s=0; ncalls_m=0; nimags_m=0; last_time = 0
 
                     for event_i in range(0, len(events), 2):
                         event_key = events[event_i]
                         event_value = events[event_i+1]
-                        if not CALLER_EVENT.match(event_key) is None:
-                            tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["letter"] #+"["+event_key[-1]+"]"
-                            ncalls+=1
+                        
+                        # NOTE: Callstack get by sampling
 
-                        if not CALLIN_EVENT.match(event_key) is None:
+                        if not CALLER_EVENT.match(event_key) is None:
+                            tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["name"]
+                            ncalls_s+=1
+                        elif not CALLIN_EVENT.match(event_key) is None:
                             tmp_image_stack[int(event_key[-1])]=IMAGES[event_value]["image"]
                             tmp_line_stack[int(event_key[-1])]=event_value
                             tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
-                            nimags+=1
+                            nimags_s+=1
 
-                    assert(ncalls==nimags)
+                        # NOTE: Callstack get by MPI interception
+
+                        elif not MPICAL_EVENT.match(event_key) is None:
+                            tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["name"]
+                            ncalls_m+=1
+                        elif not MPILIN_EVENT.match(event_key) is None:
+                            tmp_image_stack[int(event_key[-1])]=IMAGES[event_value]["image"]
+                            tmp_line_stack[int(event_key[-1])]=event_value
+                            tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
+                            nimags_m+=1
+
+                    assert(ncalls_s==nimags_s)
+                    assert(ncalls_m==nimags_m)
+                    assert(ncalls_s&ncalls_m==0)
+
+                    ncalls=ncalls_s+ncalls_m
+                    nimags=nimags_s+nimags_m
 
                     if ncalls > 0:
-                        filtered_calls=[]
-                        filtered_files=[]
-                        filtered_lines=[]
-                        filtered_levels=[]
+                        filtered_calls=[]; filtered_files=[]; filtered_lines=[]; filtered_levels=[]
 
                         for i in range(0, ncalls):
-                            if tmp_image_stack[i] in image_filter:
+                            if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
                                 filtered_calls.append(tmp_call_stack[i])
                                 filtered_files.append(tmp_file_stack[i])
                                 filtered_lines.append(tmp_line_stack[i])
                                 filtered_levels.append(str(i))
 
                         if len(filtered_calls) > 0:
+                            sampled = "S" if ncalls_s > 0 else "M"
                             callstack_to_write = str(time-last_time) + FIELD_SEPARATOR + \
+                                                 sampled + FIELD_SEPARATOR + \
                                                  "|".join(filtered_files) + FIELD_SEPARATOR + \
                                                  "|".join(filtered_lines) + FIELD_SEPARATOR + \
                                                  "|".join(filtered_levels)+ FIELD_SEPARATOR + \
                                                  "|".join(filtered_calls)
-
-                            # NOTE: Two consecutive callstacks must not be equal. If it is, it does not
-                            # apport any information.
-                            if last_callstack[task-1] != "|".join(filtered_calls):
+                            
+                            cstack_register = sampled + "#" + "|".join(filtered_calls)
+                            if last_callstack[task-1] != cstack_register:
                                 TASK_OUTFILES[task-1].write(callstack_to_write+"\n")
-                                last_callstack[task-1]="|".join(filtered_calls)
+                                last_callstack[task-1]=cstack_register
                                 last_time = time
 
     for i in range(0, total_threads):
