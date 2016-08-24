@@ -1,14 +1,51 @@
 #!/usr/bin/env python
 
-
 '''
 ./callstack_from_trace.py 
 
 This scripts is the responsible to 
 '''
 
-import sys
+from __future__ import print_function
+import sys, os
 import json,re
+
+
+class Printer():
+    """
+    Print things to stdout on one line dynamically
+    """
+                 
+    def __init__(self,data):                     
+        sys.stdout.write("\x1b[K"+data.__str__())
+        sys.stdout.flush()
+
+class progress_bar(object):
+    def __init__(self, total):
+        self.total = total
+        self.progression = 0
+        self.bar_size=20
+        self.update_every=2000
+        self.count = 0
+
+    def progress_by(self, by):
+        self.progression += by
+
+    def show(self):
+        self.count += 1
+        if self.count >= self.update_every or self.progression == self.total:
+            percent = (self.progression*100)/self.total
+            pbar_syms = (self.progression*self.bar_size)/self.total
+            pbar_spac = self.bar_size-pbar_syms
+
+            if self.progression == self.total:
+                endc="\n"
+            else:
+                endc="\r"
+
+            print("  [{0}>{1}] {2}% {3}/{4}".format("="*(pbar_syms), " "*pbar_spac, str(percent), str(self.progression),str(self.total)), end=endc)
+            self.count = 0
+
 
 CALLSTACK_SIZE=10
 
@@ -16,18 +53,25 @@ FIELD_SEPARATOR="#"
 
 CALLER_EVENT=""
 CALLIN_EVENT=""
+MPI_LIB_FILE="libmpi_injected.c"
 
+# Events of sampling callstac info
 CALLER_EVENT_BASE ="3000000"
 CALLIN_EVENT_BASE ="3000010"
 
+# Events of mpi callstack info
 MPICAL_EVENT_BASE ="7000000"
 MPILIN_EVENT_BASE ="8000000"
+
+# Event of mpi calls info
+MPI_EVENT_BASE    ="5000000"
 
 COUNTER_CALLS = None
 COUNTER_TYPE_CALLS = None
 
 CALL_NAMES={}
 IMAGES={}
+MPI_CALLS={}
 
 THREAD_DEPH={}
 
@@ -126,6 +170,30 @@ def get_call_names(trace):
                 }})
         letter = next_letter(letter)
 
+# TODO
+
+def get_mpi_calls(trace):
+    global MPI_CALLS
+
+    values = get_pcf_info(MPI_EVENT_BASE, trace)
+    
+    letter = "zzzza" # Could be a problem if there is a lot of
+                   # functions, and some of them arrive to zzz
+
+    for line in values:
+        line = line[:-1].split("   ")
+        code = line[0]
+        name = line[1]
+
+        MPI_CALLS.update({code : name})
+        CALL_NAMES.update({
+            "mpi_"+code: {
+                "name":name,
+                "letter":letter
+        }})
+        letter=next_letter(letter)
+
+
 def get_app_description(header):
 
     header = header.split(":")[3:]
@@ -146,26 +214,6 @@ def get_app_description(header):
 
     return apps_description
 
-def get_deph(callstack):
-    deph = 0
-    for call in callstack:
-        if call != "_start":
-            deph+=1
-    return deph
-
-
-def new_call(appid, taskid, threadid, call):
-    global COUNTER_CALLS, COUNTER_TYPE_CALLS
-
-    # NOTE: Assuming one thread per task
-    COUNTER_CALLS[taskid-1] += 1
-    if not call in COUNTER_TYPE_CALLS[taskid-1]:
-        COUNTER_TYPE_CALLS[taskid-1].update({call:1})
-    else:
-        COUNTER_TYPE_CALLS[taskid-1][call] += 1
-
-
-    # TODO: Generate the graph step by step
 
 def display_caller_structure(trace, level, image_filter):
     global CALLER_EVENT, CALLIN_EVENT
@@ -181,133 +229,164 @@ def display_caller_structure(trace, level, image_filter):
         MPICAL_EVENT=re.compile(MPICAL_EVENT_BASE + str(level))
         MPILIN_EVENT=re.compile(MPILIN_EVENT_BASE + str(level))
 
+    MPI_EVENT=re.compile(MPI_EVENT_BASE + ".")
+
+    file_size = os.stat(trace).st_size 
+    pbar = progress_bar(file_size)
+    
     with open(trace) as tr:
         # read header
-            header = tr.readline()
-            appd = get_app_description(header)
+        header = tr.readline()
+        pbar.progress_by(len(header))
+        appd = get_app_description(header)
 
-            total_threads = 0
-
-
-            for task in appd:
-                for thread in task:
-                    total_threads += 1
-
-            global SQUARE_HEIGHT, COUNTER_CALLS, COUNTER_TYPE_CALLS
-
-            COUNTER_TYPE_CALLS = [dict() for x in range(total_threads)]
-            COUNTER_CALLS = [0]*total_threads
-
-            get_call_names(trace)
-            get_line_info(trace)
-
-            #print json.dumps(CALL_NAMES,sort_keys=True,indent=2, separators=(',', ': '))
-
-            imgs=[]
-            cnt=0
-            for k,v in IMAGES.items():
-                if v["image"] == "En": continue # avoid End
-                if not v["image"] in imgs and v["line"] != "0":
-                    imgs.append(v["image"])
-    
-            print("Images detected during the execution")
-            print("------------------------------------")
-            for im in imgs:
-                if im in image_filter or image_filter == ["ALL"]: 
-                    print("> {0}".format(im))
-                else: 
-                    print("  {0}".format(im))
+        total_threads = 0
 
 
-            TASK_OUTFILES = [None]*total_threads
+        for task in appd:
+            for thread in task:
+                total_threads += 1
 
-            for i in range(0, total_threads):
-                TASK_OUTFILES[i] = open("functions." + str(i) + ".raw", "w")
+        global SQUARE_HEIGHT, COUNTER_CALLS, COUNTER_TYPE_CALLS
 
-            # NOTE: Assuming one app
+        COUNTER_TYPE_CALLS = [dict() for x in range(total_threads)]
+        COUNTER_CALLS = [0]*total_threads
 
-            # NOTE: Two consecutive callstacks must not be equal. If it is, it does not
-            # apport any information.
+        get_call_names(trace)
+        get_line_info(trace)
+        get_mpi_calls(trace)
 
-            last_callstack=[""]*total_threads
+        #print json.dumps(CALL_NAMES,sort_keys=True,indent=2, separators=(',', ': '))
 
-            for line in tr:
-                line = line[:-1] # Remove the final \n
-                line_fields = line.split(":")
+        imgs=[]
+        cnt=0
+        for k,v in IMAGES.items():
+            if v["image"] == "En": continue # avoid End
+            if not v["image"] in imgs and v["line"] != "0":
+                imgs.append(v["image"])
 
-                if line_fields[0] == "2":
-                    cpu = int(line_fields[1])
-                    app = int(line_fields[2])
-                    task = int(line_fields[3])
-                    thread = int(line_fields[4])
-                    time = int(line_fields[5])
-                    events = line_fields[6:]
+        img_header ="[Images detected during the execution]"
+        print(img_header)
 
-                    tmp_call_stack=[""]*CALLSTACK_SIZE; tmp_image_stack=[""]*CALLSTACK_SIZE
-                    tmp_line_stack=[""]*CALLSTACK_SIZE; tmp_file_stack=[""]*CALLSTACK_SIZE
-                    ncalls_s=0; nimags_s=0; ncalls_m=0; nimags_m=0; last_time = 0
+        for im in imgs:
+            if im in image_filter or image_filter == ["ALL"]: 
+                line = "  {0}".format(im)
+            else: 
+                line = "  {0} (filtered)".format(im)
+            print(line)
 
-                    for event_i in range(0, len(events), 2):
-                        event_key = events[event_i]
-                        event_value = events[event_i+1]
+
+        TASK_OUTFILES = [None]*total_threads
+
+        for i in range(0, total_threads):
+            TASK_OUTFILES[i] = open("functions." + str(i) + ".raw", "w")
+
+        # NOTE: Assuming one app
+        # NOTE: Two consecutive callstacks must not be equal. If it is, it does not
+        # apport any information.
+        last_callstack=[""]*total_threads
+
+        print("")
+        print("[Parsing trace...]")
+
+
+        for line in tr:
+            pbar.progress_by(len(line))
+
+            line = line[:-1] # Remove the final \n
+            line_fields = line.split(":")
+
+            if line_fields[0] == "2":
+                cpu = int(line_fields[1])
+                app = int(line_fields[2])
+                task = int(line_fields[3])
+                thread = int(line_fields[4])
+                time = int(line_fields[5])
+                events = line_fields[6:]
+
+                tmp_call_stack=[""]*CALLSTACK_SIZE; tmp_image_stack=[""]*CALLSTACK_SIZE
+                tmp_line_stack=[""]*CALLSTACK_SIZE; tmp_file_stack=[""]*CALLSTACK_SIZE
+                ncalls_s=0; nimags_s=0; ncalls_m=0; nimags_m=0; last_time = 0
+
+                # NOTE: When the callstack is gathered by mean of the interception of
+                # an MPI call, then this call is injected to the top of the callstack
+                mpi_call_to_add=None
+
+                for event_i in range(0, len(events), 2):
+                    event_key = events[event_i]
+                    event_value = events[event_i+1]
+                    
+                    # NOTE: Callstack get by sampling
+
+                    if not CALLER_EVENT.match(event_key) is None:
+                        tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["letter"]
+                        ncalls_s+=1
+                    elif not CALLIN_EVENT.match(event_key) is None:
+                        tmp_image_stack[int(event_key[-1])]=IMAGES[event_value]["image"]
+                        tmp_line_stack[int(event_key[-1])]=event_value
+                        tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
+                        nimags_s+=1
+
+                    # NOTE: Callstack get by MPI interception
+
+                    elif not MPICAL_EVENT.match(event_key) is None:
+                        tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["letter"]
+                        ncalls_m+=1
+                    elif not MPILIN_EVENT.match(event_key) is None:
+                        tmp_image_stack[int(event_key[-1])]=IMAGES[event_value]["image"]
+                        tmp_line_stack[int(event_key[-1])]=event_value
+                        tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
+                        nimags_m+=1
+                    elif not MPI_EVENT.match(event_key) is None:
+                        mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["letter"] #MPI_CALLS[event_value]
+
+
+                assert(ncalls_s==nimags_s)
+                assert(ncalls_m==nimags_m)
+                assert(ncalls_s&ncalls_m==0)
+
+                ncalls=ncalls_s+ncalls_m
+                nimags=nimags_s+nimags_m
+
+                if ncalls > 0:
+                    filtered_calls=[]; filtered_files=[]; filtered_lines=[]; filtered_levels=[]
+
+                    for i in range(0, ncalls):
+                        if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
+                            filtered_calls.append(tmp_call_stack[i])
+                            filtered_files.append(tmp_file_stack[i])
+                            filtered_lines.append(tmp_line_stack[i])
+                            filtered_levels.append(str(i))
+
+                    if len(filtered_calls) > 0:
+                        sampled = "S" if ncalls_s > 0 else "M"
+                        if sampled == "M":
+                            assert(mpi_call_to_add != None)
+                            filtered_calls = [mpi_call_to_add] + filtered_calls
+                            filtered_files = [MPI_LIB_FILE] + filtered_files
+                            filtered_lines = ["0"] + filtered_lines 
+                            filtered_levels= ["0"] + map(lambda x: str(int(x)+1), filtered_levels)
+
+                        callstack_to_write = str(time-last_time) + FIELD_SEPARATOR + \
+                            sampled + FIELD_SEPARATOR + \
+                            "|".join(filtered_files) + FIELD_SEPARATOR + \
+                            "|".join(filtered_lines) + FIELD_SEPARATOR + \
+                            "|".join(filtered_levels)+ FIELD_SEPARATOR + \
+                            "|".join(filtered_calls)
                         
-                        # NOTE: Callstack get by sampling
+                        cstack_register = sampled + "#" + "|".join(filtered_calls)
+                        if last_callstack[task-1] != cstack_register:
+                            TASK_OUTFILES[task-1].write(callstack_to_write+"\n")
+                            last_callstack[task-1]=cstack_register
+                            last_time = time
 
-                        if not CALLER_EVENT.match(event_key) is None:
-                            tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["name"]
-                            ncalls_s+=1
-                        elif not CALLIN_EVENT.match(event_key) is None:
-                            tmp_image_stack[int(event_key[-1])]=IMAGES[event_value]["image"]
-                            tmp_line_stack[int(event_key[-1])]=event_value
-                            tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
-                            nimags_s+=1
-
-                        # NOTE: Callstack get by MPI interception
-
-                        elif not MPICAL_EVENT.match(event_key) is None:
-                            tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["name"]
-                            ncalls_m+=1
-                        elif not MPILIN_EVENT.match(event_key) is None:
-                            tmp_image_stack[int(event_key[-1])]=IMAGES[event_value]["image"]
-                            tmp_line_stack[int(event_key[-1])]=event_value
-                            tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
-                            nimags_m+=1
-
-                    assert(ncalls_s==nimags_s)
-                    assert(ncalls_m==nimags_m)
-                    assert(ncalls_s&ncalls_m==0)
-
-                    ncalls=ncalls_s+ncalls_m
-                    nimags=nimags_s+nimags_m
-
-                    if ncalls > 0:
-                        filtered_calls=[]; filtered_files=[]; filtered_lines=[]; filtered_levels=[]
-
-                        for i in range(0, ncalls):
-                            if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
-                                filtered_calls.append(tmp_call_stack[i])
-                                filtered_files.append(tmp_file_stack[i])
-                                filtered_lines.append(tmp_line_stack[i])
-                                filtered_levels.append(str(i))
-
-                        if len(filtered_calls) > 0:
-                            sampled = "S" if ncalls_s > 0 else "M"
-                            callstack_to_write = str(time-last_time) + FIELD_SEPARATOR + \
-                                                 sampled + FIELD_SEPARATOR + \
-                                                 "|".join(filtered_files) + FIELD_SEPARATOR + \
-                                                 "|".join(filtered_lines) + FIELD_SEPARATOR + \
-                                                 "|".join(filtered_levels)+ FIELD_SEPARATOR + \
-                                                 "|".join(filtered_calls)
-                            
-                            cstack_register = sampled + "#" + "|".join(filtered_calls)
-                            if last_callstack[task-1] != cstack_register:
-                                TASK_OUTFILES[task-1].write(callstack_to_write+"\n")
-                                last_callstack[task-1]=cstack_register
-                                last_time = time
+            pbar.show()
 
     for i in range(0, total_threads):
         TASK_OUTFILES[i].close()
 
+    print("")
+    print("[Files generated]")
 
 def main(argc, argv):
     if argc < 2:
@@ -330,15 +409,15 @@ def main(argc, argv):
     if level != "0":
         clevels=str(level)
 
-    print("{0} : Calls level={1}; Image filter={2}; Trace=[../]{3}\n\n".format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
+    print("{0} : Calls level={1}; Image filter={2}; Trace={3}\n\n".format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
     display_caller_structure(trace, level, image_filter)
 
-    print("Generating function to letter mapping file")
+    print("[Generating function map file]")
     ofile = open(FUNC_MAP_FILE, "w")
     json.dump(CALL_NAMES, ofile)
     ofile.close()
 
-    print("Done")
+    print("[Done]")
     return 0
 
 if __name__ == "__main__":
