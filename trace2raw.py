@@ -316,8 +316,8 @@ def display_caller_structure(trace, level, image_filter):
                     event_key = events[event_i]
                     event_value = events[event_i+1]
                     
+                    '''
                     # NOTE: Callstack get by sampling
-
                     if not CALLER_EVENT.match(event_key) is None:
                         tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["letter"]
                         ncalls_s+=1
@@ -326,10 +326,9 @@ def display_caller_structure(trace, level, image_filter):
                         tmp_line_stack[int(event_key[-1])]=event_value
                         tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
                         nimags_s+=1
-
+                    '''
                     # NOTE: Callstack get by MPI interception
-
-                    elif not MPICAL_EVENT.match(event_key) is None:
+                    if not MPICAL_EVENT.match(event_key) is None:
                         tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["letter"]
                         ncalls_m+=1
                     elif not MPILIN_EVENT.match(event_key) is None:
@@ -348,9 +347,11 @@ def display_caller_structure(trace, level, image_filter):
                 ncalls=ncalls_s+ncalls_m
                 nimags=nimags_s+nimags_m
 
+
                 if ncalls > 0:
                     filtered_calls=[]; filtered_files=[]; filtered_lines=[]; filtered_levels=[]
 
+                    tmp_call_stack=filter(None,tmp_call_stack)
                     for i in range(0, ncalls):
                         if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
                             filtered_calls.append(tmp_call_stack[i])
