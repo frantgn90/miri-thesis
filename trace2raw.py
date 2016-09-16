@@ -444,11 +444,13 @@ def main(argc, argv):
     lmat=numpy.matrix(loops_series)
     iterations=numpy.asarray(lmat.mean(0))[0]
 
-    print("[Has been found {0} iterations]".format(len(iterations)))
+    print("[Have been found {0} iterations]".format(len(iterations)))
     cnt=1
-    for it in iterations:
-        print("  {0}. Iteration_start @ {1} (ns)".format(cnt,it))
+    #for it in iterations:
+    for i in range(len(iterations)-1):
+        print("  Iteration_{0} found @ [ {1} , {2} )".format(cnt,iterations[i],iterations[i+1]))
         cnt+=1
+    print("  Iteration_{0} start @ {1}".format(cnt,iterations[-1]))
 
 
     # Remove all temporal files
