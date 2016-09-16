@@ -48,17 +48,20 @@ _cs_per_thread=100
 def get_callstack(csfile):
     vs=[]
     count=0
+    times=[]
     with open(csfile, "r") as csfiled:
         for line in csfiled:
+            time=line.split(_inter_field_separator)[0]
             cs = line[:-1].split(_inter_field_separator)[-1]
             cs = cs.split(_intra_field_separator)
             cs.reverse()
             vs.append(cs)
+            times.append(time)
 
             #count+=1
             #if _cs_per_thread == count: break
 
-    return vs
+    return vs,times
 
 def searchMostFrequentRoutine(vs):
     routines = {}
@@ -98,8 +101,8 @@ def perform_alignement_st1(vs):
     pivot,firstpivot = searchMostFrequentRoutine(vs)
     #vtmps = getCsContains(vs, pivot)
 
-    print("-> Pivot: {0}".format(pivot))
-    print("-> Findex: {0}".format(firstpivot))
+    #print("-> Pivot: {0}".format(pivot))
+    #print("-> Findex: {0}".format(firstpivot))
 
     ignored_index=[]
     last_cc_index=firstpivot
@@ -188,43 +191,3 @@ def is_sublist(sl, ll):
         if eindex==len(sl): return findex
 
     return -1
-
-def Usage(name):
-    print("Usage(): {0} callstacks-file".format(name))
-
-def main(argc, argv):
-    if argc < 2:
-        Usage(argv[0])
-        return 1
-
-    for csfile in argv[1:]:
-        print("Parsing {0} ...".format(csfile))
-
-        vs = get_callstack(csfile) # vs: vector samples
-        print("Step 1 ...")
-        mat,ignored_index = perform_alignement_st1(vs) # mat: matrix (Sampled) alignement
-        print("-> {0} callstacks has been aligned".format(len(mat)-len(ignored_index)))
-        print("-> {0} callstacks has been ignored".format(len(ignored_index)))
-        print("Done!")
-        print("Step 2 ...")
-        mat2,cs_discarded, cs_aligned = perform_alignement_st2(mat,ignored_index)
-        print("-> {0} callstacks has been aligned".format(cs_aligned))
-        print("-> {0} callstack has been discarded".format(cs_discarded))
-        print("Done")
-        
-
-        outfile = "{0}.aligned".format("".join(csfile.split("/")[-1]))
-        outfiled=open(outfile,"w")
-    
-        for cs in mat2:
-            if len(cs)>0:
-                outfiled.write(_intra_field_separator.join(cs)+"\n")
-            #else:
-            #    outfiled.write("*\n")
-        outfiled.close()
-
-
-if __name__ == "__main__":
-    argc = len(sys.argv)
-    argv = sys.argv
-    exit(main(argc, argv))

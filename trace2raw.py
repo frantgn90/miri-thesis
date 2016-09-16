@@ -8,14 +8,17 @@ This scripts is the responsible to
 
 from __future__ import print_function
 import sys, os
-import json,re
+import json,re, numpy
 
+from callstackAlignement import *
+from callstackDistribution import *
+
+
+#############################
+#   Some auxiliar classes   #
+#############################
 
 class Printer():
-    """
-    Print things to stdout on one line dynamically
-    """
-                 
     def __init__(self,data):                     
         sys.stdout.write("\x1b[K"+data.__str__())
         sys.stdout.flush()
@@ -47,35 +50,38 @@ class progress_bar(object):
             self.count = 0
 
 
+#################
+#   Constants   #
+#################
+
+_verbose=False
+
 CALLSTACK_SIZE=10
 
 FIELD_SEPARATOR="#"
 
 CALLER_EVENT=""
 CALLIN_EVENT=""
-MPI_LIB_FILE="libmpi_injected.c"
 
-# Events of sampling callstac info
 CALLER_EVENT_BASE ="3000000"
 CALLIN_EVENT_BASE ="3000010"
-
-# Events of mpi callstack info
 MPICAL_EVENT_BASE ="7000000"
 MPILIN_EVENT_BASE ="8000000"
-
-# Event of mpi calls info
 MPI_EVENT_BASE    ="5000000"
 
 COUNTER_CALLS = None
 COUNTER_TYPE_CALLS = None
 
 CALL_NAMES={}
-IMAGES={}
 MPI_CALLS={}
-
 THREAD_DEPH={}
+IMAGES={}
 
 FUNC_MAP_FILE="functions.map"
+MPI_LIB_FILE="libmpi_injected.c"
+
+
+
 
 def next_letter(letter):
     letter = list(letter)
@@ -92,6 +98,7 @@ def next_letter(letter):
         letter[-1]=chr(ord(letter[-1])+1)
 
     return "".join(letter)
+
 
 def get_pcf_info(event_type, trace):
     pcf_file = trace.replace(".prv", ".pcf")
@@ -119,6 +126,7 @@ def get_pcf_info(event_type, trace):
 
     return values
 
+
 def get_line_info(trace):
     global IMAGES
 
@@ -136,17 +144,14 @@ def get_line_info(trace):
             file = info[2]
             image = info[3]
 
-            if len(file) > 0:
-                file = file[1:-1]
-            if len(image) > 0:
-                image = image[:-2]
+            if len(file) > 0: file = file[1:-1]
+            if len(image) > 0: image = image[:-2]
 
-        IMAGES.update({
-            info[0]: {
-                "line" : l,
-                "file" : file,
-                "image": image
-            }})
+        IMAGES.update({info[0]: {
+            "line" : l,
+            "file" : file,
+            "image": image}})
+
 
 def get_call_names(trace):
     global CALL_NAMES
@@ -158,19 +163,14 @@ def get_call_names(trace):
         info = line.split(" ")
         name=" ".join(info[1:])
 
-        if "[" in name:
-            entireName=name[name.find("[")+1:-2]
-        else:
-            entireName=name[:-1]
+        if "[" in name: entireName=name[name.find("[")+1:-2]
+        else: entireName=name[:-1]
 
-        CALL_NAMES.update({
-            info[0]: {
-                "name":entireName,
-                "letter":letter
-                }})
+        CALL_NAMES.update({info[0]: {
+            "name":entireName,
+            "letter":letter}})
         letter = next_letter(letter)
 
-# TODO
 
 def get_mpi_calls(trace):
     global MPI_CALLS
@@ -178,7 +178,7 @@ def get_mpi_calls(trace):
     values = get_pcf_info(MPI_EVENT_BASE, trace)
     
     letter = "zzzza" # Could be a problem if there is a lot of
-                   # functions, and some of them arrive to zzz
+                   # functions, and some of them arrive to zzzz
 
     for line in values:
         line = line[:-1].split("   ")
@@ -188,14 +188,12 @@ def get_mpi_calls(trace):
         MPI_CALLS.update({code : name})
         CALL_NAMES.update({
             "mpi_"+code: {
-                "name":name,
-                "letter":letter
-        }})
+              "name":name,
+              "letter":letter}})
         letter=next_letter(letter)
 
 
 def get_app_description(header):
-
     header = header.split(":")[3:]
     apps_description = []
 
@@ -215,7 +213,7 @@ def get_app_description(header):
     return apps_description
 
 
-def display_caller_structure(trace, level, image_filter):
+def analyze_callstacks(trace, level, image_filter):
     global CALLER_EVENT, CALLIN_EVENT
 
     if level == "0":
@@ -231,18 +229,15 @@ def display_caller_structure(trace, level, image_filter):
 
     MPI_EVENT=re.compile(MPI_EVENT_BASE + ".")
 
-    file_size = os.stat(trace).st_size 
-    pbar = progress_bar(file_size)
+    file_size = os.stat(trace).st_size
+    if _verbose: pbar = progress_bar(file_size)
     
     with open(trace) as tr:
-        # read header
         header = tr.readline()
-        pbar.progress_by(len(header))
+        if _verbose: pbar.progress_by(len(header))
         appd = get_app_description(header)
 
         total_threads = 0
-
-
         for task in appd:
             for thread in task:
                 total_threads += 1
@@ -256,8 +251,6 @@ def display_caller_structure(trace, level, image_filter):
         get_line_info(trace)
         get_mpi_calls(trace)
 
-        #print json.dumps(CALL_NAMES,sort_keys=True,indent=2, separators=(',', ': '))
-
         imgs=[]
         cnt=0
         for k,v in IMAGES.items():
@@ -265,33 +258,39 @@ def display_caller_structure(trace, level, image_filter):
             if not v["image"] in imgs and v["line"] != "0":
                 imgs.append(v["image"])
 
-        img_header ="[Images detected during the execution]"
-        print(img_header)
+        if _verbose:
+            img_header ="[Images detected during the execution]"
+            print(img_header)
 
-        for im in imgs:
-            if im in image_filter or image_filter == ["ALL"]: 
-                line = "  {0}".format(im)
-            else: 
-                line = "  {0} (filtered)".format(im)
-            print(line)
+            for im in imgs:
+                if im in image_filter or image_filter == ["ALL"]: line = "  {0}".format(im)
+                else: line = "  {0} (filtered)".format(im)
+                print(line)
 
-
-        TASK_OUTFILES = [None]*total_threads
-
-        for i in range(0, total_threads):
-            TASK_OUTFILES[i] = open("functions." + str(i) + ".raw", "w")
+        task_outfiles_names=[]
+        task_outfiles_d=[]
+        for i in range(total_threads):
+            new_file_name="functions.{0}.raw".format(i)
+            task_outfiles_names.append(new_file_name)
+            task_outfiles_d.append(open(new_file_name,"w"))
 
         # NOTE: Assuming one app
-        # NOTE: Two consecutive callstacks must not be equal. If it is, it does not
-        # apport any information.
-        last_callstack=[""]*total_threads
 
-        print("")
-        print("[Parsing trace...]")
+        #last_callstack=[""]*total_threads
+        
+        if _verbose:
+            print("")
+            print("[Parsing trace...]")
 
+        callstack_series=[]
+        timestamp_series=[]
+
+        for i in range(total_threads):
+            callstack_series.append(list())
+            timestamp_series.append(list())
 
         for line in tr:
-            pbar.progress_by(len(line))
+            if _verbose: pbar.progress_by(len(line))
 
             line = line[:-1] # Remove the final \n
             line_fields = line.split(":")
@@ -339,7 +338,6 @@ def display_caller_structure(trace, level, image_filter):
                     elif not MPI_EVENT.match(event_key) is None:
                         mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["letter"] #MPI_CALLS[event_value]
 
-
                 assert(ncalls_s==nimags_s)
                 assert(ncalls_m==nimags_m)
                 assert(ncalls_s&ncalls_m==0)
@@ -368,37 +366,60 @@ def display_caller_structure(trace, level, image_filter):
                             filtered_lines = ["0"] + filtered_lines 
                             filtered_levels= ["0"] + map(lambda x: str(int(x)+1), filtered_levels)
 
+                        # Needed for alignement
+                        filtered_calls.reverse()
+                        callstack_series[task-1].append(filtered_calls)
+                        timestamp_series[task-1].append(time)
+            
+                        '''   
                         callstack_to_write = str(time-last_time) + FIELD_SEPARATOR + \
                             sampled + FIELD_SEPARATOR + \
                             "|".join(filtered_files) + FIELD_SEPARATOR + \
                             "|".join(filtered_lines) + FIELD_SEPARATOR + \
                             "|".join(filtered_levels)+ FIELD_SEPARATOR + \
                             "|".join(filtered_calls)
-                        
+                        '''
+
+                        ''' 
                         cstack_register = sampled + "#" + "|".join(filtered_calls)
                         if last_callstack[task-1] != cstack_register:
-                            TASK_OUTFILES[task-1].write(callstack_to_write+"\n")
+                            task_outfiles_d[task-1].write(callstack_to_write+"\n")
                             last_callstack[task-1]=cstack_register
                             last_time = time
+                        '''
+                        
 
-            pbar.show()
+            if _verbose: pbar.show()
+
+    if _verbose: print("[Starting alignement of callstacks]")
+    for rank_index in range(len(callstack_series)):
+        mat,ignored_index = perform_alignement_st1(callstack_series[rank_index]) 
+        callstack_series[rank_index],cs_discarded, cs_aligned = perform_alignement_st2(mat,ignored_index)
+
+    for rank in range(len(callstack_series)):
+        for cs_i in range(len(callstack_series[rank])):
+            time=timestamp_series[rank][cs_i]
+            cstack="|".join(callstack_series[rank][cs_i])
+            task_outfiles_d[rank].write("{0}#{1}\n".format(time, cstack))
+    
 
     for i in range(0, total_threads):
-        TASK_OUTFILES[i].close()
+        task_outfiles_d[i].close()
 
-    print("")
-    print("[Files generated]")
+    return task_outfiles_names
+
 
 def main(argc, argv):
     if argc < 2:
         print("Usage(): {0} [-l call_level] [-f img1[,img2,...]] <trace>".format(argv[0]))
+
         print 
         return -1
 
 
     trace = argv[-1]
-    level=0
-    image_filter=None
+    level="0"
+    image_filter=["ALL"]
 
     for i in range(1, len(argv)-1):
         if argv[i] == "-f":
@@ -410,15 +431,38 @@ def main(argc, argv):
     if level != "0":
         clevels=str(level)
 
-    print("{0} : Calls level={1}; Image filter={2}; Trace={3}\n\n".format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
-    display_caller_structure(trace, level, image_filter)
+    if _verbose:
+        print("{0} : Calls level={1}; Image filter={2}; Trace={3}\n\n".format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
+    cs_files=analyze_callstacks(trace, level, image_filter)
 
+    loops_series=[]
+    if _verbose: print("[Analyzing loops...]")
+    for csf in cs_files:
+        cdist=getCsDistributions(csf)
+        loops_series.append(getLoops(cdist))
+
+    lmat=numpy.matrix(loops_series)
+    iterations=numpy.asarray(lmat.mean(0))[0]
+
+    print("[Has been found {0} iterations]".format(len(iterations)))
+    cnt=1
+    for it in iterations:
+        print("  {0}. Iteration_start @ {1} (ns)".format(cnt,it))
+        cnt+=1
+
+
+    # Remove all temporal files
+    for csf in cs_files:
+        os.remove(csf)
+
+    '''
     print("[Generating function map file]")
     ofile = open(FUNC_MAP_FILE, "w")
     json.dump(CALL_NAMES, ofile)
     ofile.close()
+    '''
 
-    print("[Done]")
+    if _verbose: print("[Done]")
     return 0
 
 if __name__ == "__main__":
