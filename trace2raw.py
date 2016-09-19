@@ -131,6 +131,7 @@ def get_line_info(trace):
     global IMAGES
 
     values = get_pcf_info(CALLIN_EVENT_BASE, trace)
+    values.extend(get_pcf_info(MPILIN_EVENT_BASE,trace))
 
     for line in values:
         if "[" in line:
@@ -157,6 +158,7 @@ def get_call_names(trace):
     global CALL_NAMES
 
     values = get_pcf_info(CALLER_EVENT_BASE, trace)
+    values.extend(get_pcf_info(MPICAL_EVENT_BASE,trace))
 
     letter="a"   
     for line in values:
@@ -437,8 +439,15 @@ def main(argc, argv):
 
     loops_series=[]
     if _verbose: print("[Analyzing loops...]")
+
     for csf in cs_files:
         cdist=getCsDistributions(csf)
+        print("callstack\ttimes\ttime_mean\ttime_std\tdist_mean\tdist_std")
+        for c,d in cdist.items():
+            print("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\t{5:.2f}"
+                .format(c,d["times"], d["time_mean"], d["time_std"], d["dist_mean"], d["dist_std"], d["when"]))
+        break
+
         loops_series.append(getLoops(cdist))
 
     lmat=numpy.matrix(loops_series)

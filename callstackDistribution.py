@@ -35,6 +35,7 @@ import sys,numpy
 _inter_field_separator="#"
 _freq_tolerance=5 # TODO: Que sea un factor de, en vez de un natural
 
+
 def get_distances(times):
     dist=[]
     for i in range(1,len(times)):
