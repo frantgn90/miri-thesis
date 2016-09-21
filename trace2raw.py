@@ -12,6 +12,7 @@ import json,re, numpy
 
 from callstackAlignement import *
 from callstackDistribution import *
+from calculateDelta import *
 
 
 #############################
@@ -215,7 +216,7 @@ def get_app_description(header):
     return apps_description
 
 
-def analyze_callstacks(trace, level, image_filter):
+def get_callstacks(trace, level, image_filter):
     global CALLER_EVENT, CALLIN_EVENT
 
     if level == "0":
@@ -234,10 +235,12 @@ def analyze_callstacks(trace, level, image_filter):
     file_size = os.stat(trace).st_size
     if _verbose: pbar = progress_bar(file_size)
     
+    app_time=None
     with open(trace) as tr:
         header = tr.readline()
         if _verbose: pbar.progress_by(len(header))
         appd = get_app_description(header)
+        app_time = float(header.split(":")[2].split("_")[0])
 
         total_threads = 0
         for task in appd:
@@ -408,7 +411,7 @@ def analyze_callstacks(trace, level, image_filter):
     for i in range(0, total_threads):
         task_outfiles_d[i].close()
 
-    return task_outfiles_names
+    return task_outfiles_names, app_time
 
 
 def main(argc, argv):
@@ -435,31 +438,38 @@ def main(argc, argv):
 
     if _verbose:
         print("{0} : Calls level={1}; Image filter={2}; Trace={3}\n\n".format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
-    cs_files=analyze_callstacks(trace, level, image_filter)
 
-    loops_series=[]
-    if _verbose: print("[Analyzing loops...]")
+    cs_files,app_time=get_callstacks(trace, level, image_filter)
 
+    #loops_series=[]
+    mean_delta=0
     for csf in cs_files:
         cdist=getCsDistributions(csf)
+        mean_delta+=getDelta(cdist,app_time)
+
+        #loops_series.append(getLoops(cdist))
+
+        '''
         print("callstack\ttimes\ttime_mean\ttime_std\tdist_mean\tdist_std")
         for c,d in cdist.items():
             print("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\t{5:.2f}"
                 .format(c,d["times"], d["time_mean"], d["time_std"], d["dist_mean"], d["dist_std"], d["when"]))
-        break
+        '''
 
-        loops_series.append(getLoops(cdist))
 
+    mean_delta/=len(cs_files)
+    print("Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
+    '''
     lmat=numpy.matrix(loops_series)
     iterations=numpy.asarray(lmat.mean(0))[0]
 
     print("[Have been found {0} iterations]".format(len(iterations)))
     cnt=1
-    #for it in iterations:
     for i in range(len(iterations)-1):
         print("  Iteration_{0} found @ [ {1} , {2} )".format(cnt,iterations[i],iterations[i+1]))
         cnt+=1
     print("  Iteration_{0} start @ {1}".format(cnt,iterations[-1]))
+    '''
 
 
     # Remove all temporal files
