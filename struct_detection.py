@@ -13,6 +13,7 @@ import json,re, numpy
 from callstackAlignement import *
 from callstackDistribution import *
 from calculateDelta import *
+from clustering import *
 
 
 #############################
@@ -55,7 +56,7 @@ class progress_bar(object):
 #   Constants   #
 #################
 
-_verbose=False
+_verbose=True
 
 CALLSTACK_SIZE=10
 
@@ -284,7 +285,6 @@ def get_callstacks(trace, level, image_filter):
         #last_callstack=[""]*total_threads
         
         if _verbose:
-            print("")
             print("[Parsing trace...]")
 
         callstack_series=[]
@@ -396,7 +396,9 @@ def get_callstacks(trace, level, image_filter):
 
             if _verbose: pbar.show()
 
-    if _verbose: print("[Starting alignement of callstacks]")
+    if _verbose: 
+        print("[Starting alignement of callstacks]")
+
     for rank_index in range(len(callstack_series)):
         mat,ignored_index = perform_alignement_st1(callstack_series[rank_index]) 
         callstack_series[rank_index],cs_discarded, cs_aligned = perform_alignement_st2(mat,ignored_index)
@@ -408,6 +410,8 @@ def get_callstacks(trace, level, image_filter):
             task_outfiles_d[rank].write("{0}#{1}\n".format(time, cstack))
     
 
+    if _verbose:
+        print("[Generating temporal data]")
     for i in range(0, total_threads):
         task_outfiles_d[i].close()
 
@@ -441,11 +445,16 @@ def main(argc, argv):
 
     cs_files,app_time=get_callstacks(trace, level, image_filter)
 
+    if _verbose:
+        print("[Merging data]")
     #loops_series=[]
+    filtered_data=[]
     mean_delta=0
     for csf in cs_files:
         cdist=getCsDistributions(csf)
-        mean_delta+=getDelta(cdist,app_time)
+        new_delta, new_fdata=getDelta(cdist,app_time)
+        mean_delta+=new_delta
+        filtered_data.append(new_fdata)
 
         #loops_series.append(getLoops(cdist))
 
@@ -458,7 +467,9 @@ def main(argc, argv):
 
 
     mean_delta/=len(cs_files)
-    print("Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
+    nclusters=clustering(filtered_data)
+
+    #plot_data(filtered_data)
     '''
     lmat=numpy.matrix(loops_series)
     iterations=numpy.asarray(lmat.mean(0))[0]
@@ -476,14 +487,16 @@ def main(argc, argv):
     for csf in cs_files:
         os.remove(csf)
 
-    '''
     print("[Generating function map file]")
     ofile = open(FUNC_MAP_FILE, "w")
     json.dump(CALL_NAMES, ofile)
     ofile.close()
-    '''
 
-    if _verbose: print("[Done]")
+    if _verbose: 
+        print("--> {0} clusters detected".format(nclusters))
+        print("--> Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
+        print("[Done]")
+
     return 0
 
 if __name__ == "__main__":
