@@ -45,8 +45,13 @@ _y_axis="time_mean"
 _z_axis="time_std"
 
 _eps=0.01
-_min_samples=5
+_min_samples=1
 
+def graph(formula, x_range, color):  
+    x = np.array(x_range)  
+    y = eval(formula)
+    plt.plot(x, y, color+'--')  
+    
 def plot_data(cdist):
     fig=plt.figure()
     ax2d=fig.add_subplot(111)
@@ -73,13 +78,13 @@ def plot_data(cdist):
 
 def normalize_data(data):
     data=np.array(data)
-    amax=1/(np.amax(data, axis=0).transpose())
+    amax=1/(np.amax(data,axis=0).transpose())
     data=data*amax
 
     return data
 
 def clustering(cdist):
-    # Preparing data
+    ### Preparing data
     data=[]
     for cs in cdist:
         for k,v in cs.items():
@@ -87,16 +92,29 @@ def clustering(cdist):
 
     data=normalize_data(data)
 
-    # Perform clustering
+    #graph("{0}*{1}/x".format(T,delta),np.arange(0.1,1,0.01),'b') # plotting fit line
+
+    ### Perform clustering
     db = DBSCAN(eps=_eps, min_samples=_min_samples).fit(data)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels=db.labels_
 
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    clustered_cs={}
+    for l in labels: clustered_cs.update({l:[]})
 
-    # Show clustering plot
+    label_index=0
+    for cs in cdist:
+        for k,v in cs.items():
+            clustered_cs[labels[label_index]].append({k:v})
+            label_index+=1
+
+
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    ### Show clustering plot
+    '''
     X=np.array(data)
+    
     unique_labels = set(labels)
     colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
     for k, col in zip(unique_labels, colors):
@@ -118,5 +136,6 @@ def clustering(cdist):
     plt.xlabel(_x_axis_label)
     plt.ylabel(_y_axis_label)
     plt.show()
+    '''
 
-    return n_clusters_
+    return n_clusters_, clustered_cs
