@@ -31,7 +31,7 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 
 
 import sys
-from mpl_toolkits.mplot3d import Axes3D
+#from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -112,7 +112,7 @@ def clustering(cdist):
 
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
     ### Show clustering plot
-    '''
+    
     X=np.array(data)
     
     unique_labels = set(labels)
@@ -136,6 +136,6 @@ def clustering(cdist):
     plt.xlabel(_x_axis_label)
     plt.ylabel(_y_axis_label)
     plt.show()
-    '''
+    
 
     return n_clusters_, clustered_cs

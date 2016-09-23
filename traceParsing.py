@@ -406,7 +406,7 @@ def get_callstacks(trace, level, image_filter):
         for cs_i in range(len(callstack_series[rank])):
             time=timestamp_series[rank][cs_i]
             cstack="|".join(callstack_series[rank][cs_i])
-            task_outfiles_d[rank].write("{0}#{1}\n".format(time, cstack))
+            task_outfiles_d[rank].write("{0}#{1}#{2}\n".format(rank, time, cstack))
 
     if constants._verbose: print("[Generating function map file]")
     ofile = open(constants.FUNC_MAP_FILE, "w")

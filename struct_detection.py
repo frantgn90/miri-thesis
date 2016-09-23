@@ -16,6 +16,33 @@ from clustering import *
 
 import constants
 
+def calculate_it_boundaries(cluster):
+    tomat=[]
+    index=0
+    max_size=0
+    for cs in cluster:
+        k=cs.keys()[0]
+        
+        if cs[k]["rank"] != "0": continue
+
+        if len(cs[k]["when"]) > max_size:
+            max_size=len(cs[k]["when"]) 
+            for i in range(index-1, 0, -1):
+                holes=max_size-len(tomat[i])
+                tomat[i].extend([-1]*holes)
+        elif len(cs[k]["when"]) < max_size:
+            holes=max_size-len(cs[k]["when"])
+            cs[k]["when"].extend([-1]*holes)
+
+        tomat.append(cs[k]["when"])
+        index+=1
+
+    tmat=numpy.matrix(tomat)
+    tmat=numpy.sort(tmat.view("i8,"*(max_size-1)+"i8"), order=["f0"], axis=0)
+
+    print tmat.tolist()[0][0]
+    return tmat.tolist()[0][0]
+
 def main(argc, argv):
     if argc < 2:
         print("Usage(): {0} [-l call_level] [-f img1[,img2,...]] <trace>\n"
@@ -56,29 +83,25 @@ def main(argc, argv):
 
     mean_delta/=len(cs_files)
     nclusters, clustered_data=clustering(filtered_data)
-
-    #merge_cs(clustered_data[0])
-
-    # Remove all temporal files
-    for csf in cs_files: os.remove(csf)
+    it_cluster=calculate_it_boundaries(clustered_data[1])
 
     # Printing results
-    '''
-    lmat=numpy.matrix(loops_series)
-    iterations=numpy.asarray(lmat.mean(0))[0]
-
-    print("[Have been found {0} iterations]".format(len(iterations)))
+    print("[Have been found {0} iterations]".format(len(it_cluster)))
     cnt=1
-    for i in range(len(iterations)-1):
-        print("  Iteration_{0} found @ [ {1} , {2} )".format(cnt,iterations[i],iterations[i+1]))
+    for i in range(len(it_cluster)-1):
+        print("  Iteration_{0} found @ [ {1} , {2} )".format(cnt,it_cluster[i],it_cluster[i+1]))
         cnt+=1
-    print("  Iteration_{0} start @ {1}".format(cnt,iterations[-1]))
-    '''
+    print("  Iteration_{0} start @ {1}".format(cnt,it_cluster[-1]))
+    print("  Iteration_TOT found @ [ {0} , {1} ]".format(it_cluster[0], it_cluster[0]+app_time*mean_delta))
+    
  
     print("[Results]")
     print("  -> {0} clusters detected".format(nclusters))
     print("  -> Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
     print("[Done]")
+
+    # Remove all temporal files
+    for csf in cs_files: os.remove(csf)
 
     return 0
 

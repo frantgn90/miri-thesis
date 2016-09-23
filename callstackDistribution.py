@@ -47,9 +47,11 @@ def getCsDistributions(filecs):
     callstacks={}
     with open(filecs) as filein:
         for line in filein:
-            time=line.split(_inter_field_separator)[0]
-            cs=line.split(_inter_field_separator)[1][:-1]
-            if not cs in callstacks: callstacks.update({cs:{"occu":[nline],"when":[int(time)]}})
+            rank=line.split(_inter_field_separator)[0]
+            time=line.split(_inter_field_separator)[1]
+            cs=line.split(_inter_field_separator)[2][:-1]
+            if not cs in callstacks: 
+                callstacks.update({cs:{"occu":[nline],"when":[int(time)], "rank":rank}})
             else: 
                 callstacks[cs]["occu"].append(nline)
                 callstacks[cs]["when"].append(int(time))
@@ -73,10 +75,10 @@ def getCsDistributions(filecs):
                 "time_mean":tmean,
                 "time_std" :tsdev,
                 "when":data["when"],
+                "rank":data["rank"],
                 "times":len(data["occu"])}
                 })
 
-        
     return cstack_res
 
 def getLoops(cdist):
