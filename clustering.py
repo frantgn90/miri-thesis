@@ -31,7 +31,7 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 
 
 import sys
-#from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -44,18 +44,20 @@ _x_axis="times"
 _y_axis="time_mean"
 _z_axis="time_std"
 
-_eps=0.01
+_eps=0.3
 _min_samples=1
 
+'''
 def graph(formula, x_range, color):  
     x = np.array(x_range)  
     y = eval(formula)
     plt.plot(x, y, color+'--')  
-    
+'''
+
 def plot_data(cdist):
     fig=plt.figure()
     ax2d=fig.add_subplot(111)
-    #ax3d=fig.add_subplot(111,projection="3d")
+    ax3d=fig.add_subplot(111,projection="3d")
 
     xs=[];ys=[];zs=[]
     for cs in cdist:
@@ -64,17 +66,16 @@ def plot_data(cdist):
             ys.append(v[_y_axis])
             zs.append(v[_z_axis])
     ax2d.scatter(xs,ys)
-    #ax3d.scatter(xs,ys,zs)
+    ax3d.scatter(xs,ys,zs)
     
     ax2d.set_xlabel(_x_axis)
     ax2d.set_ylabel(_y_axis)
 
-    #ax3d.set_xlabel(_x_axis)
-    #ax3d.set_ylabel(_y_axis)
-    #ax3d.set_zlabel(_z_axis)
+    ax3d.set_xlabel(_x_axis)
+    ax3d.set_ylabel(_y_axis)
+    ax3d.set_zlabel(_z_axis)
 
     plt.show()
-
 
 def normalize_data(data):
     data=np.array(data)
@@ -83,7 +84,7 @@ def normalize_data(data):
 
     return data
 
-def clustering(cdist):
+def clustering(cdist, show_plot):
     ### Preparing data
     data=[]
     for cs in cdist:
@@ -91,7 +92,7 @@ def clustering(cdist):
             data.append([v[_x_axis],v[_y_axis]])
 
     data=normalize_data(data)
-
+    #plot_data(cdist)
     #graph("{0}*{1}/x".format(T,delta),np.arange(0.1,1,0.01),'b') # plotting fit line
 
     ### Perform clustering
@@ -111,31 +112,35 @@ def clustering(cdist):
 
 
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-    ### Show clustering plot
-    
-    X=np.array(data)
-    
-    unique_labels = set(labels)
-    colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
-    for k, col in zip(unique_labels, colors):
-        if k == -1:
-            # Black used for noise.
-            col = 'k'
 
-        class_member_mask = (labels == k)
+    if show_plot:
+        ### Show clustering plot
+        X=np.array(data)
+        
+        unique_labels = set(labels)
+        colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
+        plt_labels=[]
+        for k, col in zip(unique_labels, colors):
+            if k == -1:
+                # Black used for noise.
+                col = 'k'
 
-        xy = X[class_member_mask & core_samples_mask]
-        plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
-                 markeredgecolor=col, markersize=9, marker='x')
+            class_member_mask = (labels == k)
 
-        xy = X[class_member_mask & ~core_samples_mask]
-        plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
-                 markeredgecolor=col, markersize=9, marker='x')
+            xy = X[class_member_mask & core_samples_mask]
+            lab, =plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
+                     markeredgecolor=col, markersize=9, marker='x', label="Cluster {0}".format(k))
+            plt_labels.append(lab)
 
-    plt.title('Estimated number of clusters: %d' % n_clusters_)
-    plt.xlabel(_x_axis_label)
-    plt.ylabel(_y_axis_label)
-    plt.show()
-    
+            xy = X[class_member_mask & ~core_samples_mask]
+            lab, =plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
+                     markeredgecolor=col, markersize=9, marker='x')
+            #plt_labels.append(lab)
+
+        plt.title('Estimated number of clusters: %d' % n_clusters_)
+        plt.xlabel(_x_axis_label)
+        plt.ylabel(_y_axis_label)
+        plt.legend(handles=plt_labels)
+        plt.show()
 
     return n_clusters_, clustered_cs

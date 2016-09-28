@@ -30,11 +30,12 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 '''
 
 
-_verbose=True
+_verbose=False
 
 CALLSTACK_SIZE=10
 
-FIELD_SEPARATOR="#"
+_intra_field_separator="|"
+_inter_field_separator="#"
 
 
 CALLER_EVENT_BASE ="3000000"

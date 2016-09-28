@@ -32,9 +32,19 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 
 import sys,numpy
 
-_inter_field_separator="#"
+import constants
+
 _freq_tolerance=5 # TODO: Que sea un factor de, en vez de un natural
 
+def merge_arrays(a, b):
+    tlen=(len(a)+len(b))
+    c=[None]*tlen
+
+    for i in range(0, tlen, 2):
+        if i/2 < len(a): c[i]=a[i/2]
+        if i/2 < len(b): c[i+1]=b[i/2]
+
+    return c
 
 def get_distances(times):
     dist=[]
@@ -47,14 +57,22 @@ def getCsDistributions(filecs):
     callstacks={}
     with open(filecs) as filein:
         for line in filein:
-            rank=line.split(_inter_field_separator)[0]
-            time=line.split(_inter_field_separator)[1]
-            cs=line.split(_inter_field_separator)[2][:-1]
-            if not cs in callstacks: 
-                callstacks.update({cs:{"occu":[nline],"when":[int(time)], "rank":rank}})
+            rank=line.split(constants._inter_field_separator)[0]
+            time=line.split(constants._inter_field_separator)[1]
+            lines=line.split(constants._inter_field_separator)[2]
+            cs=line.split(constants._inter_field_separator)[3][:-1]
+
+            key=constants._intra_field_separator.join(
+                    merge_arrays(cs.split(constants._intra_field_separator),
+                                 lines.split(constants._intra_field_separator)))
+
+            #key=cs
+
+            if not key in callstacks: 
+                callstacks.update({key:{"occu":[nline],"when":[int(time)], "rank":rank,}})
             else: 
-                callstacks[cs]["occu"].append(nline)
-                callstacks[cs]["when"].append(int(time))
+                callstacks[key]["occu"].append(nline)
+                callstacks[key]["when"].append(int(time))
             nline+=1
 
     cstack_res={}

@@ -288,10 +288,12 @@ def get_callstacks(trace, level, image_filter):
 
         callstack_series=[]
         timestamp_series=[]
+        lines_series=[]
 
         for i in range(total_threads):
             callstack_series.append(list())
             timestamp_series.append(list())
+            lines_series.append(list())
 
         for line in tr:
             if constants._verbose: pbar.progress_by(len(line))
@@ -374,6 +376,7 @@ def get_callstacks(trace, level, image_filter):
                         filtered_calls.reverse()
                         callstack_series[task-1].append(filtered_calls)
                         timestamp_series[task-1].append(time)
+                        lines_series[task-1].append(filtered_lines)
             
                         '''   
                         callstack_to_write = str(time-last_time) + FIELD_SEPARATOR + \
@@ -404,9 +407,14 @@ def get_callstacks(trace, level, image_filter):
 
     for rank in range(len(callstack_series)):
         for cs_i in range(len(callstack_series[rank])):
-            time=timestamp_series[rank][cs_i]
-            cstack="|".join(callstack_series[rank][cs_i])
-            task_outfiles_d[rank].write("{0}#{1}#{2}\n".format(rank, time, cstack))
+            time=timestamp_series[rank][cs_i]          
+            cstack=constants._intra_field_separator.join(callstack_series[rank][cs_i])
+            lines=constants._intra_field_separator.join(lines_series[rank][cs_i])
+            task_outfiles_d[rank].write("{0}{1}{2}{3}{4}{5}{6}\n"
+                    .format(rank, constants._inter_field_separator,
+                            time, constants._inter_field_separator,
+                            lines,constants._inter_field_separator,
+                            cstack, constants._inter_field_separator))
 
     if constants._verbose: print("[Generating function map file]")
     ofile = open(constants.FUNC_MAP_FILE, "w")

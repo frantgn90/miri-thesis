@@ -38,7 +38,7 @@ initializations and last treatments of data.
 import sys
 import numpy
 
-_bottom_bound=0.15
+_bottom_bound=0.10
 _upper_bound=0.6
 _init_delta=0.5
 
