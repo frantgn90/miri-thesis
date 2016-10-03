@@ -39,6 +39,83 @@ from clustering import *
 
 import constants
 
+
+# At this point a and b are sorted
+def get_b_to_a_pos(a, b):
+    result=[]
+
+    ib=0
+    for i in range(len(a)):
+        if ib >= len(b):
+            break
+
+        if a[i] <= b[ib]: 
+            continue
+        else: 
+            ind=i
+            while a[ind-1]==None:
+                ind-=1
+            result.append(ind)
+            ib+=1
+
+            while a[i] > b[ib]:
+                while a[ind-1]==None:
+                    ind-=1
+                result.append(ind)
+
+                ib+=1
+
+    result.extend([len(a)]*(len(b)-ib))
+
+    # Make positions relative
+    for i in range(1,len(result)):
+        result[i]=result[i]-sum(result[0:i])
+
+    # Substract one position
+    for i in range(len(result)):
+        if result[i]>0: result[i]=result[i]-1
+
+    return result
+
+def invert_holes(holes):
+    new_holes=[]
+
+    for i in range(1, len(holes)):
+        new_holes.append(holes[i]*-1)
+
+    new_holes.append(holes[0]*-1)
+    return new_holes
+
+def add_holes(holes, row):
+    # Translate holes into indexes
+
+    hindex=[]
+    hi=0
+    for h in holes:
+        while hi < len(row) and row[hi]==None: hi+=1
+        cnt=h
+            
+        if cnt > 0:
+            while cnt > 0:
+                hindex.append(hi+len(hindex)) # to left
+                cnt-=1
+        elif cnt < 0:
+            hi+=1
+            while cnt<0:
+                hindex.append(hi+len(hindex)) # to right
+                cnt+=1
+        hi+=1
+
+    # Add holes
+    for hind in hindex:
+        if hind < len(row) and row[hind] == None:
+            continue
+        row.insert(hind, None)
+
+    return row
+
+
+
 # This function performs all the matrix transformation (gaps add) needed
 # in order to guarantee the constraint of iterations non-overlaping.
 # i.e. the last element of col n must be less or equal that the first
@@ -48,34 +125,25 @@ def boundaries_sort(tmat):
     ncols=len(matrix[0])
     nrows=len(matrix)
 
-    for row in range(1, nrows):
-        for col in range(ncols):
-            rindex=0
-            head=matrix[rindex][col+1]
-            while head==-1:
-                rindex+=1
-                head=matrix[rindex][col+1]
+    #newmat=[[]]*nrows
 
-            print("Comparison {0} > {1}".format(matrix[row][col], head))
-            if matrix[row][col] > head:
-                # Then move to right
-                for above_rows in range(0, row):
-                    matrix[above_rows]=matrix[above_rows]+[-1]
+    for row in range(nrows-1):
+        holes=get_b_to_a_pos(matrix[row], matrix[row+1])
 
-                for below_rows in range(row, nrows):
-                    matrix[below_rows]=[-1]+matrix[below_rows]
+        add_holes(holes, matrix[row+1])
 
-    return numpy.array(matrix)
+        iholes=invert_holes(holes)
+        for rrow in range(row, -1, -1):
+            add_holes(iholes, matrix[rrow])
 
-def calculate_it_boundaries(cluster):
+    return numpy.matrix(matrix)
 
-    # TODO: Cation with the empty holes... for the moment
-    # -1 is put to the right hand side.
-
-    tomat=[]
+def align_cluster(rank, cluster):
+    keys_cs=[]
     index=0
     max_size=0
-    keys_cs=[]
+
+    tomat=[]
 
     for cs in cluster:
         k=cs.keys()[0]
@@ -95,28 +163,40 @@ def calculate_it_boundaries(cluster):
         keys_cs.append(k)
         index+=1
 
+    return numpy.matrix(tomat),max_size
+
+def calculate_it_boundaries(cluster):
+    tmat,max_size=align_cluster(0, cluster)
+
+    # For the moment w/o references to the callstacks
+    
+    '''
     ki=0
     for row in tomat:
         row.append(ki)
         ki+=1
+    '''
 
-    tmat=numpy.matrix(tomat)
-    tmat=tmat.view("i8,"*(max_size-1)+"i8,i8")
+    # Sorting by the first column
+    tmat=tmat.view("i8,"*(max_size-1)+"i8")
     tmat.sort(order=["f0"], axis=0)
     tmat=tmat.view(np.int)
 
+    keys_ordered=[]
+    '''
     ordered_calls=tmat[:,max_size].transpose()
 
     # Get the calls ordered by times
-    keys_ordered=[]
     for row in range(len(keys_cs)):
         ki=tmat.item((row,-1))
         keys_ordered.append(keys_cs[ki])
+    '''
 
-    
-    # TODO: Necesito la matriz sin la info sobre callstacks
-    boundaries_sort(tmat)
+    # Adding holes if needed
+    tmat=boundaries_sort(tmat)
+    tmat=align_cluster(0,tmat)
 
+    # TODO: New way to get iterations
     # Get the iterations times
     iterations=[]
     for it in range(max_size+1):
