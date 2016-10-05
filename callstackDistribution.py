@@ -92,7 +92,7 @@ def getCsDistributions(filecs):
                 "dist_std" :dsdev,
                 "time_mean":tmean,
                 "time_std" :tsdev,
-                "when":data["when"],
+                "when":sorted(data["when"]),
                 "rank":data["rank"],
                 "times":len(data["occu"])}
                 })

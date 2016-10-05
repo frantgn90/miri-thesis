@@ -40,6 +40,18 @@ from clustering import *
 import constants
 
 
+_empty_cell=0
+
+def print_matrix(matrix):
+    mat=matrix.tolist()
+
+    ff=open("matrix.txt", "w")
+    for row in mat:
+        ff.write("\t\t".join(map(str,row)))
+        ff.write("\n")
+    ff.close()
+
+
 # At this point a and b are sorted
 def get_b_to_a_pos(a, b):
     result=[]
@@ -53,13 +65,13 @@ def get_b_to_a_pos(a, b):
             continue
         else: 
             ind=i
-            while a[ind-1]==None:
+            while a[ind-1]==_empty_cell:
                 ind-=1
             result.append(ind)
             ib+=1
 
-            while a[i] > b[ib]:
-                while a[ind-1]==None:
+            while ib < len(b) and a[i] > b[ib]:
+                while a[ind-1]==_empty_cell:
                     ind-=1
                 result.append(ind)
 
@@ -70,11 +82,13 @@ def get_b_to_a_pos(a, b):
     # Make positions relative
     for i in range(1,len(result)):
         result[i]=result[i]-sum(result[0:i])
+        #result[i]=result[i]-i
 
     # Substract one position
     for i in range(len(result)):
+        #if result[i]!=0: result[i]=result[i]-1
         if result[i]>0: result[i]=result[i]-1
-
+    
     return result
 
 def invert_holes(holes):
@@ -92,7 +106,7 @@ def add_holes(holes, row):
     hindex=[]
     hi=0
     for h in holes:
-        while hi < len(row) and row[hi]==None: hi+=1
+        while hi < len(row) and row[hi]==_empty_cell: hi+=1
         cnt=h
             
         if cnt > 0:
@@ -108,13 +122,9 @@ def add_holes(holes, row):
 
     # Add holes
     for hind in hindex:
-        if hind < len(row) and row[hind] == None:
+        if hind < len(row) and row[hind] == _empty_cell:
             continue
-        row.insert(hind, None)
-
-    return row
-
-
+        row.insert(hind, _empty_cell)
 
 # This function performs all the matrix transformation (gaps add) needed
 # in order to guarantee the constraint of iterations non-overlaping.
@@ -136,9 +146,22 @@ def boundaries_sort(tmat):
         for rrow in range(row, -1, -1):
             add_holes(iholes, matrix[rrow])
 
+    # Before transform the list of list into a matrix we have to 
+    # ensure that all rows have the same lenght. If not, the matrix
+    # will be 1-element matrix of a list instead of a matrix of numbers
+
+    # First approach, add Nones
+    max_len=0
+    for row in matrix:
+        if len(row) > max_len:
+            max_len=len(row)
+    for row in matrix:
+        if len(row) < max_len:
+            row.extend([_empty_cell]*(max_len-len(row)))
+
     return numpy.matrix(matrix)
 
-def align_cluster(rank, cluster):
+def filter_cluster(rank, cluster):
     keys_cs=[]
     index=0
     max_size=0
@@ -148,16 +171,16 @@ def align_cluster(rank, cluster):
     for cs in cluster:
         k=cs.keys()[0]
         
-        if cs[k]["rank"] != "0": continue
+        if int(cs[k]["rank"]) != rank: continue
 
         if len(cs[k]["when"]) > max_size:
             max_size=len(cs[k]["when"]) 
             for i in range(index-1, -1, -1):
                 holes=max_size-len(tomat[i])
-                tomat[i].extend([-1]*holes)
+                tomat[i].extend([_empty_cell]*holes)
         elif len(cs[k]["when"]) < max_size:
             holes=max_size-len(cs[k]["when"])
-            cs[k]["when"].extend([-1]*holes)
+            cs[k]["when"].extend([_empty_cell]*holes)
 
         tomat.append(cs[k]["when"])
         keys_cs.append(k)
@@ -166,10 +189,10 @@ def align_cluster(rank, cluster):
     return numpy.matrix(tomat),max_size
 
 def calculate_it_boundaries(cluster):
-    tmat,max_size=align_cluster(0, cluster)
+    # For the moment, only for rank 0
+    tmat,max_size=filter_cluster(0, cluster)
 
     # For the moment w/o references to the callstacks
-    
     '''
     ki=0
     for row in tomat:
@@ -194,30 +217,33 @@ def calculate_it_boundaries(cluster):
 
     # Adding holes if needed
     tmat=boundaries_sort(tmat)
-    tmat=align_cluster(0,tmat)
 
-    # TODO: New way to get iterations
-    # Get the iterations times
     iterations=[]
-    for it in range(max_size+1):
-        ite=tmat[:,it].transpose().tolist()[0]
-        
-        index_from=0
-        from_time=ite[index_from]
+    mheight=tmat.shape[0]
+    mwidth=tmat.shape[1]
 
-        while from_time == -1:
-            index_from+=1
-            from_time=ite[index_from]
+    it=0
 
-        index_to=-1
-        to_time=ite[index_to]
+    while it < mwidth:
+        it_ini_index=0
+        it_fin_index=-1
 
-        while to_time == -1:
-            index_to-=1
-            to_time=ite[index_to]
+        while tmat.item(it_ini_index, it) == _empty_cell:
+            it_ini_index+=1
+            if it_ini_index>=mheight:
+                return iterations, keys_ordered
+                assert(False) # Empty col
+        it_ini=tmat.item(it_ini_index,it)
 
-        iterations.append((from_time,to_time))
+        while tmat.item(it_fin_index, it) == _empty_cell:
+            it_fin_index-=1
+            if it_fin_index <= -mheight: 
+                assert(False) # Never will be executed
+        it_fin=tmat.item(it_fin_index,it)
 
+        iterations.append((it_ini,it_fin))
+        it+=1
+    
     return iterations, keys_ordered
     #return tmat.tolist()[0][:-1], keys_ordered 
 
@@ -266,17 +292,23 @@ def main(argc, argv):
     ordered_cluster={}
     for cluster in clustered_data.keys():
         it_cluster,cs_ordered=calculate_it_boundaries(clustered_data[cluster])
-        
-        print("[\033[1mCluster {0}\033[0m have been found {1} iterations]".format(cluster, len(it_cluster)))
-        cnt=1
-        for i in range(len(it_cluster)-1):
-            print("-  Iteration_{0} found @ [ {1} , {2} )".format(cnt,it_cluster[i][0],it_cluster[i][1]))
-            cnt+=1
 
-        #print("-  Iteration_TOT found @ [ {0} , {1} ]".format(it_cluster[0][0], it_cluster[0][0]+app_time*mean_delta))
+        print("Cluster {0} have been found {1} iterations]"
+                .format(cluster, len(it_cluster)))
+        cnt=1
+        print("> Iteration_TOT  found @ [ {0} , {1} )"
+                .format(it_cluster[0][0], it_cluster[-1][1]))
+        for i in range(len(it_cluster)):
+            print(" - Iteration_{0} found @ [ {1} , {2} )"
+                    .format(cnt,it_cluster[i][0],it_cluster[i][1]))
+            cnt+=1
+        
+
+        '''
         print("[Every iteration has this calls]")
         for cs in cs_ordered:
             print("-  {0}".format(cs))
+        '''
         
     print("[Results]")
     print("  -> {0} clusters detected".format(nclusters))
