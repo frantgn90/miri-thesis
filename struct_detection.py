@@ -59,7 +59,7 @@ def print_matrix(matrix, infile):
 
         ff=open(filename, "w")
         for row in mat:
-            ff.write("\t\t".join(map(format_nums,row)))
+            ff.write("\t".join(map(format_nums,row)))
             ff.write("\n")
         ff.close()
     else:
@@ -130,7 +130,7 @@ def boundaries_sort_2(tmat):
         for row in mat:
             del row[-minzeros:]
 
-    return numpy.matrix(mat)
+    return mat
 
 
 def filter_cluster(rank, cluster):
@@ -190,20 +190,22 @@ def calculate_it_boundaries(cluster):
     # Adding holes if needed
     tmat=boundaries_sort_2(tmat)
 
-    print_matrix(tmat,True)
     iterations=[]
-    mheight=tmat.shape[0]
-    mwidth=tmat.shape[1]
- 
-    # TODO: The iterations are detected when it is called the same call
-    # then it implies that we are on other iteration.
-    last_call=0
-    for i in range(mwidth):
-        for j in range(mheight):
-            if tmat[i][j]==0:continue
-            if j==last_call:
-                pass
+    mheight=len(tmat)
+    mwidth=len(tmat[0])
+  
+    print_matrix(tmat, True)
+    # It is defined by the row. Remember that every tow corresponds to a different call
+    last_call=0; ini_it=tmat[0][0]
 
+    for j in range(mwidth):
+        for i in range(mheight):
+            if tmat[i][j]==0:continue
+            if i==last_call and j!=0:
+                fin_it=tmat[i][j]
+                iterations.append((ini_it,fin_it))
+                ini_it=fin_it
+                last_call=i
 
     return iterations, keys_ordered
     #return tmat.tolist()[0][:-1], keys_ordered 
@@ -239,13 +241,6 @@ def main(argc, argv):
         filtered_data.append(new_fdata)
         nonfiltered_data.append(cdist)
 
-        '''
-        print("callstack\ttimes\ttime_mean\ttime_std\tdist_mean\tdist_std")
-        for c,d in cdist.items():
-            print("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\t{5:.2f}"
-                .format(c,d["times"], d["time_mean"], d["time_std"], d["dist_mean"], d["dist_std"], d["when"]))
-        '''
-
     mean_delta/=len(cs_files)
     nclusters, clustered_data=clustering(filtered_data, True)
 
@@ -259,12 +254,13 @@ def main(argc, argv):
         cnt=1
         print("> Iteration_TOT  found @ [ {0} , {1} )"
                 .format(it_cluster[0][0], it_cluster[-1][1]))
-        '''
-        for i in range(len(it_cluster)):
-            print(" - Iteration_{0} found @ [ {1} , {2} )"
-                    .format(cnt,it_cluster[i][0],it_cluster[i][1]))
-            cnt+=1
-        '''
+    
+        
+        if len(it_cluster) < 50:
+            for i in range(len(it_cluster)):
+                print(" - Iteration_{0} found @ [ {1} , {2} )"
+                        .format(cnt,it_cluster[i][0],it_cluster[i][1]))
+                cnt+=1
         
 
         '''
