@@ -42,124 +42,96 @@ import constants
 
 _empty_cell=0
 
-def print_matrix(matrix):
-    mat=matrix.tolist()
 
-    ff=open("matrix.txt", "w")
-    for row in mat:
-        ff.write("\t\t".join(map(str,row)))
-        ff.write("\n")
-    ff.close()
+def print_matrix(matrix, infile):
+    if type(matrix)==list:
+        mat=matrix
+    else:
+        mat=matrix.tolist()
+
+    def format_nums(val):
+        return str(val).zfill(2)
+
+    if infile:
+        filen=int(np.random.rand()*1000)
+        filename="matrix_{0}.txt".format(filen)
+        print("---> SAVING TO {0}".format(filename))
+
+        ff=open(filename, "w")
+        for row in mat:
+            ff.write("\t\t".join(map(format_nums,row)))
+            ff.write("\n")
+        ff.close()
+    else:
+        for row in mat:
+            print("\t".join(map(format_nums,row)))
 
 
-# At this point a and b are sorted
-def get_b_to_a_pos(a, b):
-    result=[]
+def cuadra(mat):
+    # Fill the gaps at end of modified rows
+    maxcols=len(mat[0])
+    for row in range(len(mat)):
+        if len(mat[row]) < maxcols:
+            mat[row].extend([0]*(maxcols-len(mat[row])))
+        elif len(mat[row]) > maxcols:
+            maxcols=len(mat[row])
+            rr=row
+            while rr >=0:
+                mat[rr].extend([0]*(maxcols-len(mat[rr])))
+                rr-=1
 
-    ib=0
-    for i in range(len(a)):
-        if ib >= len(b):
-            break
-
-        if a[i] <= b[ib]: 
-            continue
-        else: 
-            ind=i
-            while a[ind-1]==_empty_cell:
-                ind-=1
-            result.append(ind)
-            ib+=1
-
-            while ib < len(b) and a[i] > b[ib]:
-                while a[ind-1]==_empty_cell:
-                    ind-=1
-                result.append(ind)
-
-                ib+=1
-
-    result.extend([len(a)]*(len(b)-ib))
-
-    # Make positions relative
-    for i in range(1,len(result)):
-        result[i]=result[i]-sum(result[0:i])
-        #result[i]=result[i]-i
-
-    # Substract one position
-    for i in range(len(result)):
-        #if result[i]!=0: result[i]=result[i]-1
-        if result[i]>0: result[i]=result[i]-1
-    
-    return result
-
-def invert_holes(holes):
-    new_holes=[]
-
-    for i in range(1, len(holes)):
-        new_holes.append(holes[i]*-1)
-
-    new_holes.append(holes[0]*-1)
-    return new_holes
-
-def add_holes(holes, row):
-    # Translate holes into indexes
-
-    hindex=[]
-    hi=0
-    for h in holes:
-        while hi < len(row) and row[hi]==_empty_cell: hi+=1
-        cnt=h
-            
-        if cnt > 0:
-            while cnt > 0:
-                hindex.append(hi+len(hindex)) # to left
-                cnt-=1
-        elif cnt < 0:
-            hi+=1
-            while cnt<0:
-                hindex.append(hi+len(hindex)) # to right
-                cnt+=1
-        hi+=1
-
-    # Add holes
-    for hind in hindex:
-        if hind < len(row) and row[hind] == _empty_cell:
-            continue
-        row.insert(hind, _empty_cell)
 
 # This function performs all the matrix transformation (gaps add) needed
 # in order to guarantee the constraint of iterations non-overlaping.
 # i.e. the last element of col n must be less or equal that the first
 # element of n+1 col
-def boundaries_sort(tmat):
-    matrix=tmat.tolist()
-    ncols=len(matrix[0])
-    nrows=len(matrix)
+def boundaries_sort_2(tmat):
+    mat=tmat.tolist()
 
-    #newmat=[[]]*nrows
+    mheight=len(mat)
+    mwidth=len(mat[0])
 
-    for row in range(nrows-1):
-        holes=get_b_to_a_pos(matrix[row], matrix[row+1])
+    last=mat[0][0]
+    lastcol=0
+    lastrow=0
 
-        add_holes(holes, matrix[row+1])
+    i=0
+    #for i in range(mwidth):
+    while i < len(mat[0]):
+        for j in range(mheight):
+            if mat[j][i]==0: continue
+            if mat[j][i] < last:
+                
+                jj=lastrow
+                while mat[jj][lastcol] > mat[j][i]:
+                    mat[jj].insert(lastcol,0)
+                    jj-=1
+                    if jj < 0: break
 
-        iholes=invert_holes(holes)
-        for rrow in range(row, -1, -1):
-            add_holes(iholes, matrix[rrow])
+            lastcol=i
+            lastrow=j
+            last=mat[j][i]
+        cuadra(mat)
+        i+=1
 
-    # Before transform the list of list into a matrix we have to 
-    # ensure that all rows have the same lenght. If not, the matrix
-    # will be 1-element matrix of a list instead of a matrix of numbers
+    
+    # Remove last empty cols
+    minzeros=sys.maxint
+    for row in mat:
+        zeros=0
+        for i in range(-1,-len(row)+1, -1):
+            if row[i]!=0: break
+            zeros+=1
 
-    # First approach, add Nones
-    max_len=0
-    for row in matrix:
-        if len(row) > max_len:
-            max_len=len(row)
-    for row in matrix:
-        if len(row) < max_len:
-            row.extend([_empty_cell]*(max_len-len(row)))
+        if zeros < minzeros: 
+            minzeros=zeros
 
-    return numpy.matrix(matrix)
+    if minzeros > 0:
+        for row in mat:
+            del row[-minzeros:]
+
+    return numpy.matrix(mat)
+
 
 def filter_cluster(rank, cluster):
     keys_cs=[]
@@ -216,34 +188,23 @@ def calculate_it_boundaries(cluster):
     '''
 
     # Adding holes if needed
-    tmat=boundaries_sort(tmat)
+    tmat=boundaries_sort_2(tmat)
 
+    print_matrix(tmat,True)
     iterations=[]
     mheight=tmat.shape[0]
     mwidth=tmat.shape[1]
+ 
+    # TODO: The iterations are detected when it is called the same call
+    # then it implies that we are on other iteration.
+    last_call=0
+    for i in range(mwidth):
+        for j in range(mheight):
+            if tmat[i][j]==0:continue
+            if j==last_call:
+                pass
 
-    it=0
 
-    while it < mwidth:
-        it_ini_index=0
-        it_fin_index=-1
-
-        while tmat.item(it_ini_index, it) == _empty_cell:
-            it_ini_index+=1
-            if it_ini_index>=mheight:
-                return iterations, keys_ordered
-                assert(False) # Empty col
-        it_ini=tmat.item(it_ini_index,it)
-
-        while tmat.item(it_fin_index, it) == _empty_cell:
-            it_fin_index-=1
-            if it_fin_index <= -mheight: 
-                assert(False) # Never will be executed
-        it_fin=tmat.item(it_fin_index,it)
-
-        iterations.append((it_ini,it_fin))
-        it+=1
-    
     return iterations, keys_ordered
     #return tmat.tolist()[0][:-1], keys_ordered 
 
@@ -286,7 +247,7 @@ def main(argc, argv):
         '''
 
     mean_delta/=len(cs_files)
-    nclusters, clustered_data=clustering(filtered_data, False)
+    nclusters, clustered_data=clustering(filtered_data, True)
 
     # Printing results
     ordered_cluster={}
@@ -298,10 +259,12 @@ def main(argc, argv):
         cnt=1
         print("> Iteration_TOT  found @ [ {0} , {1} )"
                 .format(it_cluster[0][0], it_cluster[-1][1]))
+        '''
         for i in range(len(it_cluster)):
             print(" - Iteration_{0} found @ [ {1} , {2} )"
                     .format(cnt,it_cluster[i][0],it_cluster[i][1]))
             cnt+=1
+        '''
         
 
         '''
