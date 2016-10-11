@@ -30,7 +30,7 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 '''
 
 
-import sys
+import sys, multiprocessing
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
@@ -44,7 +44,7 @@ _x_axis="times"
 _y_axis="time_mean"
 _z_axis="time_std"
 
-_eps=0.3
+_eps=0.01
 _min_samples=1
 
 '''
@@ -84,6 +84,36 @@ def normalize_data(data):
 
     return data
 
+def show_clustering(data, labels, core_samples_mask, n_clusters_):
+    ### Show clustering plot
+    X=np.array(data)
+    
+    unique_labels = set(labels)
+    colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
+    plt_labels=[]
+    for k, col in zip(unique_labels, colors):
+        if k == -1:
+            # Black used for noise.
+            col = 'k'
+
+        class_member_mask = (labels == k)
+
+        xy = X[class_member_mask & core_samples_mask]
+        lab, =plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
+                 markeredgecolor=col, markersize=9, marker='x', label="Cluster {0}".format(k))
+        plt_labels.append(lab)
+
+        xy = X[class_member_mask & ~core_samples_mask]
+        lab, =plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
+                 markeredgecolor=col, markersize=9, marker='x')
+        #plt_labels.append(lab)
+
+    plt.title('Estimated number of clusters: %d' % n_clusters_)
+    plt.xlabel(_x_axis_label)
+    plt.ylabel(_y_axis_label)
+    plt.legend(handles=plt_labels)
+    plt.show()
+
 def clustering(cdist, show_plot):
     ### Preparing data
     data=[]
@@ -114,33 +144,10 @@ def clustering(cdist, show_plot):
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
     if show_plot:
-        ### Show clustering plot
-        X=np.array(data)
-        
-        unique_labels = set(labels)
-        colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
-        plt_labels=[]
-        for k, col in zip(unique_labels, colors):
-            if k == -1:
-                # Black used for noise.
-                col = 'k'
+        show_plot_thread=multiprocessing.Process(
+                target=show_clustering,
+                args=(data, labels, core_samples_mask, n_clusters_))
 
-            class_member_mask = (labels == k)
-
-            xy = X[class_member_mask & core_samples_mask]
-            lab, =plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
-                     markeredgecolor=col, markersize=9, marker='x', label="Cluster {0}".format(k))
-            plt_labels.append(lab)
-
-            xy = X[class_member_mask & ~core_samples_mask]
-            lab, =plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
-                     markeredgecolor=col, markersize=9, marker='x')
-            #plt_labels.append(lab)
-
-        plt.title('Estimated number of clusters: %d' % n_clusters_)
-        plt.xlabel(_x_axis_label)
-        plt.ylabel(_y_axis_label)
-        plt.legend(handles=plt_labels)
-        plt.show()
+        show_plot_thread.start()
 
     return n_clusters_, clustered_cs

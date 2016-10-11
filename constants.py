@@ -29,8 +29,12 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 *****************************************************************************
 '''
 
+import os
 
-_verbose=False
+if "PARAVER_ON" in os.environ:
+    _verbose=False
+else:
+    _verbose=True
 
 CALLSTACK_SIZE=10
 

@@ -50,7 +50,7 @@ def print_matrix(matrix, infile):
         mat=matrix.tolist()
 
     def format_nums(val):
-        return str(val).zfill(2)
+        return str(val).zfill(12)
 
     if infile:
         filen=int(np.random.rand()*1000)
@@ -195,17 +195,24 @@ def calculate_it_boundaries(cluster):
     mwidth=len(tmat[0])
   
     print_matrix(tmat, True)
-    # It is defined by the row. Remember that every tow corresponds to a different call
-    last_call=0; ini_it=tmat[0][0]
+
+    # It is defined by the row. 
+    # Remember that every row corresponds to a different call
+    last_calls=[0]; ini_it=tmat[0][0]
 
     for j in range(mwidth):
         for i in range(mheight):
             if tmat[i][j]==0:continue
-            if i==last_call and j!=0:
+            if i in last_calls and j!=0:
                 fin_it=tmat[i][j]
                 iterations.append((ini_it,fin_it))
                 ini_it=fin_it
-                last_call=i
+                last_calls=[i]
+            else:
+                last_calls.append(i)
+
+    # Last iteration
+    iterations.append((ini_it, tmat[i][j]))
 
     return iterations, keys_ordered
     #return tmat.tolist()[0][:-1], keys_ordered 
@@ -256,11 +263,10 @@ def main(argc, argv):
                 .format(it_cluster[0][0], it_cluster[-1][1]))
     
         
-        if len(it_cluster) < 50:
-            for i in range(len(it_cluster)):
-                print(" - Iteration_{0} found @ [ {1} , {2} )"
-                        .format(cnt,it_cluster[i][0],it_cluster[i][1]))
-                cnt+=1
+        for i in range(len(it_cluster)):
+            print(" - Iteration_{0} found @ [ {1} , {2} )"
+                    .format(cnt,it_cluster[i][0],it_cluster[i][1]))
+            cnt+=1
         
 
         '''
