@@ -37,15 +37,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-_x_axis_label="Number of occurrences"
-_y_axis_label="Mean period bw occurrences"
+import constants
 
-_x_axis="times"
-_y_axis="time_mean"
-_z_axis="time_std"
-
-_eps=0.01
-_min_samples=1
 
 '''
 def graph(formula, x_range, color):  
@@ -62,18 +55,18 @@ def plot_data(cdist):
     xs=[];ys=[];zs=[]
     for cs in cdist:
         for k,v in cs.items():
-            xs.append(v[_x_axis])
-            ys.append(v[_y_axis])
+            xs.append(v[constants._x_axis])
+            ys.append(v[constants._y_axis])
             zs.append(v[_z_axis])
     ax2d.scatter(xs,ys)
     ax3d.scatter(xs,ys,zs)
     
-    ax2d.set_xlabel(_x_axis)
-    ax2d.set_ylabel(_y_axis)
+    ax2d.set_xlabel(constants._x_axis)
+    ax2d.set_ylabel(constants._y_axis)
 
-    ax3d.set_xlabel(_x_axis)
-    ax3d.set_ylabel(_y_axis)
-    ax3d.set_zlabel(_z_axis)
+    ax3d.set_xlabel(constants._x_axis)
+    ax3d.set_ylabel(constants._y_axis)
+    ax3d.set_zlabel(constants._z_axis)
 
     plt.show()
 
@@ -109,8 +102,10 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_):
         #plt_labels.append(lab)
 
     plt.title('Estimated number of clusters: %d' % n_clusters_)
-    plt.xlabel(_x_axis_label)
-    plt.ylabel(_y_axis_label)
+    plt.xlabel(constants._x_axis_label)
+    plt.ylabel(constants._y_axis_label)
+    plt.ylim([0,1])
+    plt.xlim([0,1])
     plt.legend(handles=plt_labels)
     plt.show()
 
@@ -119,14 +114,14 @@ def clustering(cdist, show_plot):
     data=[]
     for cs in cdist:
         for k,v in cs.items():
-            data.append([v[_x_axis],v[_y_axis]])
+            data.append([v[constants._x_axis],v[constants._y_axis]])
 
     data=normalize_data(data)
     #plot_data(cdist)
     #graph("{0}*{1}/x".format(T,delta),np.arange(0.1,1,0.01),'b') # plotting fit line
 
     ### Perform clustering
-    db = DBSCAN(eps=_eps, min_samples=_min_samples).fit(data)
+    db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(data)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels=db.labels_

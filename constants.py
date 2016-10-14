@@ -52,5 +52,20 @@ MPI_EVENT_BASE    ="5000000"
 FUNC_MAP_FILE="functions.map"
 MPI_LIB_FILE="libmpi_injected.c"
 
+_empty_cell=0
 
+#### CLUSTERING ####
 
+_x_axis_label="Number of occurrences"
+_y_axis_label="Mean period bw occurrences"
+
+_x_axis="times"
+_y_axis="time_mean"
+_z_axis="time_std"
+
+_eps=0.2
+_min_samples=1
+
+#### LOOPS ####
+
+PURELOOPS=0
