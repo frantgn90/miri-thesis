@@ -163,6 +163,94 @@ def cluster2mat(rank, cluster):
     return np.matrix(tomat),max_size,cs_map
 
 
+
+def cs_uncommon_part(scalls):
+    # odd positions have the lines meanwhile even possitions have calls
+
+    '''
+    result=[]
+    loopbodypos=0
+    howmany=0
+    for i in range(1, len(scalls)):
+        csprev_lines=scalls[i-1].split(constants._intra_field_separator)[1::2]
+        cscurr_lines=scalls[i].split(constants._intra_field_separator)[1::2]
+
+        csprev_calls=scalls[i-1].split(constants._intra_field_separator)[0::2]
+        cscurr_calls=scalls[i].split(constants._intra_field_separator)[0::2]
+
+
+        its=max(len(csprev_lines),len(cscurr_lines))
+        for j in range(its):
+            if csprev_lines[j] != cscurr_lines[j]:
+                new_loopbodypos=j-1
+                break
+         
+        if new_loopbodypos != loopbodypos:
+            if howmany > 0:
+                result.append((loopbodypos,howmany))
+            loopbodypos=new_loopbodypos
+            howmany=1
+
+        howmany+=1
+
+    result.append((loopbodypos, howmany))
+
+    return result
+    
+    '''
+    # We can expect that all the stack before the loop is equal, then
+    # the loop is exactly in the first call when the lines differs.
+    # The rest of calls are from the loop.
+
+    globpos=len(scalls[0].split(constants._intra_field_separator))
+
+    for i in range(1,len(scalls)):
+        csprev_lines=scalls[i-1].split(constants._intra_field_separator)[1::2]
+        cscurr_lines=scalls[i].split(constants._intra_field_separator)[1::2]
+
+        iterations=max(len(csprev_lines),len(cscurr_lines))
+        for j in range(iterations):
+            if csprev_lines[j] != cscurr_lines[j]:
+                pos=j
+                break
+
+        assert(pos != iterations)
+
+        if pos < globpos:
+            globpos=pos
+
+
+    result=[]
+    for cs in scalls:
+        calls=cs.split(constants._intra_field_separator)[0::2]
+        result.append(calls[globpos:]) # globpos+1
+        
+    return result, globpos-1 # globpos
+
+
+def matrix2pseudo_pure(mat, scalls):
+    #niters=mat.shape[1] # number of cols 
+    niters=len(mat[0])
+
+    
+    # Get the uncommon part of the callstacks
+    suncommon,ibase=cs_uncommon_part(scalls)
+
+    pseudocode =constants.FORLOOP.format(
+            niters,
+            scalls[0].split(constants._intra_field_separator)[0::2][ibase])
+
+    # TODO: Sort calls in the loop by line
+
+    lastsc=[]
+    for sc in suncommon:
+        callchain="()->".join(sc)
+        pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
+
+    return pseudocode
+
+
+
 # This function get a cluster (set of callstacks and occurrences)
 # and generate a sorted matrix. The sorted is done by sorting the columns
 # in such way that the las value of column N is less or equal that the
@@ -192,6 +280,7 @@ def cluster2smatrix(cluster):
     # Adding holes if needed
     tmat, mcomplexity=boundaries_sort_2(tmat)
 
+    #print_matrix(tmat, True)
     return tmat, keys_ordered, mcomplexity
 '''
     iterations=[]

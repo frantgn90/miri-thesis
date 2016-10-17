@@ -191,8 +191,8 @@ def get_mpi_calls(trace):
         MPI_CALLS.update({code : name})
         CALL_NAMES.update({
             "mpi_"+code: {
-              "name":name,
-              "letter":letter}})
+            "name":name,
+            "letter":letter}})
         letter=next_letter(letter)
 
 
@@ -313,7 +313,7 @@ def get_callstacks(trace, level, image_filter):
                 tmp_line_stack=[""]*constants.CALLSTACK_SIZE; tmp_file_stack=[""]*constants.CALLSTACK_SIZE
                 ncalls_s=0; nimags_s=0; ncalls_m=0; nimags_m=0; last_time = 0
 
-                # NOTE: When the callstack is gathered by mean of the interception of
+                # When the callstack is gathered by mean of the interception of
                 # an MPI call, then this call is injected to the top of the callstack
                 mpi_call_to_add=None
 
@@ -332,17 +332,18 @@ def get_callstacks(trace, level, image_filter):
                         tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
                         nimags_s+=1
                     '''
-                    # NOTE: Callstack get by MPI interception
+
+                    # Callstack get by MPI interception
                     if not MPICAL_EVENT.match(event_key) is None:
-                        tmp_call_stack[int(event_key[-1])]=CALL_NAMES[event_value]["letter"]
+                        tmp_call_stack[int(event_key[-1])-1]=CALL_NAMES[event_value]["name"] # "letter"
                         ncalls_m+=1
                     elif not MPILIN_EVENT.match(event_key) is None:
-                        tmp_image_stack[int(event_key[-1])]=IMAGES[event_value]["image"]
-                        tmp_line_stack[int(event_key[-1])]=event_value
-                        tmp_file_stack[int(event_key[-1])]=IMAGES[event_value]["file"]
+                        tmp_image_stack[int(event_key[-1])-1]=IMAGES[event_value]["image"]
+                        tmp_line_stack[int(event_key[-1])-1]=event_value
+                        tmp_file_stack[int(event_key[-1])-1]=IMAGES[event_value]["file"]
                         nimags_m+=1
                     elif not MPI_EVENT.match(event_key) is None:
-                        mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["letter"] #MPI_CALLS[event_value]
+                        mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["name"] #MPI_CALLS[event_value]
 
                 assert(ncalls_s==nimags_s)
                 assert(ncalls_m==nimags_m)
@@ -374,6 +375,9 @@ def get_callstacks(trace, level, image_filter):
 
                         # Needed for alignement
                         filtered_calls.reverse()
+                        filtered_files.reverse()
+                        filtered_lines.reverse()
+                        filtered_levels.reverse()
                         callstack_series[task-1].append(filtered_calls)
                         timestamp_series[task-1].append(time)
                         lines_series[task-1].append(filtered_lines)

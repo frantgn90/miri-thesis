@@ -94,20 +94,25 @@ def main(argc, argv):
     ########################
     ###### CLUSTERING ######
     ########################
-    nclusters, clustered_data=clustering(filtered_data, True)
+    print("[Performing clustering]")
+    nclusters, clustered_data=clustering(filtered_data, False)
 
     #########################################################
     ###### GENERATING PSEUDO-CODE AND PRINTING RESULTS ######
     #########################################################
+    print("[Generating pseudocode]")
+    print("")
     ordered_cluster={}
     for cluster in clustered_data.keys():
-        it_cluster,cs_ordered,mc=cluster2smatrix(clustered_data[cluster])
+        smatrix,cs_ordered,mc=cluster2smatrix(clustered_data[cluster])
 
         if mc==constants.PURELOOP:
-            pass
+            pseudocode = matrix2pseudo_pure(smatrix,cs_ordered)
+            print pseudocode
         else:
             assert(False)
 
+        '''
         print("Cluster {0} have been found {1} iterations]"
                 .format(cluster, len(it_cluster)))
         cnt=1
@@ -119,16 +124,16 @@ def main(argc, argv):
             print(" - Iteration_{0} found @ [ {1} , {2} )"
                     .format(cnt,it_cluster[i][0],it_cluster[i][1]))
             cnt+=1
-        
+        '''
         
     print("[Results]")
     print("  -> {0} clusters detected".format(nclusters))
     print("  -> Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
-    print("[Done]")
 
     # Remove all temporal files
     for csf in cs_files: os.remove(csf)
 
+    print("[Done]")
     return 0
 
 if __name__ == "__main__":

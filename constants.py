@@ -68,4 +68,9 @@ _min_samples=1
 
 #### LOOPS ####
 
-PURELOOPS=0
+PURELOOP=0
+
+#### PSEUDO-CODE ####
+
+FORLOOP="FOR 1..{0}: [{1}]\n"
+INLOOP_STATEMENT="\t{0}\n"
