@@ -31,13 +31,314 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 
 
 import sys
+import numpy as np
+import constants
+
+
+
+class cluster (object):
+    def __init__(self, cluster):
+        self._cluster = cluster
+        
+        # TODO: For all ranks
+        ranks=[0]
+        ranks_loops=[]
+        for rank in ranks:
+            _smatrix,_scs, _mc=cluster2smatrix(self._cluster, 0)
+            loops=self.subloops(_smatrix, _scs, _mc)
+
+            if len(loops) > 1:
+                # Loops merging level (those ones that behaves equal)
+                pass
+            else:
+                ranks_loops.append(loops[0])
+
+        # TODO: Ranks merge level
+        self._merged_rank_loops=ranks_loops[0]
+
+    def str(self):
+        return self._merged_rank_loops.str()
+
+    def subloops(self, smatrix, scs, mc):
+        # A times matrix for a cluster can contain more than one loop
+        # if there are behaving in the same way. The matrix could looks like
+        #
+        #   1-loop matrix       2-loops matrix      3-loops matrix
+        #   ~ ~ ~ ~             - - - - ~ ~ ~ ~     ~ ~ - - - - - -
+        #   ~ ~ ~ ~             ~ ~ ~ ~ - - - -     - - ~ ~ ~ - - -
+        #   ~ ~ ~ ~             ~ ~ ~ ~ - - - -     - - - - - ~ ~ ~
+
+        # TODO: Detect how many loops there are and split the matrix
+        # NOTE: No estoy seguro de si podria ser un unico bucle con condiciones
+
+        if mc == constants.PURELOOP:
+            return [loop(smatrix, scs)]
+        else:
+            assert(False)
+
+
 
 class loop (object):
-    def __init__(self):
-        pass
+    def __init__(self, tmat, scstack):
+        self._tmat=tmat
+        self._scstack=scstack
+
+        self._suncommon,self._ibase=cs_uncommon_part(self._scstack)
+
+    def str(self):
+        niters=len(self._tmat[0])
+        pseudocode =constants.FORLOOP.format(
+                niters,
+                self._scstack[0].split(
+                    constants._intra_field_separator)[0::2][self._ibase])
+
+        # TODO: Sort calls in the loop by line
+
+        # Loop body
+        lastsc=[]
+        for sc in self._suncommon:
+
+            line=[]
+            for i in sc:
+                if not i in lastsc: line.append(i)
+            
+            ucommon_sc=len(sc)-len(line)
+            callchain="  | "*(ucommon_sc) + line[0] + "()\n"
+            for j in range(1,len(line)):
+                callchain+="  " + "  | "*(ucommon_sc+j) + line[j] + "()\n"
+
+            lastsc=sc[:-1]
+            callchain="  "+callchain
+            pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
+
+        return pseudocode
+
+
     def merge(self, oloop):
         pass
-    def get(self):
+
+    def print_iterations(self):
+        '''
+        print("Cluster {0} have been found {1} iterations]"
+                .format(cluster, len(it_cluster)))
+        cnt=1
+        print("> Iteration_TOT  found @ [ {0} , {1} )"
+                .format(it_cluster[0][0], it_cluster[-1][1]))
+    
+        
+        for i in range(len(it_cluster)):
+            print(" - Iteration_{0} found @ [ {1} , {2} )"
+                    .format(cnt,it_cluster[i][0],it_cluster[i][1]))
+            cnt+=1
+        '''
         pass
-    def print(self):
+
+
+############################
+#### AUXILIAR FUNCTIONS ####
+############################
+
+def cs_uncommon_part(scalls):
+    # odd positions have the lines meanwhile even possitions have calls
+
+    # We can expect that all the stack before the loop is equal, then
+    # the loop is exactly in the first call when the lines differs.
+    # The rest of calls are from the loop.
+
+    globpos=len(scalls[0].split(constants._intra_field_separator))
+
+    for i in range(1,len(scalls)):
+        csprev_lines=scalls[i-1].split(constants._intra_field_separator)[1::2]
+        cscurr_lines=scalls[i].split(constants._intra_field_separator)[1::2]
+
+        iterations=max(len(csprev_lines),len(cscurr_lines))
+        for j in range(iterations):
+            if csprev_lines[j] != cscurr_lines[j]:
+                pos=j
+                break
+
+        assert(pos != iterations)
+
+        if pos < globpos:
+            globpos=pos
+
+
+    result=[]
+    for cs in scalls:
+        calls=cs.split(constants._intra_field_separator)[0::2]
+        result.append(calls[globpos+1:]) # globpos+1
+        
+    return result, globpos # globpos
+
+
+
+def cuadra(mat):
+    # Fill the gaps at end of modified rows
+    maxcols=len(mat[0])
+    for row in range(len(mat)):
+        if len(mat[row]) < maxcols:
+            mat[row].extend([0]*(maxcols-len(mat[row])))
+        elif len(mat[row]) > maxcols:
+            maxcols=len(mat[row])
+            rr=row
+            while rr >=0:
+                mat[rr].extend([0]*(maxcols-len(mat[rr])))
+                rr-=1
+
+
+# This function performs all the matrix transformation (gaps add) needed
+# in order to guarantee the constraint of iterations non-overlaping.
+# i.e. the last element of col n must be less or equal that the first
+# element of n+1 col
+def boundaries_sort_2(tmat):
+    mat=tmat.tolist()
+
+    mheight=len(mat)
+    mwidth=len(mat[0])
+
+    last=mat[0][0]
+    lastcol=0
+    lastrow=0
+
+    i=0
+    matrix_complexity=0
+    # 0: there are no holes, therefore all iterations all equal
+    # 1: are holes but all of them are concentrated in areas, therefore in this cluster
+    #    there are more than one loop
+    # 2: The holes are diseminated over all matrix with a certain pattern. 
+    #    There are some conditional statements in iterations.
+    # TODO: For the moment 1 means only that there are holes
+
+    while i < len(mat[0]):
+        for j in range(mheight):
+            if mat[j][i]==0: continue
+            if mat[j][i] < last:
+                matrix_complexity=1
+                jj=lastrow
+                while mat[jj][lastcol] > mat[j][i]:
+                    mat[jj].insert(lastcol,0)
+                    jj-=1
+                    if jj < 0: break
+
+            lastcol=i
+            lastrow=j
+            last=mat[j][i]
+        cuadra(mat)
+        i+=1
+
+    
+    # Remove last empty cols
+    minzeros=sys.maxint
+    for row in mat:
+        zeros=0
+        for i in range(-1,-len(row)+1, -1):
+            if row[i]!=0: break
+            zeros+=1
+
+        if zeros < minzeros: 
+            minzeros=zeros
+
+    if minzeros > 0:
+        for row in mat:
+            del row[-minzeros:]
+
+    return mat, matrix_complexity
+
+
+def cluster2mat(rank, cluster):
+    keys_cs=[]
+    index=0
+    max_size=0
+
+    tomat=[]
+
+    cs_map={}
+    for cs in cluster:
+        k=cs.keys()[0]
+        
+        if int(cs[k]["rank"]) != rank: continue
+
+        cs_map.update({cs[k]["when"][0]:k})
+
+        if len(cs[k]["when"]) > max_size:
+            max_size=len(cs[k]["when"]) 
+            for i in range(index-1, -1, -1):
+                holes=max_size-len(tomat[i])
+                tomat[i].extend([constants._empty_cell]*holes)
+        elif len(cs[k]["when"]) < max_size:
+            holes=max_size-len(cs[k]["when"])
+            cs[k]["when"].extend([constants._empty_cell]*holes)
+
+        tomat.append(cs[k]["when"])
+        keys_cs.append(k)
+        index+=1
+
+    return np.matrix(tomat),max_size,cs_map
+
+# This function get a cluster (set of callstacks and occurrences)
+# and generate a sorted matrix. The sorted is done by sorting the columns
+# in such way that the las value of column N is less or equal that the
+# first value of column N+1. It means that the columns can be divided into
+# subsets on every subset is an iteration.
+#
+# RETURN: tmat         : The matrix of occurrences of calls
+#         keys_ordered : Callstacks ordered in such way that the callstack in
+#                        position y is the callstack that have its occurrences
+#                        on times in row y of the 'tmat'.
+#         mcomplexity  : ...
+
+def cluster2smatrix(cluster, rank):
+    tmat,xsize,cs_map=cluster2mat(rank, cluster)
+
+    # Sorting by the first column
+    tmat=tmat.view("i8,"*(xsize-1)+"i8")
+    tmat.sort(order=["f0"], axis=0)
+    tmat=tmat.view(np.int)
+
+    # Get the callstacks ordered by first occurrence
+    keys_ordered=[]
+    for row in tmat.tolist():
+        keys_ordered.append(cs_map[row[0]])
+
+    # Adding holes if needed
+    tmat, mcomplexity=boundaries_sort_2(tmat)
+
+    #print_matrix(tmat, True)
+    return tmat, keys_ordered, mcomplexity
+'''
+    iterations=[]
+    if mcomplexity==0:
+        # simple case
+        
+
         pass
+    else:
+        # complex case
+
+        mheight=len(tmat)
+        mwidth=len(tmat[0])
+      
+        print_matrix(tmat, True)
+
+        # It is defined by the row. 
+        # Remember that every row corresponds to a different call
+        last_calls=[0]; ini_it=tmat[0][0]
+
+        for j in range(mwidth):
+            for i in range(mheight):
+                if tmat[i][j]==0:continue
+                if i in last_calls and j!=0:
+                    fin_it=tmat[i][j]
+                    iterations.append((ini_it,fin_it))
+                    ini_it=fin_it
+                    last_calls=[i]
+                else:
+                    last_calls.append(i)
+
+        # Last iteration
+        iterations.append((ini_it, tmat[i][j]))
+
+    return iterations, keys_ordered
+    #return tmat.tolist()[0][:-1], keys_ordered 
+'''
+

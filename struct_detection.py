@@ -40,11 +40,22 @@ from pseudoCodeGenerator import *
 
 import constants
 
+def pretty_print(pseudocode):
+    print("+"+"-"*78+"+")
+    print("|"+" "*78+"|")
+    pseudocode=pseudocode.split("\n")
+    for line in pseudocode:
+        pline = "|  " + line + " "*(76-len(line))+"|"
+        print(pline)
+
+    print("+"+"-"*78+"+")
+
 
 def Usage(cmd):
     print("Usage(): {0} [-l call_level] [-f img1[,img2,...]] <trace>\n"
         .format(cmd))
     exit(1)
+
 
 def main(argc, argv):
     if argc < 2:
@@ -55,19 +66,14 @@ def main(argc, argv):
     #######################################
     level="0"; trace = argv[-1]; image_filter=["ALL"]
     for i in range(1, len(argv)-1):
-        if argv[i] == "-f": 
-            image_filter=argv[i+1].split(",")
-        elif argv[i] == "-l": 
-            level=argv[i+1]
+        if argv[i] == "-f": image_filter=argv[i+1].split(",")
+        elif argv[i] == "-l": level=argv[i+1]
 
     clevels = "All"
-    if level != "0":
-        clevels=str(level)
+    if level != "0": clevels=str(level)
 
-    if constants._verbose:
-        print("{0} : Calls level={1}; Image filter={2}; Trace={3}\n\n"
-                .format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
-
+    if constants._verbose: print("{0} : Calls level={1}; Image filter={2}; Trace={3}\n\n"
+        .format(argv[0], clevels, str(image_filter), trace.split("/")[-1]))
 
 
     #######################################
@@ -75,12 +81,11 @@ def main(argc, argv):
     #######################################
     cs_files,app_time=get_callstacks(trace, level, image_filter)
 
-    if constants._verbose: 
-        print("[Merging data]")
 
     ########################################
     ###### GETTING CALLSTACKS METRICS ######
     ########################################
+    if constants._verbose: print("[Merging data]")
     mean_delta=0; filtered_data=[]; nonfiltered_data=[]
     for csf in cs_files:
         cdist=getCsDistributions(csf)
@@ -91,41 +96,24 @@ def main(argc, argv):
 
     mean_delta/=len(cs_files)
 
+
     ########################
     ###### CLUSTERING ######
     ########################
-    print("[Performing clustering]")
+    if constants._verbose: print("[Performing clustering]")
     nclusters, clustered_data=clustering(filtered_data, False)
+
 
     #########################################################
     ###### GENERATING PSEUDO-CODE AND PRINTING RESULTS ######
     #########################################################
     print("[Generating pseudocode]")
     print("")
-    ordered_cluster={}
-    for cluster in clustered_data.keys():
-        smatrix,cs_ordered,mc=cluster2smatrix(clustered_data[cluster])
 
-        if mc==constants.PURELOOP:
-            pseudocode = matrix2pseudo_pure(smatrix,cs_ordered)
-            print pseudocode
-        else:
-            assert(False)
+    pseudocode=generate_pseudocode(clustered_data)
 
-        '''
-        print("Cluster {0} have been found {1} iterations]"
-                .format(cluster, len(it_cluster)))
-        cnt=1
-        print("> Iteration_TOT  found @ [ {0} , {1} )"
-                .format(it_cluster[0][0], it_cluster[-1][1]))
-    
-        
-        for i in range(len(it_cluster)):
-            print(" - Iteration_{0} found @ [ {1} , {2} )"
-                    .format(cnt,it_cluster[i][0],it_cluster[i][1]))
-            cnt+=1
-        '''
-        
+    pretty_print(pseudocode)
+
     print("[Results]")
     print("  -> {0} clusters detected".format(nclusters))
     print("  -> Really useful time (in loops): {0:.2f} %".format(mean_delta*100))

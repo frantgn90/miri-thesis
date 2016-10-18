@@ -69,6 +69,7 @@ _min_samples=1
 #### LOOPS ####
 
 PURELOOP=0
+MULTILOOP=1
 
 #### PSEUDO-CODE ####
 

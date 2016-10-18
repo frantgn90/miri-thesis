@@ -2,6 +2,7 @@
 *.prv
 *.pcf
 *.row
+*.mpits
 set-0/
 
 # Output of program
