@@ -15,6 +15,23 @@
 #define TAG 1234
 #define TOSLEEP 500
 
+void CommSend(int rank, int partner);
+void CommRecv(int rank, int partner, int *val);
+
+void CommSend(int rank, int partner)
+{
+	int dummy;
+	MPI_Comm_rank(MPI_COMM_WORLD, &dummy);
+	MPI_Send(&rank, 1, MPI_INT, partner, TAG, MPI_COMM_WORLD);
+}
+
+void CommRecv(int rank, int partner, int *val)
+{
+	int dummy;
+	MPI_Comm_rank(MPI_COMM_WORLD, &dummy);
+	MPI_Recv(val, 1,MPI_INT, partner, TAG, MPI_COMM_WORLD, NULL);
+}
+
 int main(int argc, char **argv)
 {
 	int rank, team;
@@ -39,18 +56,20 @@ int main(int argc, char **argv)
 		if (rank%2==0)
 		{
 			int prank;
-			MPI_Send(&rank, 1, MPI_INT, rank+1, TAG, MPI_COMM_WORLD);
-			MPI_Recv(&prank, 1,MPI_INT, rank+1, TAG, MPI_COMM_WORLD, NULL);
+			CommSend(rank, rank+1);
+			CommRecv(rank, rank+1, &prank);
 		}	
 		else
 		{
 			int prank;
-			MPI_Recv(&prank, 1,MPI_INT, rank-1, TAG, MPI_COMM_WORLD, NULL);
-			MPI_Send(&rank, 1, MPI_INT, rank-1, TAG, MPI_COMM_WORLD);
+			CommRecv(rank, rank-1, &prank);
+			CommSend(rank, rank-1);
 		}
 
 		// Perform some work
 		usleep(TOSLEEP);
+
+		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);

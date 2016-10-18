@@ -223,28 +223,39 @@ def cs_uncommon_part(scalls):
     result=[]
     for cs in scalls:
         calls=cs.split(constants._intra_field_separator)[0::2]
-        result.append(calls[globpos:]) # globpos+1
+        result.append(calls[globpos+1:]) # globpos+1
         
-    return result, globpos-1 # globpos
+    return result, globpos # globpos
 
 
 def matrix2pseudo_pure(mat, scalls):
-    #niters=mat.shape[1] # number of cols 
-    niters=len(mat[0])
-
     
     # Get the uncommon part of the callstacks
     suncommon,ibase=cs_uncommon_part(scalls)
 
+    # Printing loop statement
+    niters=len(mat[0])
     pseudocode =constants.FORLOOP.format(
             niters,
             scalls[0].split(constants._intra_field_separator)[0::2][ibase])
 
     # TODO: Sort calls in the loop by line
 
+    # Printing loop body
     lastsc=[]
     for sc in suncommon:
-        callchain="()->".join(sc)
+
+        line=[]
+        for i in sc:
+            if not i in lastsc: line.append(i)
+        
+        ucommon_sc=len(sc)-len(line)
+        callchain="  | "*(ucommon_sc) + line[0] + "()\n"
+        for j in range(1,len(line)):
+            callchain+="  " + "  | "*(ucommon_sc+j) + line[j] + "()\n"
+
+        lastsc=sc[:-1]
+        callchain="  "+callchain
         pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
 
     return pseudocode

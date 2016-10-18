@@ -29,48 +29,15 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 *****************************************************************************
 '''
 
-import os
 
-if "PARAVER_ON" in os.environ:
-    _verbose=False
-else:
-    _verbose=True
+import sys
 
-CALLSTACK_SIZE=10
-
-_intra_field_separator="|"
-_inter_field_separator="#"
-
-
-CALLER_EVENT_BASE ="3000000"
-CALLIN_EVENT_BASE ="3000010"
-MPICAL_EVENT_BASE ="7000000"
-MPILIN_EVENT_BASE ="8000000"
-MPI_EVENT_BASE    ="5000000"
-
-
-FUNC_MAP_FILE="functions.map"
-MPI_LIB_FILE="libmpi_injected.c"
-
-_empty_cell=0
-
-#### CLUSTERING ####
-
-_x_axis_label="Number of occurrences"
-_y_axis_label="Mean period bw occurrences"
-
-_x_axis="times"
-_y_axis="time_mean"
-_z_axis="time_std"
-
-_eps=0.2
-_min_samples=1
-
-#### LOOPS ####
-
-PURELOOP=0
-
-#### PSEUDO-CODE ####
-
-FORLOOP="for loop 1 to {0}: [{1}]\n"
-INLOOP_STATEMENT="{0}"
+class loop (object):
+    def __init__(self):
+        pass
+    def merge(self, oloop):
+        pass
+    def get(self):
+        pass
+    def print(self):
+        pass
