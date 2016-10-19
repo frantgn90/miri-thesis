@@ -74,4 +74,6 @@ MULTILOOP=1
 #### PSEUDO-CODE ####
 
 FORLOOP="for loop 1 to {0}: [{1}]\n"
+IF="if {0}"
 INLOOP_STATEMENT="{0}"
+

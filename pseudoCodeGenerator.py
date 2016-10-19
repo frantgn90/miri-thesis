@@ -61,12 +61,12 @@ def print_matrix(matrix, infile):
             print("\t".join(map(format_nums,row)))
 
 
-def generate_pseudocode(clusters):
+def generate_pseudocode(clusters, ranks):
 
     ocluster=[]
     # Assuming every cluster is a loop
     for k in clusters.keys():
-        new_ocluster = cluster(clusters[k])
+        new_ocluster = cluster(clusters[k], ranks)
         ocluster.append(new_ocluster)
 
 

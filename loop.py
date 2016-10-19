@@ -37,29 +37,28 @@ import constants
 
 
 class cluster (object):
-    def __init__(self, cluster):
-        self._cluster = cluster
+    def __init__(self, cluster, ranks):
+        self._cluster=cluster
+        self._ranks=ranks
         
         # TODO: For all ranks
-        ranks=[0]
         ranks_loops=[]
-        for rank in ranks:
-            _smatrix,_scs, _mc=cluster2smatrix(self._cluster, 0)
-            loops=self.subloops(_smatrix, _scs, _mc)
+        for rank in range(self._ranks):
+            _smatrix,_scs, _mc=cluster2smatrix(self._cluster, rank)
+            loops=self.__subloops(_smatrix, _scs, _mc, rank)
 
             if len(loops) > 1:
-                # Loops merging level (those ones that behaves equal)
-                pass
+                self.__loops_level_merge(self, loops)
             else:
                 ranks_loops.append(loops[0])
 
         # TODO: Ranks merge level
-        self._merged_rank_loops=ranks_loops[0]
+        self.__ranks_level_merge(ranks_loops)
 
     def str(self):
         return self._merged_rank_loops.str()
 
-    def subloops(self, smatrix, scs, mc):
+    def __subloops(self, smatrix, scs, mc, rank):
         # A times matrix for a cluster can contain more than one loop
         # if there are behaving in the same way. The matrix could looks like
         #
@@ -72,50 +71,141 @@ class cluster (object):
         # NOTE: No estoy seguro de si podria ser un unico bucle con condiciones
 
         if mc == constants.PURELOOP:
-            return [loop(smatrix, scs)]
+            return [loop(smatrix, scs, rank)]
         else:
-            assert(False)
+            assert False, "It is not developed yet."
+
+    def __loops_level_merge(self, loops):
+        assert False, "It is not developed yet."
+
+    def __ranks_level_merge(self, ranks_loops):
+        # Merging all ranks with first one
+        for i in range(1, len(ranks_loops)):
+            #print "RANK {0}".format(i)
+            #print ranks_loops[i].str()
+
+            ranks_loops[0].merge(ranks_loops[i])
+
+        self._merged_rank_loops=ranks_loops[0]
 
 
 
 class loop (object):
-    def __init__(self, tmat, scstack):
-        self._tmat=tmat
-        self._scstack=scstack
+    def __init__(self, tmat, cstack, rank):
+        self._tmat={}
+        self._cs={} # {cs:[..], ranks:[..]}
 
-        self._suncommon,self._ibase=cs_uncommon_part(self._scstack)
+        self._rank=rank
+        self._tmat[rank]=tmat
+        self._cstack = cstack
+        self._merge = 0
+
+        # The key of every cs set is the line of the first call of the callstack
+        dummy,self._loopdeph=cs_uncommon_part(self._cstack)
+        key=self._cstack[0] \
+            .split(constants._intra_field_separator)[1::2][self._loopdeph]
+
+        self._cs.update({key:{"cs":self._cstack, "ranks":[self._rank]}})
+
+    def merge(self, oloop):
+        assert len(oloop._cs) == 1, "TODO: Merge merged loops (tree-merge)"
+
+        newcs = oloop._cstack
+        newrank = oloop._rank
+    
+        print("MERGING {0} with {1}".format(self._rank, newrank))
+
+        for key, cset in self._cs.items():
+            if newrank in cset["ranks"]: continue
+
+            commoncs = self.__get_common_cs(cset["cs"], newcs)
+
+            if len(commoncs) == len(cset["cs"]):
+                self._cs[key]["ranks"].append(newrank)
+                break
+            elif len(commoncs) == 0:
+                # New cset
+                newkey=newcs[0] \
+                        .split(constants._intra_field_separator)[1::2][self._loopdeph]
+                self._cs.update({
+                    newkey:{
+                    "cs": newcs,
+                    "ranks": [newrank]}})
+
+            elif len(commoncs) < len(cset["cs"]):
+                # Create new cset
+                newkey=commoncs[0] \
+                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
+                self._cs.update({
+                    newkey:{ 
+                        "cs": commoncs, 
+                        "ranks": cset["ranks"].append(newrank)}})
+
+                # Update cset
+                self._cs[key]["cs"] = self.__substract_cs(self._cs[key]["cs"],commoncs)
+                newkey=self._cs[key]["cs"][0] \
+                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
+                self._cs[newkey]=self._cs[key]
+                del(self._cs[key])
+
+            newcs = self.__substract_cs(newcs, commoncs)
+
+        self._merge += 1
+
+    def __get_common_cs(self, cs1, cs2):
+        res=[]
+        for cs in cs1:
+            if cs in cs2:
+                res.append(cs)
+
+        return res
+
+    def __substract_cs(self, cs1, cs2):
+        res=[]
+        for cs in cs1:
+            if not cs in cs2:
+                res.append(cs)
+
+        return res
 
     def str(self):
-        niters=len(self._tmat[0])
-        pseudocode =constants.FORLOOP.format(
-                niters,
-                self._scstack[0].split(
-                    constants._intra_field_separator)[0::2][self._ibase])
-
-        # TODO: Sort calls in the loop by line
-
-        # Loop body
-        lastsc=[]
-        for sc in self._suncommon:
-
-            line=[]
-            for i in sc:
-                if not i in lastsc: line.append(i)
+        niters=len(self._tmat[self._rank][0])
+        cskeys=sorted(self._cs.keys())
             
-            ucommon_sc=len(sc)-len(line)
-            callchain="  | "*(ucommon_sc) + line[0] + "()\n"
-            for j in range(1,len(line)):
-                callchain+="  " + "  | "*(ucommon_sc+j) + line[j] + "()\n"
+        pseudocode =constants.FORLOOP.format(
+            niters,
+            self._cstack[0].split(
+                constants._intra_field_separator)[0::2][self._loopdeph])
 
-            lastsc=sc[:-1]
-            callchain="  "+callchain
-            pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
+        for key in cskeys:
+            ranks=self._cs[key]["ranks"]
+            cs=self._cs[key]["cs"]
+
+            suncommon, ibase=cs_uncommon_part(cs)
+
+            if len(ranks) < self._merge:
+                pseudocode += constants.INLOOP_STATEMENT \
+                    .format(IF.format("rank in "+",".join(ranks)))
+
+            # Loop body
+            lastsc=[]
+            for sc in suncommon:
+
+                line=[]
+                for i in sc:
+                    if not i in lastsc: line.append(i)
+                
+                ucommon_sc=len(sc)-len(line)
+                callchain="  | "*(ucommon_sc) + line[0] + "()\n"
+                for j in range(1,len(line)):
+                    callchain+="  " + "  | "*(ucommon_sc+j) + line[j] + "()\n"
+
+                lastsc=sc[:-1]
+                callchain="  "+callchain
+                pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
 
         return pseudocode
 
-
-    def merge(self, oloop):
-        pass
 
     def print_iterations(self):
         '''

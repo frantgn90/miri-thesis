@@ -80,6 +80,7 @@ def main(argc, argv):
     ####### GETTING DATA FROM TRACE #######
     #######################################
     cs_files,app_time=get_callstacks(trace, level, image_filter)
+    nranks=len(cs_files)
 
 
     ########################################
@@ -110,7 +111,7 @@ def main(argc, argv):
     print("[Generating pseudocode]")
     print("")
 
-    pseudocode=generate_pseudocode(clustered_data)
+    pseudocode=generate_pseudocode(clustered_data, nranks)
 
     pretty_print(pseudocode)
 
