@@ -81,13 +81,10 @@ class cluster (object):
     def __ranks_level_merge(self, ranks_loops):
         # Merging all ranks with first one
         for i in range(1, len(ranks_loops)):
-            #print "RANK {0}".format(i)
-            #print ranks_loops[i].str()
-
             ranks_loops[0].merge(ranks_loops[i])
 
         self._merged_rank_loops=ranks_loops[0]
-
+        # import pdb; pdb.set_trace()
 
 
 class loop (object):
@@ -112,43 +109,56 @@ class loop (object):
 
         newcs = oloop._cstack
         newrank = oloop._rank
+
+        self._tmat[newrank] = oloop._tmat[newrank]
     
-        print("MERGING {0} with {1}".format(self._rank, newrank))
+        # print("MERGING {0} with {1}".format(self._rank, newrank))
 
         for key, cset in self._cs.items():
+            if len(newcs) == 0: break
             if newrank in cset["ranks"]: continue
 
             commoncs = self.__get_common_cs(cset["cs"], newcs)
+            uncommoncs_a = self.__substract_cs(self._cs[key]["cs"],commoncs)
+            uncommoncs_b = self.__substract_cs(newcs, commoncs)
 
-            if len(commoncs) == len(cset["cs"]):
+            if len(commoncs) == len(cset["cs"]): # all is common
                 self._cs[key]["ranks"].append(newrank)
-                break
-            elif len(commoncs) == 0:
-                # New cset
+            elif len(commoncs) > 0 and len(commoncs) < len(cset["cs"]):
+
+                # Create common new cset
+                newkey=commoncs[0] \
+                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
+                newcset=list(cset["ranks"]) # copy
+                newcset.append(newrank)
+                self._cs.update({
+                    newkey:{ 
+                        "cs": commoncs, 
+                        "ranks": newcset}})
+
+                # Update uncommon cset
+                self._cs[key]["cs"] = uncommoncs_a
+                newkey=self._cs[key]["cs"][0] \
+                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
+
+
+                if key != newkey:
+                    self._cs[newkey]=dict(self._cs[key]) # copy
+                    del(self._cs[key]) # removing the old entry
+
+            # Every time a part of this newcs is merged, then it have to be
+            # substracted in order to no merge it again
+            newcs = self.__substract_cs(newcs, commoncs)
+
+        # If we check all the actual cs and there is no any coincidence for 
+        # some calls, then, we have to create a new cs group
+        if len(newcs) > 0: 
                 newkey=newcs[0] \
-                        .split(constants._intra_field_separator)[1::2][self._loopdeph]
+                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
                 self._cs.update({
                     newkey:{
                     "cs": newcs,
                     "ranks": [newrank]}})
-
-            elif len(commoncs) < len(cset["cs"]):
-                # Create new cset
-                newkey=commoncs[0] \
-                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
-                self._cs.update({
-                    newkey:{ 
-                        "cs": commoncs, 
-                        "ranks": cset["ranks"].append(newrank)}})
-
-                # Update cset
-                self._cs[key]["cs"] = self.__substract_cs(self._cs[key]["cs"],commoncs)
-                newkey=self._cs[key]["cs"][0] \
-                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
-                self._cs[newkey]=self._cs[key]
-                del(self._cs[key])
-
-            newcs = self.__substract_cs(newcs, commoncs)
 
         self._merge += 1
 
@@ -169,15 +179,22 @@ class loop (object):
         return res
 
     def str(self):
+
+        # For now, we only allow rank mergin, when the number of loops is the
+        # same for every rank.
         niters=len(self._tmat[self._rank][0])
-        cskeys=sorted(self._cs.keys())
-            
+
+        for rank, tmat in self._tmat.items():
+            assert len(tmat[0])==niters, "Not all merged ranks have the same iters.)"
+   
         pseudocode =constants.FORLOOP.format(
             niters,
             self._cstack[0].split(
                 constants._intra_field_separator)[0::2][self._loopdeph])
 
+        cskeys=sorted(self._cs.keys())
         for key in cskeys:
+
             ranks=self._cs[key]["ranks"]
             cs=self._cs[key]["cs"]
 
@@ -185,7 +202,8 @@ class loop (object):
 
             if len(ranks) < self._merge:
                 pseudocode += constants.INLOOP_STATEMENT \
-                    .format(IF.format("rank in "+",".join(ranks)))
+                    .format(constants.IF.format("rank in "+",".join(map(ranks))))
+
 
             # Loop body
             lastsc=[]
