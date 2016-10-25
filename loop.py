@@ -84,7 +84,6 @@ class cluster (object):
             ranks_loops[0].merge(ranks_loops[i])
 
         self._merged_rank_loops=ranks_loops[0]
-        # import pdb; pdb.set_trace()
 
 
 class loop (object):
@@ -192,28 +191,40 @@ class loop (object):
             self._cstack[0].split(
                 constants._intra_field_separator)[0::2][self._loopdeph])
 
-        cskeys=sorted(self._cs.keys())
-        for key in cskeys:
+        cskeys=list(self._cs.keys())
+        sorted(cskeys)
 
+        for key in cskeys:
             ranks=self._cs[key]["ranks"]
             cs=self._cs[key]["cs"]
 
-            suncommon, ibase=cs_uncommon_part(cs)
+            #suncommon, ibase=cs_uncommon_part(cs)
+            #if len(suncommon[0])==0: continue
 
+            suncommon=[]
+            for cs in self._cs[key]["cs"]:
+                suncommon.append(
+                    cs.split(
+                        constants._intra_field_separator)[0::2][self._loopdeph+1:])
+
+            #import pdb; pdb.set_trace()
+
+            tabs=0
             if len(ranks) < self._merge:
-                pseudocode += constants.INLOOP_STATEMENT \
-                    .format(constants.IF.format("rank in "+",".join(map(ranks))))
+                tabs+=1
+                pseudocode += "  "+constants.INLOOP_STATEMENT \
+                    .format(constants.IF.format("rank in "+str(ranks)))
+
 
 
             # Loop body
             lastsc=[]
             for sc in suncommon:
-
                 line=[]
                 for i in sc:
                     if not i in lastsc: line.append(i)
                 
-                ucommon_sc=len(sc)-len(line)
+                ucommon_sc=len(sc)-len(line)+tabs
                 callchain="  | "*(ucommon_sc) + line[0] + "()\n"
                 for j in range(1,len(line)):
                     callchain+="  " + "  | "*(ucommon_sc+j) + line[j] + "()\n"
