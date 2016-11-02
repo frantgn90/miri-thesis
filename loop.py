@@ -40,23 +40,53 @@ class cluster (object):
     def __init__(self, cluster, ranks):
         self._cluster=cluster
         self._ranks=ranks
+        self._merges=0
+        self._first_line=0
+
+        # These two parameters are those ones that defines the cluster
+        self._time_mean = self.__time_mean_m()
+        self._times = self.__times_m()
         
-        # TODO: For all ranks
         ranks_loops=[]
         for rank in range(self._ranks):
             _smatrix,_scs, _mc=cluster2smatrix(self._cluster, rank)
-            loops=self.__subloops(_smatrix, _scs, _mc, rank)
+            if _smatrix != None:
+                loops=self.__subloops(_smatrix, _scs, _mc, rank)
 
-            if len(loops) > 1:
-                self.__loops_level_merge(self, loops)
-            else:
-                ranks_loops.append(loops[0])
+                if len(loops) > 1:
+                    self.__loops_level_merge(self, loops)
+                elif len(loops) == 1:
+                    ranks_loops.append(loops[0])
 
-        # TODO: Ranks merge level
+        # Ranks merge level
         self.__ranks_level_merge(ranks_loops)
 
+    
+    def __time_mean_m(self):
+        total_time=0
+        for callstack in self._cluster:
+            values = callstack[callstack.keys()[0]]
+            total_time += values["time_mean"]
+
+        return total_time/len(self._cluster)
+    
+
+    def __times_m(self):
+        total_times=0
+        for callstack in self._cluster:
+            values = callstack[callstack.keys()[0]]
+            total_times += values["times"]
+
+        return total_times/len(self._cluster)
+    
+    def getPeriod(self):
+        return self._time_mean
+
+    def getOccurrences(self):
+        return self._times
+
     def str(self):
-        return self._merged_rank_loops.str()
+        return self._merged_rank_loops.str(0)
 
     def __subloops(self, smatrix, scs, mc, rank):
         # A times matrix for a cluster can contain more than one loop
@@ -84,6 +114,32 @@ class cluster (object):
             ranks_loops[0].merge(ranks_loops[i])
 
         self._merged_rank_loops=ranks_loops[0]
+        self._first_line = self._merged_rank_loops.getFirstLine()
+    
+    def getLoop(self):
+        return self._merged_rank_loops
+
+    def getnMerges(self):
+        return self._merges
+
+    def getFirstLine(self):
+        return self._first_line
+
+    def merge(self, ocluster):
+        self._merges += 1
+
+        # Is it a subplot ?
+        assert(ocluster.getFirstLine() > self._first_line)
+        assert(ocluster.getOccurrences() > self._times)
+
+        subloop = ocluster.getLoop()
+
+        # We have to merge this subloop with our __ranks_level_merge
+        # TODO: We need the times of the callstacks!! and the overall time 
+        # of the loop in order to fit it in its correct place!!!!
+        
+        self._merged_rank_loops.mergeS(subloop)
+        self._merges+=1
 
 
 class loop (object):
@@ -95,13 +151,26 @@ class loop (object):
         self._tmat[rank]=tmat
         self._cstack = cstack
         self._merge = 0
+        self._first_line = 0
 
+        self._iterations = len(self._tmat[self._rank][0])
+
+        #import pdb; pdb.set_trace()
+    
         # The key of every cs set is the line of the first call of the callstack
         dummy,self._loopdeph=cs_uncommon_part(self._cstack)
         key=self._cstack[0] \
             .split(constants._intra_field_separator)[1::2][self._loopdeph]
 
+        self._first_line = key
         self._cs.update({key:{"cs":self._cstack, "ranks":[self._rank]}})
+
+    def get_ranks(self):
+        ranks=[]
+        for k,v in self._cs.items():
+            ranks.extend(v["ranks"])
+
+        return list(set(ranks)) # Removing repetitions
 
     def merge(self, oloop):
         assert len(oloop._cs) == 1, "TODO: Merge merged loops (tree-merge)"
@@ -161,6 +230,70 @@ class loop (object):
 
         self._merge += 1
 
+        cskeys=list(self._cs.keys())
+        sorted(cskeys)
+
+        # Every time a merge is done, recompute the first line
+        self._first_line = cskeys[0]
+
+    def recomputeFirstLine(self, looplevel):
+        for k,v in self._cs.items():
+            # With the first one is enough
+            newkey=v["cs"][0].split(constants._intra_field_separator)[1::2][looplevel]
+            
+            if newkey!=k:
+                self._cs[newkey] = self._cs[k]
+                self._cs.pop(k)
+
+        cskeys=list(self._cs.keys())
+        sorted(cskeys)
+
+        self._first_line = cskeys[0]
+
+    def mergeS(self, subloop):
+        subranks = subloop.get_ranks()
+        # It means that potentially, the subloop will be placed here.
+        # Is important to recompute the keys of the cs at the subloop
+        # because the level of loop base (i.e. shared calls) in subloop
+        # will be potentially highest than the superloop
+
+        subloop.recomputeFirstLine(self._loopdeph)
+        subloop._iterations/=self._iterations
+        sline = subloop.getFirstLine()
+
+        # This subloop has to be pushed in some place, inside a set of 
+        # callstacks that is a superset of sranks.
+
+        done=False
+        for k,v in self._cs.items():
+            superranks = v["ranks"]
+            #superset = (set(superranks).intersection(subranks)==set(subranks))
+            superset = (subranks==superranks)
+
+            if superset:
+                # TODO: Speedup search by dicotomical search
+                inject_at=0
+                for i in range(len(v["cs"])):
+                    line = v["cs"][i].split(constants._intra_field_separator)[1::2]\
+                            [self._loopdeph]
+                    if line < sline:
+                        inject_at=i
+                    elif line > sline:
+                        done=True
+                        # Injecting subloop
+                        v["cs"].insert(i, subloop)
+                        break
+                if not done:
+                    done=True
+                    v["cs"].append(subloop)
+
+            if done: break
+
+        # If the execution arrives here without injecting the subloop, then
+        # it means that we need to create a new callstack group
+        if not done:
+            self._cs.update({sline:{ "cs": subloop, "ranks": subranks}})
+
     def __get_common_cs(self, cs1, cs2):
         res=[]
         for cs in cs1:
@@ -177,64 +310,84 @@ class loop (object):
 
         return res
 
-    def str(self):
+    def str(self,tabs):
+        #if self._rank == 0:
+        #    print self._cs
+        #    print
 
-        # For now, we only allow rank mergin, when the number of loops is the
-        # same for every rank.
+        '''
         niters=len(self._tmat[self._rank][0])
 
         for rank, tmat in self._tmat.items():
-            assert len(tmat[0])==niters, "Not all merged ranks have the same iters.)"
-   
-        pseudocode =constants.FORLOOP.format(
-            niters,
-            self._cstack[0].split(
-                constants._intra_field_separator)[0::2][self._loopdeph])
+            assert len(tmat[0])==self._iterations, 
+                "Not all merged ranks have the same iters.)"
+        '''
+        loop_base=self._cstack[0].split\
+                (constants._intra_field_separator)[0::2][self._loopdeph]
+        pseudocode=constants.TAB*tabs+loop_base+"()\n"
+        
+        pseudocode+=constants.TAB*tabs + \
+            constants.FORLOOP.format(self._iterations,loop_base)
 
         cskeys=list(self._cs.keys())
-        sorted(cskeys)
+        cskeys.sort(key=float)
 
         for key in cskeys:
+            set_tabs=tabs+1
             ranks=self._cs[key]["ranks"]
             cs=self._cs[key]["cs"]
 
-            #suncommon, ibase=cs_uncommon_part(cs)
-            #if len(suncommon[0])==0: continue
-
             suncommon=[]
             for cs in self._cs[key]["cs"]:
-                suncommon.append(
-                    cs.split(
-                        constants._intra_field_separator)[0::2][self._loopdeph+1:])
+                if type(cs) == loop:
+                    suncommon.append(cs)
+                else:
+                    suncommon.append(cs.split(constants.\
+                            _intra_field_separator)[0::2][self._loopdeph+1:])
 
-            #import pdb; pdb.set_trace()
-
-            tabs=0
+            # Ranks conditional
             if len(ranks) < self._merge:
-                tabs+=1
-                pseudocode += "  "+constants.INLOOP_STATEMENT \
-                    .format(constants.IF.format("rank in "+str(ranks)))
-
-
+                pseudocode += constants.TAB*set_tabs + \
+                        constants.INLOOP_STATEMENT.format\
+                        (constants.IF.format("rank in "+str(ranks)))
+                set_tabs+=1
 
             # Loop body
             lastsc=[]
+            set_tabs_uc=0
+            last_common=0
             for sc in suncommon:
-                line=[]
-                for i in sc:
-                    if not i in lastsc: line.append(i)
-                
-                ucommon_sc=len(sc)-len(line)+tabs
-                callchain="  | "*(ucommon_sc) + line[0] + "()\n"
-                for j in range(1,len(line)):
-                    callchain+="  " + "  | "*(ucommon_sc+j) + line[j] + "()\n"
+                if type(sc) == loop:
+                    pass
+                    pseudocode+=sc.str(set_tabs)
+                else:
+                    line=[]
+                    for i in sc:
+                        if not i in lastsc: line.append(i)
+                    
+                    new_common=len(sc)-len(line)
+                    if new_common < last_common:
+                        set_tabs_uc=max(0,new_common-set_tabs)
+                    else:
+                        set_tabs_uc=max(set_tabs_uc,new_common-set_tabs)
 
-                lastsc=sc[:-1]
-                callchain="  "+callchain
-                pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
+                    last_common=new_common
+                    callchain=constants.TAB*set_tabs_uc + line[0] +"()\n"
+                    
+                    set_tabs_uc_s=set_tabs_uc+2
+                    for j in range(1,len(line)):
+                        callchain+= constants.TAB*(set_tabs_uc_s+j) + line[j]+"()\n"
+                        set_tabs_uc+=1
+
+                    lastsc=sc[:-1]
+                    callchain=constants.TAB*set_tabs+callchain
+                    pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
 
         return pseudocode
 
+
+    def getFirstLine(self):
+        return self._first_line
 
     def print_iterations(self):
         '''
@@ -407,7 +560,10 @@ def cluster2mat(rank, cluster):
 #         mcomplexity  : ...
 
 def cluster2smatrix(cluster, rank):
+    #import pdb; pdb.set_trace()
     tmat,xsize,cs_map=cluster2mat(rank, cluster)
+
+    if xsize == 0: return None, None, None
 
     # Sorting by the first column
     tmat=tmat.view("i8,"*(xsize-1)+"i8")

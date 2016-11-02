@@ -40,8 +40,12 @@ from pseudoCodeGenerator import *
 
 import constants
 
-def pretty_print(pseudocode):
-    print("+"+"-"*78+"+")
+def pretty_print(pseudocode, trace_name):
+    side=(76-len(trace_name))/2
+    if len(trace_name)%2 == 0: offs=0
+    else: offs=1
+
+    print("+"+"-"*(side-offs) + "[ " + trace_name + " ]" + "-"*(side) + "+")
     print("|"+" "*78+"|")
     pseudocode=pseudocode.split("\n")
     for line in pseudocode:
@@ -104,7 +108,6 @@ def main(argc, argv):
     if constants._verbose: print("[Performing clustering]")
     nclusters, clustered_data=clustering(filtered_data, False)
 
-
     #########################################################
     ###### GENERATING PSEUDO-CODE AND PRINTING RESULTS ######
     #########################################################
@@ -113,16 +116,17 @@ def main(argc, argv):
 
     pseudocode=generate_pseudocode(clustered_data, nranks)
 
-    pretty_print(pseudocode)
+    pretty_print(pseudocode, trace)
 
+    print
     print("[Results]")
-    print("  -> {0} clusters detected".format(nclusters))
-    print("  -> Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
+    print("-> {0} clusters detected".format(nclusters))
+    print("-> Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
 
     # Remove all temporal files
     for csf in cs_files: os.remove(csf)
 
-    print("[Done]")
+    print
     return 0
 
 if __name__ == "__main__":

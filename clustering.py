@@ -110,18 +110,26 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_):
     plt.show()
 
 def clustering(cdist, show_plot):
-    ### Preparing data
+
+    ##################
+    # Preparing data #
+    ##################
+
     data=[]
     for cs in cdist:
         for k,v in cs.items():
             data.append([v[constants._x_axis],v[constants._y_axis]])
 
-    data=normalize_data(data)
+    normdata=normalize_data(data)
+
     #plot_data(cdist)
     #graph("{0}*{1}/x".format(T,delta),np.arange(0.1,1,0.01),'b') # plotting fit line
 
-    ### Perform clustering
-    db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(data)
+    ######################
+    # Perform clustering #
+    ######################
+
+    db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(normdata)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels=db.labels_
@@ -135,13 +143,16 @@ def clustering(cdist, show_plot):
             clustered_cs[labels[label_index]].append({k:v})
             label_index+=1
 
-
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+
+    #############
+    # SHOW PLOT #
+    #############
 
     if show_plot:
         show_plot_thread=multiprocessing.Process(
                 target=show_clustering,
-                args=(data, labels, core_samples_mask, n_clusters_))
+                args=(normdata, labels, core_samples_mask, n_clusters_))
 
         show_plot_thread.start()
 
