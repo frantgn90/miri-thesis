@@ -69,9 +69,18 @@ def generate_pseudocode(clusters, ranks):
         new_ocluster = cluster(clusters[k], ranks)
         ocluster.append(new_ocluster)
 
+    # Now, the clusters are sorted by number of occurrences
+    # it means that the clusters that are first are the super-loops ones
+    # and those clusters that are at the end are the sub-loops ones.
+    # (For now we are not taking into account the data conditionals)
+    ocluster.sort(key=lambda x: x.getOccurrences(), reverse=False)
 
-    # TODO: Clusters level merge
-    for cl in ocluster:
-        return cl.str()
+    # Then, the merge must be done from the little one to the biggest one.
+    for i in range(len(ocluster)-2, -1 ,-1):
+        ocluster[i].merge(ocluster[i+1])
+
+    # Finally, the fist one will have all the merged clusters
+    return ocluster[0].str()
+
 
 

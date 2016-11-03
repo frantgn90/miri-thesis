@@ -14,7 +14,7 @@
 #define SUBITERS 50
 #define MASTER 0
 #define TAG 1234
-#define TOSLEEP 500
+#define TOSLEEP 100
 
 void CommSend(int rank, int partner);
 void CommRecv(int rank, int partner, int *val);
@@ -33,14 +33,22 @@ void CommRecv(int rank, int partner, int *val)
 	MPI_Recv(val, 1,MPI_INT, partner, TAG, MPI_COMM_WORLD, NULL);
 }
 
-void DoWork()
+void DoWork(int rank)
 {
-	int i, team, rank;
+	int i, team;
 	for(i=0; i<SUBITERS; ++i)
 	{
+		if (rank % 3 == 0)
+		{
+			MPI_Comm_size(MPI_COMM_WORLD, &team);
+			MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+		}
+		else
+		{
+			MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+			MPI_Comm_size(MPI_COMM_WORLD, &team);
+		}
 		usleep(TOSLEEP);
-		MPI_Comm_size(MPI_COMM_WORLD, &team);
-		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	}
 }
 
@@ -69,14 +77,14 @@ int main(int argc, char **argv)
 		{
 			int prank;
 			CommSend(rank, rank+1);
-			DoWork();
+			DoWork(rank);
 			CommRecv(rank, rank+1, &prank);
 		}	
 		else
 		{
 			int prank;
 			CommRecv(rank, rank-1, &prank);
-			//DoWork();
+			//DoWork(rank);
 			CommSend(rank, rank-1);
 		}
 

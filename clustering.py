@@ -104,8 +104,8 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_):
     plt.title('Estimated number of clusters: %d' % n_clusters_)
     plt.xlabel(constants._x_axis_label)
     plt.ylabel(constants._y_axis_label)
-    plt.ylim([0,1])
-    plt.xlim([0,1])
+    plt.ylim([-0.1,1.1])
+    plt.xlim([-0.1,1.1])
     plt.legend(handles=plt_labels)
     plt.show()
 

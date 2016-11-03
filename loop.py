@@ -35,6 +35,7 @@ import numpy as np
 import constants
 
 
+import pdb
 
 class cluster (object):
     def __init__(self, cluster, ranks):
@@ -237,6 +238,8 @@ class loop (object):
         self._first_line = cskeys[0]
 
     def recomputeFirstLine(self, looplevel):
+        #pdb.set_trace()
+        '''
         for k,v in self._cs.items():
             # With the first one is enough
             newkey=v["cs"][0].split(constants._intra_field_separator)[1::2][looplevel]
@@ -244,11 +247,18 @@ class loop (object):
             if newkey!=k:
                 self._cs[newkey] = self._cs[k]
                 self._cs.pop(k)
-
+        
         cskeys=list(self._cs.keys())
         sorted(cskeys)
-
         self._first_line = cskeys[0]
+        '''
+
+        cskeys=list(self._cs.keys())
+        cskeys.sort(key=float)
+        firstk=cskeys[0]
+
+        self._first_line=self._cs[firstk]["cs"][0]\
+                .split(constants._intra_field_separator)[1::2][looplevel]
 
     def mergeS(self, subloop):
         subranks = subloop.get_ranks()
@@ -324,7 +334,7 @@ class loop (object):
         '''
         loop_base=self._cstack[0].split\
                 (constants._intra_field_separator)[0::2][self._loopdeph]
-        pseudocode=constants.TAB*tabs+loop_base+"()\n"
+        pseudocode=constants.TAB*tabs+loop_base+"() ->\n"
         
         pseudocode+=constants.TAB*tabs + \
             constants.FORLOOP.format(self._iterations,loop_base)
@@ -560,7 +570,6 @@ def cluster2mat(rank, cluster):
 #         mcomplexity  : ...
 
 def cluster2smatrix(cluster, rank):
-    #import pdb; pdb.set_trace()
     tmat,xsize,cs_map=cluster2mat(rank, cluster)
 
     if xsize == 0: return None, None, None
