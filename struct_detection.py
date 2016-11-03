@@ -106,7 +106,7 @@ def main(argc, argv):
     ###### CLUSTERING ######
     ########################
     if constants._verbose: print("[Performing clustering]")
-    nclusters, clustered_data=clustering(filtered_data, False)
+    nclusters, clustered_data=clustering(filtered_data, True)
 
     #########################################################
     ###### GENERATING PSEUDO-CODE AND PRINTING RESULTS ######

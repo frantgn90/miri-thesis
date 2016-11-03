@@ -130,8 +130,8 @@ class cluster (object):
         self._merges += 1
 
         # Is it a subplot ?
-        assert(ocluster.getFirstLine() > self._first_line)
         assert(ocluster.getOccurrences() > self._times)
+        #assert(ocluster.getFirstLine() >= self._first_line)
 
         subloop = ocluster.getLoop()
 
@@ -160,11 +160,13 @@ class loop (object):
     
         # The key of every cs set is the line of the first call of the callstack
         dummy,self._loopdeph=cs_uncommon_part(self._cstack)
+
+        #pdb.set_trace()
         key=self._cstack[0] \
             .split(constants._intra_field_separator)[1::2][self._loopdeph]
 
         self._first_line = key
-        self._cs.update({key:{"cs":self._cstack, "ranks":[self._rank]}})
+        self._cs.update({key:{"cs":list(self._cstack), "ranks":[self._rank]}})
 
     def get_ranks(self):
         ranks=[]
@@ -238,7 +240,6 @@ class loop (object):
         self._first_line = cskeys[0]
 
     def recomputeFirstLine(self, looplevel):
-        #pdb.set_trace()
         '''
         for k,v in self._cs.items():
             # With the first one is enough
@@ -286,12 +287,9 @@ class loop (object):
                 for i in range(len(v["cs"])):
                     line = v["cs"][i].split(constants._intra_field_separator)[1::2]\
                             [self._loopdeph]
-                    if line < sline:
-                        inject_at=i
-                    elif line > sline:
-                        done=True
-                        # Injecting subloop
+                    if int(line) > int(sline):
                         v["cs"].insert(i, subloop)
+                        done=True
                         break
                 if not done:
                     done=True
@@ -322,8 +320,8 @@ class loop (object):
 
     def str(self,tabs):
         #if self._rank == 0:
-        #    print self._cs
-        #    print
+        print self._cs
+        print
 
         '''
         niters=len(self._tmat[self._rank][0])
@@ -332,6 +330,7 @@ class loop (object):
             assert len(tmat[0])==self._iterations, 
                 "Not all merged ranks have the same iters.)"
         '''
+
         loop_base=self._cstack[0].split\
                 (constants._intra_field_separator)[0::2][self._loopdeph]
         pseudocode=constants.TAB*tabs+loop_base+"() ->\n"
@@ -426,6 +425,9 @@ def cs_uncommon_part(scalls):
     # We can expect that all the stack before the loop is equal, then
     # the loop is exactly in the first call when the lines differs.
     # The rest of calls are from the loop.
+
+    if len(scalls)==1: return scalls[0].split(\
+            constants._intra_field_separator), 3
 
     globpos=len(scalls[0].split(constants._intra_field_separator))
 

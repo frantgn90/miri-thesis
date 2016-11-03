@@ -74,7 +74,7 @@ def generate_pseudocode(clusters, ranks):
     # and those clusters that are at the end are the sub-loops ones.
     # (For now we are not taking into account the data conditionals)
     ocluster.sort(key=lambda x: x.getOccurrences(), reverse=False)
-
+    
     # Then, the merge must be done from the little one to the biggest one.
     for i in range(len(ocluster)-2, -1 ,-1):
         ocluster[i].merge(ocluster[i+1])
