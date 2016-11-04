@@ -151,7 +151,7 @@ class loop (object):
         self._rank=rank
         self._tmat[rank]=tmat
         self._cstack = cstack
-        self._merge = 0
+        self._merge = 1 # myself
         self._first_line = 0
 
         self._iterations = len(self._tmat[self._rank][0])
@@ -345,6 +345,10 @@ class loop (object):
             set_tabs=tabs+1
             ranks=self._cs[key]["ranks"]
             cs=self._cs[key]["cs"]
+
+            if type(self._cs[key]["cs"])==loop:
+                pseudocode+=self._cs[key]["cs"].str(1)
+                continue
 
             suncommon=[]
             for cs in self._cs[key]["cs"]:
