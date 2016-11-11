@@ -30,11 +30,12 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 '''
 
 
-import sys,numpy
-
+import sys,numpy, random
 import constants
 
 _freq_tolerance=5 # TODO: Que sea un factor de, en vez de un natural
+
+random.seed(constants.RANDOM_SEED)
 
 def merge_arrays(a, b):
     tlen=(len(a)+len(b))
@@ -52,6 +53,20 @@ def get_distances(times):
         dist.append(times[i]-times[i-1])
     return dist
 
+def getPeriod(signal):
+    # http://stackoverflow.com/questions/11205037/detect-period-of-unknown-source
+    N=len(signal)
+    W    = numpy.fft.fft(signal)
+    freq = numpy.fft.fftfreq(N,1)
+
+    threshold = 10**6
+
+    idx = numpy.where(abs(W)>threshold)[0][-1]
+    max_f = abs(freq[idx])
+
+
+    return int(1/max_f)
+
 def getCsDistributions(filecs):
     nline=0
     callstacks={}
@@ -62,6 +77,7 @@ def getCsDistributions(filecs):
             lines=line.split(constants._inter_field_separator)[2]
             cs=line.split(constants._inter_field_separator)[3][:-1]
 
+            if len(cs)==0: print "WTF... Cutted trace?"; continue;
             key=constants._intra_field_separator.join(
                     merge_arrays(cs.split(constants._intra_field_separator),
                                  lines.split(constants._intra_field_separator)))
@@ -69,7 +85,8 @@ def getCsDistributions(filecs):
             #key=cs
 
             if not key in callstacks: 
-                callstacks.update({key:{"occu":[nline],"when":[int(time)], "rank":rank,}})
+                callstacks.update({key:{"occu":[nline],"when":[int(time)], 
+                    "rank":rank,}})
             else: 
                 callstacks[key]["occu"].append(nline)
                 callstacks[key]["when"].append(int(time))
@@ -86,6 +103,15 @@ def getCsDistributions(filecs):
 
             tmean=numpy.mean(tt)
             tsdev=numpy.std(tt)
+
+            # Calcule the center in a timeline of the first time this
+            # call is iterating (think about nested loops)
+
+            # TODO: Period is not working properly
+            #period=getPeriod(tt)
+            #r=random.randrange(len(data["when"])/period)
+            #wmean=numpy.mean(data["when"][r*period:r*period+period])
+            wmean=None
         
             cstack_res.update({callstack:{
                 "dist_mean":dmean,
@@ -93,6 +119,7 @@ def getCsDistributions(filecs):
                 "time_mean":tmean,
                 "time_std" :tsdev,
                 "when":sorted(data["when"]),
+                "when_mean":wmean,
                 "rank":data["rank"],
                 "times":len(data["occu"])}
                 })

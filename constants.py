@@ -41,6 +41,7 @@ CALLSTACK_SIZE=10
 _intra_field_separator="|"
 _inter_field_separator="#"
 
+### PARAVER ###
 
 CALLER_EVENT_BASE ="3000000"
 CALLIN_EVENT_BASE ="3000010"
@@ -48,6 +49,7 @@ MPICAL_EVENT_BASE ="7000000"
 MPILIN_EVENT_BASE ="8000000"
 MPI_EVENT_BASE    ="5000000"
 
+PARAVER_EVENT     ="2"
 
 FUNC_MAP_FILE="functions.map"
 MPI_LIB_FILE="libmpi_injected.c"
@@ -61,7 +63,8 @@ _y_axis_label="Mean period bw occurrences"
 
 _x_axis="times"
 _y_axis="time_mean"
-_z_axis="time_std"
+#_z_axis="time_std"
+_z_axis="when_mean"
 
 _eps=0.2
 _min_samples=1
@@ -76,5 +79,8 @@ MULTILOOP=1
 FORLOOP="for loop 1 to {0}: [{1}]\n"
 IF="if {0}:\n"
 INLOOP_STATEMENT="{0}"
-TAB="   "
+TAB=":  "
 
+
+### RANDOM ###
+RANDOM_SEED=5748473

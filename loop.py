@@ -30,7 +30,7 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 '''
 
 
-import sys
+import sys, random
 import numpy as np
 import constants
 
@@ -87,7 +87,9 @@ class cluster (object):
         return self._times
 
     def str(self):
-        return self._merged_rank_loops.str(0)
+        pseudocode, dummy=self._merged_rank_loops\
+                .str(0, self._merged_rank_loops._loopdeph)
+        return pseudocode
 
     def __subloops(self, smatrix, scs, mc, rank):
         # A times matrix for a cluster can contain more than one loop
@@ -104,6 +106,7 @@ class cluster (object):
         if mc == constants.PURELOOP:
             return [loop(smatrix, scs, rank)]
         else:
+            return [loop(smatrix, scs, rank)]
             assert False, "It is not developed yet."
 
     def __loops_level_merge(self, loops):
@@ -142,6 +145,15 @@ class cluster (object):
         self._merged_rank_loops.mergeS(subloop)
         self._merges+=1
 
+    def getRandomIterations(self, n):
+        niters = self._merged_rank_loops._iterations
+        result = []
+        for i in range(n):
+            rit=random.randrange(0,niters-1)
+            iteration = self._merged_rank_loops.getIteration(0, rit)
+            result.append(iteration)
+
+        return result
 
 class loop (object):
     def __init__(self, tmat, cstack, rank):
@@ -285,12 +297,22 @@ class loop (object):
                 # TODO: Speedup search by dicotomical search
                 inject_at=0
                 for i in range(len(v["cs"])):
-                    line = v["cs"][i].split(constants._intra_field_separator)[1::2]\
-                            [self._loopdeph]
+                    callstack=v["cs"][i].split(constants._intra_field_separator)
+                    line = callstack[1::2][self._loopdeph]
+
                     if int(line) > int(sline):
                         v["cs"].insert(i, subloop)
-                        done=True
-                        break
+                        done=True; break
+                    elif int(line) == int(sline):
+                        for j in range(self._loopdeph,len(callstack[0::2])):
+                            subloop.recomputeFirstLine(j)
+                            new_line=callstack[1::2][j]
+                            new_sline=subloop.getFirstLine()
+
+                            if int(new_sline) < int(new_line):
+                                v["cs"].insert(i, subloop)
+                                done=True; break;
+
                 if not done:
                     done=True
                     v["cs"].append(subloop)
@@ -318,26 +340,41 @@ class loop (object):
 
         return res
 
-    def str(self,tabs):
+    def str(self,tabs, base):
         #if self._rank == 0:
-        print self._cs
-        print
+        #print self._cs
+        #print
 
-        '''
-        niters=len(self._tmat[self._rank][0])
+        ##############################################################
+        # Printing the path from the previous level loop to this one #
+        ##############################################################
+        loop_base_from=""
+        loop_base_from=constants.TAB*(tabs-2)+self._cstack[0].split\
+                (constants._intra_field_separator)[0::2][base]+"()\n"
+    
+        pre_tabs=tabs+1
+        for lb in range(base+1, self._loopdeph+1):
+            loop_base_from+=constants.TAB*(pre_tabs)+self._cstack[0].split\
+                (constants._intra_field_separator)[0::2][lb]+"()\n"
+            pre_tabs+=1
 
-        for rank, tmat in self._tmat.items():
-            assert len(tmat[0])==self._iterations, 
-                "Not all merged ranks have the same iters.)"
-        '''
+        pseudocode=loop_base_from
 
+        #############################
+        # Printing loop description #
+        #############################
+
+        tabs=pre_tabs
         loop_base=self._cstack[0].split\
                 (constants._intra_field_separator)[0::2][self._loopdeph]
-        pseudocode=constants.TAB*tabs+loop_base+"() ->\n"
-        
-        pseudocode+=constants.TAB*tabs + \
+
+        pseudocode+=constants.TAB*(tabs) + \
             constants.FORLOOP.format(self._iterations,loop_base)
 
+        ######################
+        # Printing loop body #
+        ######################
+        pseudocode+=constants.TAB*(tabs+1)
         cskeys=list(self._cs.keys())
         cskeys.sort(key=float)
 
@@ -347,8 +384,9 @@ class loop (object):
             cs=self._cs[key]["cs"]
 
             if type(self._cs[key]["cs"])==loop:
-                pseudocode+=self._cs[key]["cs"].str(1)
-                continue
+                assert False, "Strange situation"
+                #pseudocode+=self._cs[key]["cs"].str(1, self._loopdeph+1) #TODO
+                #continue
 
             suncommon=[]
             for cs in self._cs[key]["cs"]:
@@ -358,7 +396,9 @@ class loop (object):
                     suncommon.append(cs.split(constants.\
                             _intra_field_separator)[0::2][self._loopdeph+1:])
 
-            # Ranks conditional
+            #####################
+            # Ranks conditional #
+            #####################
             if len(ranks) < self._merge:
                 pseudocode += constants.TAB*set_tabs + \
                         constants.INLOOP_STATEMENT.format\
@@ -371,15 +411,16 @@ class loop (object):
             last_common=0
             for sc in suncommon:
                 if type(sc) == loop:
-                    pass
-                    pseudocode+=sc.str(set_tabs)
+                    loop_pseudocode, dummy=sc.str(set_tabs, self._loopdeph+1)
+                    pseudocode+=loop_pseudocode
                 else:
                     line=[]
                     for i in sc:
                         if not i in lastsc: line.append(i)
                     
                     new_common=len(sc)-len(line)
-                    if new_common < last_common:
+
+                    if new_common <= last_common:
                         set_tabs_uc=max(0,new_common-set_tabs)
                     else:
                         set_tabs_uc=max(set_tabs_uc,new_common-set_tabs)
@@ -387,36 +428,31 @@ class loop (object):
                     last_common=new_common
                     callchain=constants.TAB*set_tabs_uc + line[0] +"()\n"
                     
-                    set_tabs_uc_s=set_tabs_uc+2
+                    #set_tabs_uc_s=set_tabs_uc+2
+                    set_tabs_uc_s=set_tabs_uc
                     for j in range(1,len(line)):
                         callchain+= constants.TAB*(set_tabs_uc_s+j) + line[j]+"()\n"
                         set_tabs_uc+=1
 
                     lastsc=sc[:-1]
-                    callchain=constants.TAB*set_tabs+callchain
+                    # Adding set_tabs at the begginning of every line
+                    #callchain=constants.TAB*set_tabs+callchain
+                    callchain=callchain.replace("\n", "\n"+constants.TAB*set_tabs)
+
                     pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
 
-        return pseudocode
-
+        # Restore the original tabulation when return from loop
+        pseudocode=pseudocode[:-(len(constants.TAB)*set_tabs+1)]+"\n"\
+                + constants.TAB*(base-1)
+        return pseudocode, lastsc
 
     def getFirstLine(self):
         return self._first_line
 
-    def print_iterations(self):
-        '''
-        print("Cluster {0} have been found {1} iterations]"
-                .format(cluster, len(it_cluster)))
-        cnt=1
-        print("> Iteration_TOT  found @ [ {0} , {1} )"
-                .format(it_cluster[0][0], it_cluster[-1][1]))
-    
-        
-        for i in range(len(it_cluster)):
-            print(" - Iteration_{0} found @ [ {1} , {2} )"
-                    .format(cnt,it_cluster[i][0],it_cluster[i][1]))
-            cnt+=1
-        '''
-        pass
+
+    def getIteration(self, rank, it):
+        assert it < len(self._tmat[rank][0]), "This iteration does not exist."
+        return [self._tmat[rank][0][it], self._tmat[rank][0][it+1]]
 
 
 ############################
@@ -430,9 +466,15 @@ def cs_uncommon_part(scalls):
     # the loop is exactly in the first call when the lines differs.
     # The rest of calls are from the loop.
 
-    if len(scalls)==1: return scalls[0].split(\
-            constants._intra_field_separator), 3
+    if len(scalls)==1: 
+        level=0
+        for call in scalls[0].split(constants._intra_field_separator)[0::2]:
+            if call == "main": 
+                break
+            level+=1
+        return scalls[0].split(constants._intra_field_separator), level
 
+    pos=0
     globpos=len(scalls[0].split(constants._intra_field_separator))
 
     for i in range(1,len(scalls)):

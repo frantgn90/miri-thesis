@@ -61,7 +61,7 @@ def print_matrix(matrix, infile):
             print("\t".join(map(format_nums,row)))
 
 
-def generate_pseudocode(clusters, ranks):
+def generate_pseudocode(clusters, ranks, n_random_iterations):
 
     ocluster=[]
     # Assuming every cluster is a loop
@@ -75,12 +75,26 @@ def generate_pseudocode(clusters, ranks):
     # (For now we are not taking into account the data conditionals)
     ocluster.sort(key=lambda x: x.getOccurrences(), reverse=False)
     
+    #print ocluster[len(ocluster)-1]._merged_rank_loops._cs
+    #print ocluster[len(ocluster)-1]._merged_rank_loops._loopdeph
+
     # Then, the merge must be done from the little one to the biggest one.
+    random_iters=[]
     for i in range(len(ocluster)-2, -1 ,-1):
+        #print ocluster[i]._merged_rank_loops._cs
+        #print ocluster[i]._merged_rank_loops._loopdeph
+        random_iters.append(ocluster[i+1]\
+                .getRandomIterations(n_random_iterations))
         ocluster[i].merge(ocluster[i+1])
 
+    #print ocluster[0]._merged_rank_loops._cs
+    #print ocluster[0]._merged_rank_loops._loopdeph
+
+
+    random_iters.append(ocluster[0].getRandomIterations(n_random_iterations))
+
     # Finally, the fist one will have all the merged clusters
-    return ocluster[0].str()
+    return ocluster[0].str(), random_iters
 
 
 

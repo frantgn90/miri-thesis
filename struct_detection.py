@@ -41,22 +41,34 @@ from pseudoCodeGenerator import *
 import constants
 
 def pretty_print(pseudocode, trace_name):
-    side=(76-len(trace_name))/2
-    if len(trace_name)%2 == 0: offs=0
+    WIDTH=66
+    side=(WIDTH-4-len(trace_name))/2
+    if len(trace_name)%2 == 0: offs=2
     else: offs=1
 
     print("+"+"-"*(side-offs) + "[ " + trace_name + " ]" + "-"*(side) + "+")
-    print("|"+" "*78+"|")
+    print("|"+" "*(WIDTH-2)+"|")
     pseudocode=pseudocode.split("\n")
     for line in pseudocode:
-        pline = "|  " + line + " "*(76-len(line))+"|"
+        pline = "|  " + line + " "*(WIDTH-4-len(line))+"|"
         print(pline)
 
-    print("+"+"-"*78+"+")
+    print("+"+"-"*(WIDTH-2)+"+")
+
+def print_iterations(iterations):
+    outtext=""
+    for loop in range(len(iterations)):
+        outtext+="CLUSTER {0}\n".format(loop)
+
+        for it in iterations[loop]:
+            outtext+="> Iteration_1 found @ [{0} ,{1})\n"\
+                    .format(it[0], it[1])
+
+    pretty_print(outtext, "Random iterations by cluster")
 
 
 def Usage(cmd):
-    print("Usage(): {0} [-l call_level] [-f img1[,img2,...]] <trace>\n"
+    print("Usage(): {0} [-l call_level] [-f img1[,img2,...]] [-ri N] <trace>\n"
         .format(cmd))
     exit(1)
 
@@ -68,10 +80,11 @@ def main(argc, argv):
     #######################################
     ####### PREPARE AND SHOW PARAMS #######
     #######################################
-    level="0"; trace = argv[-1]; image_filter=["ALL"]
+    level="0"; trace = argv[-1]; image_filter=["ALL"]; ri=0
     for i in range(1, len(argv)-1):
         if argv[i] == "-f": image_filter=argv[i+1].split(",")
         elif argv[i] == "-l": level=argv[i+1]
+        elif argv[i] == "-ri": ri=int(argv[i+1])
 
     clevels = "All"
     if level != "0": clevels=str(level)
@@ -106,7 +119,7 @@ def main(argc, argv):
     ###### CLUSTERING ######
     ########################
     if constants._verbose: print("[Performing clustering]")
-    nclusters, clustered_data=clustering(filtered_data, True)
+    nclusters, clustered_data=clustering(filtered_data, False)
 
     #########################################################
     ###### GENERATING PSEUDO-CODE AND PRINTING RESULTS ######
@@ -114,14 +127,16 @@ def main(argc, argv):
     print("[Generating pseudocode]")
     print("")
 
-    pseudocode=generate_pseudocode(clustered_data, nranks)
+    pseudocode, iterations=generate_pseudocode(clustered_data, nranks, ri)
 
     pretty_print(pseudocode, trace)
+    if ri > 0:
+        print_iterations(iterations)
 
-    print
-    print("[Results]")
-    print("-> {0} clusters detected".format(nclusters))
-    print("-> Really useful time (in loops): {0:.2f} %".format(mean_delta*100))
+    final_stats="> {0} clusters detected\n".format(nclusters)
+    final_stats+="> Really useful time (in loops): {0:.2f} % \n"\
+            .format(mean_delta*100)
+    pretty_print(final_stats, "Final stats")
 
     # Remove all temporal files
     for csf in cs_files: os.remove(csf)

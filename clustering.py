@@ -47,26 +47,29 @@ def graph(formula, x_range, color):
     plt.plot(x, y, color+'--')  
 '''
 
-def plot_data(cdist):
+def plot_data(data):
     fig=plt.figure()
-    ax2d=fig.add_subplot(111)
+    #ax2d=fig.add_subplot(111)
     ax3d=fig.add_subplot(111,projection="3d")
 
     xs=[];ys=[];zs=[]
-    for cs in cdist:
-        for k,v in cs.items():
-            xs.append(v[constants._x_axis])
-            ys.append(v[constants._y_axis])
-            zs.append(v[_z_axis])
-    ax2d.scatter(xs,ys)
+    for point in data:
+            xs.append(point[0])
+            ys.append(point[1])
+            zs.append(point[2])
+    #ax2d.scatter(xs,ys)
     ax3d.scatter(xs,ys,zs)
     
-    ax2d.set_xlabel(constants._x_axis)
-    ax2d.set_ylabel(constants._y_axis)
+    #ax2d.set_xlabel(constants._x_axis)
+    #ax2d.set_ylabel(constants._y_axis)
 
     ax3d.set_xlabel(constants._x_axis)
     ax3d.set_ylabel(constants._y_axis)
     ax3d.set_zlabel(constants._z_axis)
+    
+    ax3d.set_xlim([-0.1,1.1])
+    ax3d.set_ylim([-0.1,1.1])
+    ax3d.set_zlim([-0.1,1.1])
 
     plt.show()
 
@@ -78,7 +81,6 @@ def normalize_data(data):
     return data
 
 def show_clustering(data, labels, core_samples_mask, n_clusters_):
-    ### Show clustering plot
     X=np.array(data)
     
     unique_labels = set(labels)
@@ -119,10 +121,13 @@ def clustering(cdist, show_plot):
     for cs in cdist:
         for k,v in cs.items():
             data.append([v[constants._x_axis],v[constants._y_axis]])
+            #data.append([ v[constants._x_axis],
+            #              v[constants._y_axis],
+            #              v[constants._z_axis] ])
 
     normdata=normalize_data(data)
 
-    #plot_data(cdist)
+    #plot_data(normdata)
     #graph("{0}*{1}/x".format(T,delta),np.arange(0.1,1,0.01),'b') # plotting fit line
 
     ######################
