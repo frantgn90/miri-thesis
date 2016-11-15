@@ -78,7 +78,7 @@ MULTILOOP=1
 
 FORLOOP="for loop 1 to {0}: [{1}]\n"
 IF="if {0}:\n"
-INLOOP_STATEMENT="{0}"
+ELSE="elif {0}:\n"
 TAB=":  "
 
 

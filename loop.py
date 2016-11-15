@@ -340,23 +340,30 @@ class loop (object):
 
         return res
 
-    def str(self,tabs, base):
+    def str(self,block_tabs, base):
         #if self._rank == 0:
-        #print self._cs
-        #print
+        print self._cs
+        print
+
+        relative_tabs=0
 
         ##############################################################
         # Printing the path from the previous level loop to this one #
         ##############################################################
+
         loop_base_from=""
-        loop_base_from=constants.TAB*(tabs-2)+self._cstack[0].split\
-                (constants._intra_field_separator)[0::2][base]+"()\n"
-    
-        pre_tabs=tabs+1
+        if base <= self._loopdeph:
+            loop_base_from=constants.TAB*relative_tabs\
+                    + self._cstack[0].split(constants._intra_field_separator)\
+                        [0::2][base]+"()\n"
+        
+            relative_tabs+=1
+
         for lb in range(base+1, self._loopdeph+1):
-            loop_base_from+=constants.TAB*(pre_tabs)+self._cstack[0].split\
-                (constants._intra_field_separator)[0::2][lb]+"()\n"
-            pre_tabs+=1
+            loop_base_from+=constants.TAB*relative_tabs\
+                    + self._cstack[0].split(constants._intra_field_separator)\
+                        [0::2][lb]+"()\n"
+            relative_tabs+=1
 
         pseudocode=loop_base_from
 
@@ -364,29 +371,28 @@ class loop (object):
         # Printing loop description #
         #############################
 
-        tabs=pre_tabs
         loop_base=self._cstack[0].split\
                 (constants._intra_field_separator)[0::2][self._loopdeph]
 
-        pseudocode+=constants.TAB*(tabs) + \
-            constants.FORLOOP.format(self._iterations,loop_base)
+        pseudocode+=constants.TAB*(relative_tabs)\
+                + constants.FORLOOP.format(self._iterations,loop_base)
+
+        relative_tabs+=1
 
         ######################
         # Printing loop body #
         ######################
-        pseudocode+=constants.TAB*(tabs+1)
+
         cskeys=list(self._cs.keys())
         cskeys.sort(key=float)
 
+        some_if=False
         for key in cskeys:
-            set_tabs=tabs+1
             ranks=self._cs[key]["ranks"]
             cs=self._cs[key]["cs"]
 
             if type(self._cs[key]["cs"])==loop:
-                assert False, "Strange situation"
-                #pseudocode+=self._cs[key]["cs"].str(1, self._loopdeph+1) #TODO
-                #continue
+                assert False, "CHECK IT OUT: Strange situation"
 
             suncommon=[]
             for cs in self._cs[key]["cs"]:
@@ -399,54 +405,67 @@ class loop (object):
             #####################
             # Ranks conditional #
             #####################
-            in_condition=False
+            if_tabs=0
             if len(ranks) < self._merge:
-                #pseudocode += constants.INLOOP_STATEMENT.format\
-                #        (constants.IF.format("rank in "+str(ranks)))\
+                if some_if == True:
+                    pseudocode += constants.TAB*relative_tabs\
+                        + constants.ELSE.format("rank in "+str(ranks))
+                else:
+                    # TODO: Not should be elif for all cases.. only for those
+                    # cases that the conditions are completely complementary
+                    some_if=True
+                    pseudocode += constants.TAB*relative_tabs\
+                        + constants.IF.format("rank in "+str(ranks))
 
-                pseudocode += (constants.IF\
-                        .format("rank in "+str(ranks)))
-                in_condition=True
 
-            # Loop body
+                if_tabs=1
+                #relative_tabs+=1
+
+            # Loop body calls
             lastsc=[]
-            set_tabs_uc=0
-            last_common=0
+            rel_relative_tabs=0
+            callchain=""
             for sc in suncommon:
                 if type(sc) == loop:
-                    loop_pseudocode, dummy=sc.str(set_tabs, self._loopdeph+1)
-                    pseudocode+=loop_pseudocode
+                    loop_pseudocode, dummy=sc.str(rel_relative_tabs, 
+                            self._loopdeph+1)
+                    callchain += loop_pseudocode
                 else:
                     line=[]
                     for i in sc:
-                        if not i in lastsc: line.append(i)
+                        if not i in lastsc: 
+                            line.append(i)
                     
-                    new_common=len(sc)-len(line)
+                    n_common_calls=len(sc)-len(line)
+                    rel_relative_calls=n_common_calls
+    
+                    # First call of the callchain
+                    callchain+=constants.TAB*rel_relative_calls\
+                            + line[0] +"()\n"
 
-                    if new_common <= last_common:
-                        set_tabs_uc=max(0,new_common-set_tabs)
-                    else:
-                        set_tabs_uc=max(set_tabs_uc,new_common-set_tabs)
+                    #rel_relative_calls+=1
 
-                    last_common=new_common
-                    callchain=constants.TAB*set_tabs_uc + line[0] +"()\n"
-
-                    #set_tabs_uc_s=set_tabs_uc+2
-                    set_tabs_uc_s=set_tabs_uc
                     for j in range(1,len(line)):
-                        callchain+= constants.TAB*(set_tabs_uc_s+j) + line[j]+"()\n"
-                        set_tabs_uc+=1
+                        callchain+= constants.TAB*(rel_relative_calls+j)\
+                                + line[j]+"()\n"
                     
+                    # If there is more than one call to the same function
+                    # we want to see it more than one time
                     lastsc=sc[:-1]
-                    # Adding set_tabs at the begginning of every line
-                    #callchain=constants.TAB*set_tabs+callchain
-                    callchain=callchain.replace("\n", "\n"+constants.TAB*set_tabs)
-                    pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
 
+
+            callchain=constants.TAB*(relative_tabs+if_tabs)\
+                    + callchain.replace("\n",
+                            "\n"+constants.TAB*(relative_tabs+if_tabs))
+            # Removing the last newline tabulations
+            callchain=callchain[:-(len(constants.TAB*(relative_tabs+if_tabs)))]
+            pseudocode+=callchain
                     
-        # Restore the original tabulation when return from loop
-        pseudocode=pseudocode[:-(len(constants.TAB)*set_tabs+1)]+"\n"\
-                + constants.TAB*(base-1)
+        # Adding the block tabulation
+        pseudocode=constants.TAB*block_tabs \
+                + pseudocode.replace("\n", "\n"+constants.TAB*block_tabs)
+        #pseudocode=pseudocode[:-(len(constants.TAB*block_tabs))]
+
         return pseudocode, lastsc
 
     def getFirstLine(self):
