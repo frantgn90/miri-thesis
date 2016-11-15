@@ -399,11 +399,14 @@ class loop (object):
             #####################
             # Ranks conditional #
             #####################
+            in_condition=False
             if len(ranks) < self._merge:
-                pseudocode += constants.TAB*set_tabs + \
-                        constants.INLOOP_STATEMENT.format\
-                        (constants.IF.format("rank in "+str(ranks)))
-                set_tabs+=1
+                #pseudocode += constants.INLOOP_STATEMENT.format\
+                #        (constants.IF.format("rank in "+str(ranks)))\
+
+                pseudocode += (constants.IF\
+                        .format("rank in "+str(ranks)))
+                in_condition=True
 
             # Loop body
             lastsc=[]
@@ -427,20 +430,20 @@ class loop (object):
 
                     last_common=new_common
                     callchain=constants.TAB*set_tabs_uc + line[0] +"()\n"
-                    
+
                     #set_tabs_uc_s=set_tabs_uc+2
                     set_tabs_uc_s=set_tabs_uc
                     for j in range(1,len(line)):
                         callchain+= constants.TAB*(set_tabs_uc_s+j) + line[j]+"()\n"
                         set_tabs_uc+=1
-
+                    
                     lastsc=sc[:-1]
                     # Adding set_tabs at the begginning of every line
                     #callchain=constants.TAB*set_tabs+callchain
                     callchain=callchain.replace("\n", "\n"+constants.TAB*set_tabs)
-
                     pseudocode+=constants.INLOOP_STATEMENT.format(callchain)
 
+                    
         # Restore the original tabulation when return from loop
         pseudocode=pseudocode[:-(len(constants.TAB)*set_tabs+1)]+"\n"\
                 + constants.TAB*(base-1)
