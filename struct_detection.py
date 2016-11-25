@@ -134,8 +134,10 @@ def main(argc, argv):
         print_iterations(iterations)
 
     final_stats="> {0} clusters detected\n".format(nclusters)
-    final_stats+="> Really useful time (in loops): {0:.2f} % \n"\
+    final_stats+="> Time in pseudocode: {0:.2f} % \n"\
             .format(mean_delta*100)
+    final_stats+="> Discarded calls time: {0:.2f} % \n"\
+            .format(100-(mean_delta*100))
     pretty_print(final_stats, "Final stats")
 
     # Remove all temporal files

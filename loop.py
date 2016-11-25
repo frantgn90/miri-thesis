@@ -106,20 +106,140 @@ class cluster (object):
         if mc == constants.PURELOOP:
             return [loop(smatrix, scs, rank)]
         else:
-            return [loop(smatrix, scs, rank)]
-            assert False, "It is not developed yet."
+            #assert False, "It is not developed yet."
+
+            # TODO: It we are here it means that this cluster can suffer from 
+            # aliasing, then, here we will return, potentially, more than one
+            # loop.
+
+            subm, subscs = self.__submatrix(smatrix, scs)
+
+            loops=[]
+            for i in range(len(subm)):
+                loops.append(loop(subm[i], subscs[i], rank))
+
+            return loops
 
     def __loops_level_merge(self, loops):
         assert False, "It is not developed yet."
 
     def __ranks_level_merge(self, ranks_loops):
         # Merging all ranks with first one
+
+        # TODO: For every pair, check if the merge can be done. It depends on
+        # if they are describing the same loop or not and it depends on the 
+        # matrix of times. (function __submatrix)
+
+        
+
         for i in range(1, len(ranks_loops)):
             ranks_loops[0].merge(ranks_loops[i])
 
         self._merged_rank_loops=ranks_loops[0]
         self._first_line = self._merged_rank_loops.getFirstLine()
     
+
+    def __merge_smatrix(self, smat1, smat2):
+        # TODO
+        exit(1)
+
+    def __submatrix(self, mat, scs):
+        subm=[]
+
+        min_v=float("inf")
+        min_h=float("inf")
+
+        for i in range(len(mat)):
+            for j in range(len(mat[0])):
+                
+                already_explored=False
+                # Already explored i
+                for sm in subm:
+                    if i > sm[1][0] and i < sm[1][1]:
+                        already_explored=True
+                        break
+                # Already explored j
+                for sm in subm:
+                    if j > sm[0][0] and j < sm[0][1]:
+                        already_explored=True
+                        break
+
+                if not already_explored and mat[i][j] != 0: # Void cell
+                    v=h=0
+
+                    # Horitzontal min
+                    for ii in range(i, len(mat)):
+                        if mat[ii][j] == 0: break
+                        for jj in range(j, len(mat[0])):
+                            if mat[ii][jj] != 0:
+                                h+=1
+                            else: break
+                        if h < min_h: min_h=h
+
+                    # Vertical min
+                    for jj in range(j,len(mat[0])):
+                        if mat[i][jj] == 0: break;
+                        for ii in range(i, len(mat)):
+                            if mat[ii][jj] != 0:
+                                v+=1
+                            else: break
+                        if v < min_v: min_v=v
+                    subm.append([(j,j+min_h),(i,i+min_v)])
+
+        # If all partitions are completelly disyunctive and can explain all 
+        # the matrix, it means that every partition is a loop
+        # TODO: Think about complex cases with conditionals...
+
+        disyunctive=True
+
+        visited_rows=[]
+        visited_cols=[]
+
+        for s in subm:
+            # Let's test the rows
+
+            rows_range=s[1]
+            for i in range(rows_range[0], rows_range[1]):
+                if not i in visited_rows:
+                    visited_rows.append(i)
+                else:
+                    disyunctive=False
+                    break
+
+            # Let's test the cols
+            
+            cols_range=s[0]
+            for i in range(cols_range[0], cols_range[1]):
+                if not i in visited_cols:
+                    visited_cols.append(i)
+                else:
+                    disyunctive=False
+                    break
+            
+
+        if len(visited_rows)==len(mat[0]) and \
+                len(visited_cols)==len(mat):
+                    completed=True
+        else:
+            completed=False
+
+        if completed and disyunctive:
+            # The partitioned matrixes have to be returned
+            res=[]
+            rescs=[]
+            for s in subm:
+                pmat=[]
+                for i in range(s[1][0], s[1][1]):
+                    pmat.append(mat[i][s[0][0]:(s[0][1])])
+                
+                res.append(pmat)
+                rescs.append(scs[s[1][0]:s[1][1]])
+        else:
+            res=[mat]
+            rescs=[scs]
+
+        return res, rescs
+
     def getLoop(self):
         return self._merged_rank_loops
 
@@ -132,16 +252,16 @@ class cluster (object):
     def merge(self, ocluster):
         self._merges += 1
 
-        # Is it a subplot ?
+        # Is it a subloop ?
         assert(ocluster.getOccurrences() > self._times)
         #assert(ocluster.getFirstLine() >= self._first_line)
 
         subloop = ocluster.getLoop()
 
         # We have to merge this subloop with our __ranks_level_merge
-        # TODO: We need the times of the callstacks!! and the overall time 
+        # TODO: (??) We need the times of the callstacks!! and the overall time 
         # of the loop in order to fit it in its correct place!!!!
-        
+       
         self._merged_rank_loops.mergeS(subloop)
         self._merges+=1
 
@@ -179,6 +299,9 @@ class loop (object):
 
         self._first_line = key
         self._cs.update({key:{"cs":list(self._cstack), "ranks":[self._rank]}})
+
+    def get_tmat(self):
+        return self._tmat[self._rank]
 
     def get_ranks(self):
         ranks=[]
@@ -297,8 +420,12 @@ class loop (object):
                 # TODO: Speedup search by dicotomical search
                 inject_at=0
                 for i in range(len(v["cs"])):
-                    callstack=v["cs"][i].split(constants._intra_field_separator)
-                    line = callstack[1::2][self._loopdeph]
+                    if type(v["cs"][i])==loop:
+                        v["cs"][i].recomputeFirstLine(self._loopdeph)
+                        line=v["cs"][i].getFirstLine()
+                    else:
+                        callstack=v["cs"][i].split(constants._intra_field_separator)
+                        line = callstack[1::2][self._loopdeph]
 
                     if int(line) > int(sline):
                         v["cs"].insert(i, subloop)
@@ -342,8 +469,8 @@ class loop (object):
 
     def str(self,block_tabs, base):
         #if self._rank == 0:
-        print self._cs
-        print
+        #print self._cs
+        #print
 
         relative_tabs=0
 
@@ -392,6 +519,13 @@ class loop (object):
             cs=self._cs[key]["cs"]
 
             if type(self._cs[key]["cs"])==loop:
+                '''
+                loop_pseudocode, dummy=self._cs[key]["cs"].str(rel_relative_tabs, 
+                            self._loopdeph+1)
+                pseudocode += loop_pseudocode
+                lastsc=dummy[:-1]
+                continue
+                '''
                 assert False, "CHECK IT OUT: Strange situation"
 
             suncommon=[]
@@ -430,6 +564,7 @@ class loop (object):
                     loop_pseudocode, dummy=sc.str(rel_relative_tabs, 
                             self._loopdeph+1)
                     callchain += loop_pseudocode
+                    lastsc=dummy[:-1]
                 else:
                     line=[]
                     for i in sc:
@@ -466,10 +601,25 @@ class loop (object):
                 + pseudocode.replace("\n", "\n"+constants.TAB*block_tabs)
         #pseudocode=pseudocode[:-(len(constants.TAB*block_tabs))]
 
-        return pseudocode, lastsc
+        # When return from a subloop we want to know at which level this subloop
+        # has been executed
+        complete_lastsc=self.getLastSc(base)
+        return pseudocode, complete_lastsc
 
     def getFirstLine(self):
         return self._first_line
+
+    def getLastSc(self, base):
+        cskeys=list(self._cs.keys())
+        cskeys.sort(key=float)
+
+        if type(self._cs[cskeys[-1]]["cs"])==loop: # NOTE: Not sure about it
+            return self._cs[cskeys[-1]]["cs"].getLastSc(base)
+        elif type(self._cs[cskeys[-1]]["cs"][-1])==loop:
+            return self._cs[cskeys[-1]]["cs"][-1].getLastSc(base)
+        else:
+            return self._cs[cskeys[-1]]["cs"][-1]\
+                .split(constants._intra_field_separator)[0::2][base:]
 
 
     def getIteration(self, rank, it):
@@ -554,11 +704,12 @@ def boundaries_sort_2(tmat):
 
     i=0
     matrix_complexity=0
-    # 0: there are no holes, therefore all iterations all equal
+    # 0: there are no holes, therefore all iterations are equal
     # 1: are holes but all of them are concentrated in areas, therefore in this cluster
     #    there are more than one loop
     # 2: The holes are diseminated over all matrix with a certain pattern. 
     #    There are some conditional statements in iterations.
+    #
     # TODO: For the moment 1 means only that there are holes
 
     while i < len(mat[0]):

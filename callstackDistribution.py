@@ -33,7 +33,7 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 import sys,numpy, random
 import constants
 
-_freq_tolerance=5 # TODO: Que sea un factor de, en vez de un natural
+from spectrum import *
 
 random.seed(constants.RANDOM_SEED)
 
@@ -53,19 +53,17 @@ def get_distances(times):
         dist.append(times[i]-times[i-1])
     return dist
 
-def getPeriod(signal):
-    # http://stackoverflow.com/questions/11205037/detect-period-of-unknown-source
-    N=len(signal)
-    W    = numpy.fft.fft(signal)
-    freq = numpy.fft.fftfreq(N,1)
 
-    threshold = 10**6
+def getPeriod2(signal):
+    p = speriodogram(signal)
+    freq = numpy.fft.fftfreq(len(signal),1)
 
-    idx = numpy.where(abs(W)>threshold)[0][-1]
-    max_f = abs(freq[idx])
+    period=1/freq[p.tolist().index(max(p))]
 
-
-    return int(1/max_f)
+    if period==float("inf"):
+        return None
+    else:
+        return int(period+0.5)
 
 def getCsDistributions(filecs):
     nline=0
@@ -107,24 +105,63 @@ def getCsDistributions(filecs):
             # Calcule the center in a timeline of the first time this
             # call is iterating (think about nested loops)
 
-            # TODO: Period is not working properly
-            #period=getPeriod(tt)
-            #r=random.randrange(len(data["when"])/period)
-            #wmean=numpy.mean(data["when"][r*period:r*period+period])
-            wmean=None
-        
+            
+            sorted(data["when"])
+            '''
+            period=getPeriod2(tt)
+
+            if period==None:
+                wmean=1
+            else:
+                wmean=numpy.mean(data["when"][:period])
+            '''
+            wmean=1    
+            
             cstack_res.update({callstack:{
-                "dist_mean":dmean,
-                "dist_std" :dsdev,
-                "time_mean":tmean,
-                "time_std" :tsdev,
-                "when":sorted(data["when"]),
+                #"dist_mean":dmean,
+                #"dist_std" :dsdev,
+                #"time_std" :tsdev,
                 "when_mean":wmean,
+                "time_mean":tmean,
+                "when":data["when"],
                 "rank":data["rank"],
                 "times":len(data["occu"])}
                 })
 
     return cstack_res
+
+def getBreakpoints(data):
+    '''
+    data=numpy.atleast_2d(numpy.array(data)).T
+    print data
+    Q_full, P_full, Pcp_full = offcd.offline_changepoint_detection(
+            data,
+            partial(offcd.const_prior,
+            l=(len(data)+1)),
+            offcd.fullcov_obs_log_likelihood, 
+            truncate=-50
+        )
+
+    result=numpy.exp(Pcp_full).sum(0)
+    
+    bps=[]
+    for i in range(len(result)):
+        if result[i] > 0.60:
+            bps.append(i)
+    '''
+
+    dmax=numpy.max(data)
+    dmean=numpy.mean(data)
+    #dstd=numpy.std(data)
+    
+    threshold=(5*(dmax+dmean))/(2*4)
+
+    result=[]
+    for i in range(len(data)):
+        if data[i] >= threshold:
+            result.append(i)
+ 
+    return result
 
 def getLoops(cdist):
     #IDEA: Apply clustering with times and dist_mean as features

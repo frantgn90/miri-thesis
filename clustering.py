@@ -120,15 +120,14 @@ def clustering(cdist, show_plot):
     data=[]
     for cs in cdist:
         for k,v in cs.items():
-            data.append([v[constants._x_axis],v[constants._y_axis]])
-            #data.append([ v[constants._x_axis],
-            #              v[constants._y_axis],
-            #              v[constants._z_axis] ])
+            #data.append([v[constants._x_axis],v[constants._y_axis]])
+            data.append([ v[constants._x_axis],
+                          v[constants._y_axis],
+                          v[constants._z_axis] ])
 
     normdata=normalize_data(data)
 
-    #plot_data(normdata)
-    #graph("{0}*{1}/x".format(T,delta),np.arange(0.1,1,0.01),'b') # plotting fit line
+    plot_data(normdata)
 
     ######################
     # Perform clustering #

@@ -73,28 +73,27 @@ def generate_pseudocode(clusters, ranks, n_random_iterations):
     # it means that the clusters that are first are the super-loops ones
     # and those clusters that are at the end are the sub-loops ones.
     # (For now we are not taking into account the data conditionals)
-    ocluster.sort(key=lambda x: x.getOccurrences(), reverse=False)
+    ocluster.sort(key=lambda x: x.getOccurrences(), reverse=True)
     
-    #print ocluster[len(ocluster)-1]._merged_rank_loops._cs
-    #print ocluster[len(ocluster)-1]._merged_rank_loops._loopdeph
-
     # Then, the merge must be done from the little one to the biggest one.
     random_iters=[]
-    for i in range(len(ocluster)-2, -1 ,-1):
-        #print ocluster[i]._merged_rank_loops._cs
-        #print ocluster[i]._merged_rank_loops._loopdeph
+    for i in range(len(ocluster)-1):
         random_iters.append(ocluster[i+1]\
                 .getRandomIterations(n_random_iterations))
-        ocluster[i].merge(ocluster[i+1])
 
-    #print ocluster[0]._merged_rank_loops._cs
-    #print ocluster[0]._merged_rank_loops._loopdeph
+        done=False
+        for j in range(i+1,len(ocluster)):
+            if ocluster[j].getOccurrences() < ocluster[i].getOccurrences():
+                #print ocluster[i]._merged_rank_loops._cs
+                #print ocluster[j]._merged_rank_loops._cs
+                #print
 
+                ocluster[j].merge(ocluster[i])
+                done=True
 
-    random_iters.append(ocluster[0].getRandomIterations(n_random_iterations))
+        assert done, "Error at cluster level merge"
+
+    random_iters.append(ocluster[-1].getRandomIterations(n_random_iterations))
 
     # Finally, the fist one will have all the merged clusters
-    return ocluster[0].str(), random_iters
-
-
-
+    return ocluster[-1].str(), random_iters

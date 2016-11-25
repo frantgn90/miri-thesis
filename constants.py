@@ -63,10 +63,9 @@ _y_axis_label="Mean period bw occurrences"
 
 _x_axis="times"
 _y_axis="time_mean"
-#_z_axis="time_std"
 _z_axis="when_mean"
 
-_eps=0.2
+_eps=0.05
 _min_samples=1
 
 #### LOOPS ####
