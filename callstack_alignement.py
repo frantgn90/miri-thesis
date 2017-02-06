@@ -3,45 +3,14 @@
 # vim:fenc=utf-8
 
 '''
-Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
+Algorithm extracted from thesis 'Towards instantaneous performance analysis using 
+coarse-grain sampledand instrumented data'. Harald Servat
 
-*****************************************************************************
-*                        ANALYSIS PERFORMANCE TOOLS                         *
-*                              [tool name]                                  *
-*                         [description of the tool]                         *
-*****************************************************************************
-*     ___     This library is free software; you can redistribute it and/or *
-*    /  __         modify it under the terms of the GNU LGPL as published   *
-*   /  /  _____    by the Free Software Foundation; either version 2.1      *
-*  /  /  /     \   of the License, or (at your option) any later version.   *
-* (  (  ( B S C )                                                           *
-*  \  \  \_____/   This library is distributed in hope that it will be      *
-*   \  \__         useful but WITHOUT ANY WARRANTY; without even the        *
-*    \___          implied warranty of MERCHANTABILITY or FITNESS FOR A     *
-*                  PARTICULAR PURPOSE. See the GNU LGPL for more details.   *
-*                                                                           *
-* You should have received a copy of the GNU Lesser General Public License  *
-* along with this library; if not, write to the Free Software Foundation,   *
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA          *
-* The GNU LEsser General Public License is contained in the file COPYING.   *
-*                                 ---------                                 *
-*   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
-*****************************************************************************
+At Accurate source code attribution (4.5), pag.82
 '''
 
-'''
-Algorithm extracted from thesis
-'Towards instantaneous performance analysis using coarse-grain sampled
-and instrumented data'. Harald Servat
-
--> Accurate source code attribution (4.5), pag.82
-'''
-
-
+import constants
 import sys
-
-_intra_field_separator="|"
-_inter_field_separator="#"
 
 _cs_per_thread=100
 

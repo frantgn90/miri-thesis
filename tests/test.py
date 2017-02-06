@@ -31,70 +31,117 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 
 
 import sys,numpy
-from struct_detection import *
-
-def cuadra(mat):
-    # Fill the gaps at end of modified rows
-    maxcols=len(mat[0])
-    for row in range(len(mat)):
-        if len(mat[row]) < maxcols:
-            mat[row].extend([0]*(maxcols-len(mat[row])))
-        elif len(mat[row]) > maxcols:
-            maxcols=len(mat[row])
-            rr=row
-            while rr >=0:
-                mat[rr].extend([0]*(maxcols-len(mat[rr])))
-                rr-=1
 
 
-def testing(mat):
-    mheight=len(mat)
-    mwidth=len(mat[0])
+def __submatrix(mat):
+    subm=[]
 
-    last=mat[0][0]
-    lastcol=0
-    lastrow=0
+    min_v=float("inf")
+    min_h=float("inf")
 
-    i=0
-    #for i in range(mwidth):
-    while i < len(mat[0]):
-        for j in range(mheight):
-            if mat[j][i]==0: continue
-            if mat[j][i] < last:
-                
-                jj=lastrow
-                while mat[jj][lastcol] > mat[j][i]:
-                    mat[jj].insert(lastcol,0)
-                    jj-=1
-                    if jj < 0: break
+    for i in range(len(mat)):
+        for j in range(len(mat[0])):
+            
+            already_explored=False
+            # Already explored i
+            for sm in subm:
+                if i > sm[1][0] and i < sm[1][1]:
+                    already_explored=True
+                    break
+            # Already explored j
+            for sm in subm:
+                if j > sm[0][0] and j < sm[0][1]:
+                    already_explored=True
+                    break
 
-            lastcol=i
-            lastrow=j
-            last=mat[j][i]
-        cuadra(mat)
-        i+=1
+            if not already_explored and mat[i][j] != 0: # Void cell
+                v=h=0
 
-    # Remove last empty cols
-    minzeros=sys.maxint
-    for row in mat:
-        zeros=0
-        for i in range(-1,-len(row)+1, -1):
-            if row[i]!=0: break
-            zeros+=1
-    if zeros < minzeros: 
-        minzeros=zeros
+                # Horitzontal min
+                for ii in range(i, len(mat)):
+                    if mat[ii][j] == 0: break
+                    for jj in range(j, len(mat[0])):
+                        if mat[ii][jj] != 0:
+                            h+=1
+                        else: break
+                    if h < min_h: min_h=h
 
-    for row in mat:
-        del row[-minzeros:]
+                # Vertical min
+                for jj in range(j,len(mat[0])):
+                    if mat[i][jj] == 0: break;
+                    for ii in range(i, len(mat)):
+                        if mat[ii][jj] != 0:
+                            v+=1
+                        else: break
+                    if v < min_v: min_v=v
+                subm.append([(j,j+min_h),(i,i+min_v)])
+
+    # If all partitions are completelly disyunctive and can explain all 
+    # the matrix, it means that every partition is a loop
+    # TODO: Think about complex cases with conditionals...
+    
+
+    disyunctive=True
+
+    visited_rows=[]
+    visited_cols=[]
+
+    # Let's test the rows
+    for s in subm:
+        rows_range=s[0]
+        for i in range(rows_range[0], rows_range[1]):
+            if not i in visited_rows:
+                visited_rows.append(i)
+            else:
+                disyunctive=False
+                break
+
+    if disyunctive:
+        # Let's test the cols
+        for s in subm:
+            cols_range=s[1]
+            for i in range(cols_range[0], cols_range[1]):
+                if not i in visited_cols:
+                    visited_cols.append(i)
+                else:
+                    disyunctive=False
+                    break
+
+    if len(visited_rows)==len(mat[0]) and \
+            len(visited_cols)==len(mat):
+                completed=True
+    else:
+        completed=False
+
+
+    print str(completed) + " " + str(disyunctive)
+    if completed and disyunctive:
+        # The partitioned matrixes have to be returned
+        res=[]
+        
+        for s in subm:
+            pmat=[]
+            for i in range(s[1][0], s[1][1]):
+                pmat.append(mat[i][s[0][0]:(s[0][1])])
+            
+            res.append(pmat)
+
+    else:
+        res=mat
+
+    return res
 
 
 def main(argc, argv):
-    a=[[1,6,9,10],[2,7,11,12],[3,4,5,13]]
-    #a=[[1,30,33],[2,31,34],[3,32,35],[4,7,8]]
-    #a=[[1,2],[3,4]]
+    a=[[0,0,9,10],[0,0,11,12],[3,4,0,0]]
+    a=[[1,30,33],[2,31,34],[3,32,35],[4,7,8]]
+    a=[[1,2],[3,4]]
     
-    testing(a)
-    print_matrix(a,False)
+    subm=__submatrix(a)
+
+    print str(subm)
+    print
+    print str(a)
 
     return 0
 

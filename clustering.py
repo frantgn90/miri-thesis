@@ -2,34 +2,6 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-'''
-Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
-
-*****************************************************************************
-*                        ANALYSIS PERFORMANCE TOOLS                         *
-*                              [tool name]                                  *
-*                         [description of the tool]                         *
-*****************************************************************************
-*     ___     This library is free software; you can redistribute it and/or *
-*    /  __         modify it under the terms of the GNU LGPL as published   *
-*   /  /  _____    by the Free Software Foundation; either version 2.1      *
-*  /  /  /     \   of the License, or (at your option) any later version.   *
-* (  (  ( B S C )                                                           *
-*  \  \  \_____/   This library is distributed in hope that it will be      *
-*   \  \__         useful but WITHOUT ANY WARRANTY; without even the        *
-*    \___          implied warranty of MERCHANTABILITY or FITNESS FOR A     *
-*                  PARTICULAR PURPOSE. See the GNU LGPL for more details.   *
-*                                                                           *
-* You should have received a copy of the GNU Lesser General Public License  *
-* along with this library; if not, write to the Free Software Foundation,   *
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA          *
-* The GNU LEsser General Public License is contained in the file COPYING.   *
-*                                 ---------                                 *
-*   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
-*****************************************************************************
-'''
-
-
 import sys, multiprocessing
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -113,10 +85,7 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_):
 
 def clustering(cdist, show_plot):
 
-    ##################
-    # Preparing data #
-    ##################
-
+    # 1. Preparing data
     data=[]
     for cs in cdist:
         for k,v in cs.items():
@@ -129,10 +98,7 @@ def clustering(cdist, show_plot):
 
     plot_data(normdata)
 
-    ######################
-    # Perform clustering #
-    ######################
-
+    # 2. Perform clustering
     db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(normdata)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
@@ -149,10 +115,7 @@ def clustering(cdist, show_plot):
 
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
-    #############
-    # SHOW PLOT #
-    #############
-
+    # 3. Show plots 
     if show_plot:
         show_plot_thread=multiprocessing.Process(
                 target=show_clustering,
