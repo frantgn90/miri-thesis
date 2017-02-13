@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-import sys
+import sys, logging
 import numpy as np
 
 import constants
-
-#from loop import cluster
 from cluster import cluster
 
 def print_matrix(matrix, infile):
@@ -34,39 +32,37 @@ def print_matrix(matrix, infile):
             print("\t".join(map(format_nums,row)))
 
 
-def generate_pseudocode(clusters, ranks, n_random_iterations):
+def get_random_iters(clusters, n_random_iterations):
+    random_iters=[]
 
-    ocluster=[]
-    # Assuming every cluster is a loop
-    for k in clusters.keys():
-        new_ocluster = cluster(clusters[k], ranks)
-        ocluster.append(new_ocluster)
+    for i in range(len(cluster_set)-1):
+        random_iters.append(cluster_set[i+1].getRandomIterations(n_random_iterations))
 
+    random_iters.append(cluster_set[-1].getRandomIterations(n_random_iterations))
+    return random_iters
+
+def merge_clusters(cluster_set, ranks):
+    
     # Now, the clusters are sorted by number of occurrences
-    # it means that the clusters that are first are the super-loops ones
-    # and those clusters that are at the end are the sub-loops ones.
+    # it means that the clusters that are first are the subloops ones
+    # and those clusters that are at the end are the superloops ones.
     # (For now we are not taking into account the data conditionals)
-    ocluster.sort(key=lambda x: x.getOccurrences(), reverse=True)
+    cluster_set.sort(key=lambda x: x.getOccurrences(), reverse=True)
     
     # Then, the merge must be done from the little one to the biggest one.
-    random_iters=[]
-    for i in range(len(ocluster)-1):
-        random_iters.append(ocluster[i+1]\
-                .getRandomIterations(n_random_iterations))
+    for i in range(len(cluster_set)-1):
 
         done=False
-        for j in range(i+1,len(ocluster)):
-            if ocluster[j].getOccurrences() < ocluster[i].getOccurrences():
-                #print ocluster[i]._merged_rank_loops._cs
-                #print ocluster[j]._merged_rank_loops._cs
-                #print
-
-                ocluster[j].merge(ocluster[i])
+        for j in range(i+1,len(cluster_set)):
+            if cluster_set[j].getOccurrences() < cluster_set[i].getOccurrences():
+                logging.debug("{0} occ. -> {1} occ.".format(
+                    cluster_set[i].getOccurrences(),
+                    cluster_set[j].getOccurrences()))
+                
+                cluster_set[j].merge(cluster_set[i])
                 done=True
 
         assert done, "Error at cluster level merge"
 
-    random_iters.append(ocluster[-1].getRandomIterations(n_random_iterations))
-
-    # Finally, the fist one will have all the merged clusters
-    return ocluster[-1].str(), random_iters
+    # Finally, the last one will have all the merged clusters
+    return cluster_set[-1]

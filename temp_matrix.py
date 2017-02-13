@@ -33,13 +33,21 @@ Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
 import sys
 import numpy as np
 
+import constants
+
 #########################
 # Temporal matrix class #
 #########################
 
 class tmatrix(object):
-    def __init__(self, callstacks_list):
-        matrix, cs_map = self.__get_matrix(callstacks_list)
+    def __init__(self, matrix, callstacks, transformations):
+        self._matrix=matrix
+        self._transformations=transformations
+        self._sorted_callstacks=callstacks
+
+    @classmethod
+    def fromCallstackList(cls, callstacks_list):
+        matrix, cs_map = cls.__get_matrix(callstacks_list)
         
         # Get the callstacks ordered by first occurrence
         keys_ordered=[]
@@ -47,24 +55,22 @@ class tmatrix(object):
             keys_ordered.append(cs_map[row[0]])
 
         # Adding holes if needed
-        sorted_matrix, transformations=self.__boundaries_sort(matrix)
+        sorted_matrix, transformations=cls.__boundaries_sort(matrix)
 
-        self._matrix=sorted_matrix
-        self._transformations=transformations
-        self._sorted_callstacks=keys_ordered
+        return(cls(matrix=sorted_matrix, 
+                   callstacks=keys_ordered, 
+                   transformations=transformations))
 
-    def __init__(self, matrix, callstacks):
-        self._matrix=matrix
-        self._transformations=0
-        self._sorted_callstacks=callstacks
+    def getMatrix(self):
+        return self._matrix
 
     def getPartitions(self):
         partitions=[]
 
-        p, scs = self.__submatrix()
+        p, scs = self.__submatrix(self._matrix)
 
         for i in range(len(p)):
-            partitions.append(tmatrix(p[i],scs[i]))
+            partitions.append(tmatrix(p[i],scs[i], 0))
 
         return partitions
 
@@ -74,6 +80,7 @@ class tmatrix(object):
     def getCallstacks(self):
         return self._sorted_callstacks
 
+    @classmethod
     def __get_matrix(self, callstacks_list):
         keys_cs=[]; tomat=[]; index=0; max_size=0 
 
@@ -100,7 +107,7 @@ class tmatrix(object):
         tmat=np.matrix(tomat)
 
         # Sorting by the first column
-        tmat=tmat.view("i8,"*(xsize-1)+"i8")
+        tmat=tmat.view("i8,"*(max_size-1)+"i8")
         tmat.sort(order=["f0"], axis=0)
         tmat=tmat.view(np.int)
 
@@ -113,7 +120,8 @@ class tmatrix(object):
     # i.e. the last element of col n must be less or equal that the first
     # element of n+1 col
 
-    def __boundaries_sort(self, tmat):
+    @classmethod
+    def __boundaries_sort(cls, tmat):
         mat=tmat.tolist()
 
         mheight=len(mat)
@@ -140,7 +148,7 @@ class tmatrix(object):
                 lastcol=i
                 lastrow=j
                 last=mat[j][i]
-            self.__cuadra(mat)
+            cls.__cuadra(mat)
             i+=1
 
         
@@ -162,7 +170,8 @@ class tmatrix(object):
         return mat, matrix_complexity
 
 
-    def __cuadra(self, mat):
+    @classmethod
+    def __cuadra(cls, mat):
         # Fill the gaps at end of modified rows
         maxcols=len(mat[0])
         for row in range(len(mat)):
@@ -175,7 +184,7 @@ class tmatrix(object):
                     mat[rr].extend([0]*(maxcols-len(mat[rr])))
                     rr-=1
 
-    def __submatrix(self, mat, scs):
+    def __submatrix(self, mat):
             subm=[]
 
             min_v=float("inf")

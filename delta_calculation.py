@@ -11,7 +11,6 @@ initializations and last treatments of data.
 import sys
 import numpy
 
-_bottom_bound=0.10
 _upper_bound=1
 _init_delta=0.5
 
@@ -21,31 +20,32 @@ _init_delta=0.5
 def getCost(lmbda, T, P, delta):
     return lmbda-((T*delta)/P)
 
-'''
-TODO: Implement this function with the descent gradient technique in order to
-increase the performance of finding the optimal delta
-'''
-def getDelta(cdist, total_time):
+def filterIrrelevant(cdist, total_time, bottom_bound):
+    filtered_cdist=\
+        {k:v for k,v in cdist.items() \
+            if getCost(v["times"],total_time,v["time_mean"], bottom_bound) > 0}
 
-    # First of all we have to discard all clusters  that are below
-    # the bottom boundary
-    filtered_cdist={ k:v for k,v in cdist.items() if getCost(v["times"],total_time,v["time_mean"],_bottom_bound) > 0 }
+    return filtered_cdist
 
+##########################
+# TODO: Descent gradient #
+##########################
+def getDelta(cdist, total_time, bottom_bound):
     cost=sys.maxint
     delta=_init_delta
     optimal=delta
 
-    for delta in numpy.arange(_bottom_bound, _upper_bound, 0.01):
+    for delta in numpy.arange(bottom_bound, _upper_bound, 0.01):
         mean_cost=0
-        for cs,data in filtered_cdist.items():
+        for cs,data in cdist.items():
             pcost=abs(getCost(data["times"], total_time, data["time_mean"], delta))
             mean_cost+=pcost
 
-        mean_cost/=len(filtered_cdist)
+        mean_cost/=len(cdist)
 
         if mean_cost < cost:
             optimal=delta
             cost=mean_cost
 
-    return optimal, filtered_cdist
+    return optimal
 

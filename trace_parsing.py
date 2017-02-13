@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-from __future__ import print_function
 import sys, json, re, os
 
-from callstack_alignement import *
+import logging
 import constants
+from callstack_alignement import *
+from utilities import progress_bar
 
 
 ####### GLOBAL
@@ -27,39 +28,6 @@ CALLIN_EVENT=None
 MPICAL_EVENT=None
 MPILIN_EVENT=None
 MPI_EVENT=None
-
-####### AUX CLASSES
-
-class Printer():
-    def __init__(self,data):                     
-        sys.stdout.write("\x1b[K"+data.__str__())
-        sys.stdout.flush()
-
-class progress_bar(object):
-    def __init__(self, total):
-        self.total = total
-        self.progression = 0
-        self.bar_size=20
-        self.update_every=2000
-        self.count = 0
-
-    def progress_by(self, by):
-        self.progression += by
-
-    def show(self):
-        self.count += 1
-        if self.count >= self.update_every or self.progression == self.total:
-            percent = (self.progression*100)/self.total
-            pbar_syms = (self.progression*self.bar_size)/self.total
-            pbar_spac = self.bar_size-pbar_syms
-
-            if self.progression == self.total:
-                endc="\n"
-            else:
-                endc="\r"
-
-            print("  [{0}>{1}] {2}% {3}/{4}".format("="*(pbar_syms), " "*pbar_spac, str(percent), str(self.progression),str(self.total)), end=endc)
-            self.count = 0
 
 
 def next_letter(letter):
@@ -304,6 +272,14 @@ def get_app_description(header):
 
     return apps_description
 
+def get_app_time(trace):
+    with open(trace) as tr:
+        header = tr.readline()
+        appd = get_app_description(header)
+        app_time = float(header.split(":")[2].split("_")[0])
+
+    return app_time
+
 
 def get_callstacks(trace, level, image_filter):
     global CALLER_EVENT, CALLIN_EVENT, MPICAL_EVENT, MPILIN_EVENT, MPI_EVENT
@@ -313,22 +289,24 @@ def get_callstacks(trace, level, image_filter):
         CALLIN_EVENT=re.compile(constants.CALLIN_EVENT_BASE + ".")
         MPICAL_EVENT=re.compile(constants.MPICAL_EVENT_BASE + ".")
         MPILIN_EVENT=re.compile(constants.MPILIN_EVENT_BASE + ".")
+        OMPCAL_EVENT=re.compile(constants.OMPCAL_EVENT_BASE + ".")
+        OMPLIN_EVENT=re.compile(constants.OMPLIN_EVENT_BASE + ".")
     else:
         CALLER_EVENT=re.compile(constants.CALLER_EVENT_BASE + str(level))
         CALLIN_EVENT=re.compile(constants.CALLIN_EVENT_BASE + str(level))
         MPICAL_EVENT=re.compile(constants.MPICAL_EVENT_BASE + str(level))
         MPILIN_EVENT=re.compile(constants.MPILIN_EVENT_BASE + str(level))
+        OMPCAL_EVENT=re.compile(constants.OMPCAL_EVENT_BASE + str(level))
+        OMPLIN_EVENT=re.compile(constants.OMPLIN_EVENT_BASE + str(level))
 
     MPI_EVENT=re.compile(constants.MPI_EVENT_BASE + ".")
 
     file_size = os.stat(trace).st_size
     if constants._verbose: pbar = progress_bar(file_size)
     
-    app_time=None
     with open(trace) as tr:
         header = tr.readline()
         appd = get_app_description(header)
-        app_time = float(header.split(":")[2].split("_")[0])
 
         if constants._verbose: pbar.progress_by(len(header))
 
@@ -358,22 +336,28 @@ def get_callstacks(trace, level, image_filter):
             if not v["image"] in imgs and v["line"] != "0":
                 imgs.append(v["image"])
 
-        if constants._verbose:
-            img_header ="[Images detected during the execution]"
-            print(img_header)
+        logging.info("Images detected during the execution")
 
-            for im in imgs:
-                if im in image_filter or image_filter == ["ALL"]: line = "  {0}".format(im)
-                else: line = "  {0} (filtered)".format(im)
-                print(line)
+        for im in imgs:
+            if im in image_filter or image_filter == ["ALL"]: 
+                line = "  {0}".format(im)
+            else: 
+                line = "  {0} (filtered)".format(im)
+            logging.info(line)
 
         ###############################
         ### Creating temporal files ###
         ###############################
+
+        import tempfile
+
+        tmp_files_dir = tempfile.mkdtemp(prefix="struct-gen.")
+
         task_outfiles_names=[]
         task_outfiles_d=[]
         for i in range(total_threads):
-            new_file_name="functions.{0}.raw".format(i)
+            new_file_name="{0}/functions.{1}.aligned".format(tmp_files_dir, i)
+
             task_outfiles_names.append(new_file_name)
             task_outfiles_d.append(open(new_file_name,"w"))
 
@@ -383,8 +367,6 @@ def get_callstacks(trace, level, image_filter):
         #####################
         ### Parsing trace ###
         #####################
-        if constants._verbose:
-            print("[Parsing trace...]")
 
         callstack_series=[]
         timestamp_series=[]
@@ -452,13 +434,42 @@ def get_callstacks(trace, level, image_filter):
             timestamp_series[task-1].append(v["time"])
             lines_series[task-1].append(flines)
 
-    if constants._verbose: 
-        print("[Starting alignement of callstacks]")
+    # If this aplication is using mpl, then consider it as the very
+    # low level MPI call.
 
     for rank_index in range(len(callstack_series)):
-        mat,ignored_index = perform_alignement_st1(callstack_series[rank_index]) 
-        callstack_series[rank_index],cs_discarded, cs_aligned = perform_alignement_st2(mat,ignored_index)
+        for i_stack in range(len(callstack_series[rank_index])):
+            new_stack_call=[]
+            new_stack_line=[]
 
+            for i_call in range(len(callstack_series[rank_index][i_stack])):
+                new_stack_call.append(callstack_series[rank_index][i_stack][i_call])
+                new_stack_line.append(lines_series[rank_index][i_stack][i_call])
+
+                if "mpl" in callstack_series[rank_index][i_stack][i_call]:
+                    break
+
+            callstack_series[rank_index][i_stack] = new_stack_call
+            lines_series[rank_index][i_stack] = new_stack_line
+ 
+
+    logging.info("Starting alignement of callstacks")
+
+    for rank_index in range(len(callstack_series)):
+        logging.info("#{0} Aligning step 1".format(rank_index))
+        ignored_index = perform_alignement_st1(
+                        callstack_series[rank_index],
+                        lines_series[rank_index]) 
+
+        logging.info("#{0} Aligning step 2".format(rank_index))
+        cs_discarded, cs_aligned =perform_alignement_st2(
+                        callstack_series[rank_index],
+                        lines_series[rank_index],
+                        ignored_index)
+
+        logging.info("#{0} Aligning done: {1} discarded, {2} aligned"\
+                .format(rank_index,cs_discarded, cs_aligned))
+ 
     for rank in range(len(callstack_series)):
         for cs_i in range(len(callstack_series[rank])):
             time=timestamp_series[rank][cs_i]          
@@ -479,10 +490,10 @@ def get_callstacks(trace, level, image_filter):
     
 
     if constants._verbose:
-        print("[Generating temporal data]")
+        print("[Generating temporal data at {0}]".format(tmp_files_dir))
     for i in range(0, total_threads):
         task_outfiles_d[i].close()
 
-    return task_outfiles_names, app_time
+    return task_outfiles_names
 
 

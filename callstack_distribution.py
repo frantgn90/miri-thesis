@@ -5,38 +5,16 @@
 
 import sys,numpy, random
 import constants
-
+from utilities import merge_arrays
 from spectrum import *
 
 random.seed(constants.RANDOM_SEED)
-
-def merge_arrays(a, b):
-    tlen=(len(a)+len(b))
-    c=[None]*tlen
-
-    for i in range(0, tlen, 2):
-        if i/2 < len(a): c[i]=a[i/2]
-        if i/2 < len(b): c[i+1]=b[i/2]
-
-    return c
 
 def get_distances(times):
     dist=[]
     for i in range(1,len(times)):
         dist.append(times[i]-times[i-1])
     return dist
-
-
-def getPeriod2(signal):
-    p = speriodogram(signal)
-    freq = numpy.fft.fftfreq(len(signal),1)
-
-    period=1/freq[p.tolist().index(max(p))]
-
-    if period==float("inf"):
-        return None
-    else:
-        return int(period+0.5)
 
 def getCsDistributions(filecs):
     nline=0
@@ -48,16 +26,26 @@ def getCsDistributions(filecs):
             lines=line.split(constants._inter_field_separator)[2]
             cs=line.split(constants._inter_field_separator)[3][:-1]
 
-            if len(cs)==0: print "WTF... Cutted trace?"; continue;
-            key=constants._intra_field_separator.join(
-                    merge_arrays(cs.split(constants._intra_field_separator),
-                                 lines.split(constants._intra_field_separator)))
+            # Because during the alignement some callstacks has been
+            # ignored
+            if len(cs)==0: 
+                continue
 
-            #key=cs
+            cs_lines_merged = merge_arrays(
+                    cs.split(constants._intra_field_separator),
+                    lines.split(constants._intra_field_separator))
+
+            assert cs_lines_merged != None, \
+                "Calls and lines merges can not be done."
+
+            key=constants._intra_field_separator.join(cs_lines_merged)
 
             if not key in callstacks: 
-                callstacks.update({key:{"occu":[nline],"when":[int(time)], 
-                    "rank":rank,}})
+                callstacks.update({
+                    key:{
+                        "occu":[nline],
+                        "when":[int(time)], 
+                        "rank":rank,}})
             else: 
                 callstacks[key]["occu"].append(nline)
                 callstacks[key]["when"].append(int(time))
@@ -77,17 +65,8 @@ def getCsDistributions(filecs):
 
             # Calcule the center in a timeline of the first time this
             # call is iterating (think about nested loops)
-
             
             sorted(data["when"])
-            '''
-            period=getPeriod2(tt)
-
-            if period==None:
-                wmean=1
-            else:
-                wmean=numpy.mean(data["when"][:period])
-            '''
             wmean=1    
             
             cstack_res.update({callstack:{
@@ -102,52 +81,3 @@ def getCsDistributions(filecs):
                 })
 
     return cstack_res
-
-def getBreakpoints(data):
-    '''
-    data=numpy.atleast_2d(numpy.array(data)).T
-    print data
-    Q_full, P_full, Pcp_full = offcd.offline_changepoint_detection(
-            data,
-            partial(offcd.const_prior,
-            l=(len(data)+1)),
-            offcd.fullcov_obs_log_likelihood, 
-            truncate=-50
-        )
-
-    result=numpy.exp(Pcp_full).sum(0)
-    
-    bps=[]
-    for i in range(len(result)):
-        if result[i] > 0.60:
-            bps.append(i)
-    '''
-
-    dmax=numpy.max(data)
-    dmean=numpy.mean(data)
-    #dstd=numpy.std(data)
-    
-    threshold=(5*(dmax+dmean))/(2*4)
-
-    result=[]
-    for i in range(len(data)):
-        if data[i] >= threshold:
-            result.append(i)
- 
-    return result
-
-def getLoops(cdist):
-    #IDEA: Apply clustering with times and dist_mean as features
-
-    #mock-up: In the case of lulesh, we have only one loop with
-    #then iterations. It has been detected that 21 mpi calls forms part
-    #of this loop and we want to print the init of every iteration of the loop
-
-    min_first_time=sys.maxint
-    first_call_iter=None
-    for cs,val in cdist.items():
-        if val["when"][0] < min_first_time:
-            min_frist_time=val["when"][0]
-            first_call_iter=val
-
-    return first_call_iter["when"]

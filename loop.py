@@ -10,7 +10,7 @@ from temp_matrix import tmatrix
 import pdb
 
 class loop (object):
-    def __init__(self, tmat, rank):
+    def __init__(self, tmat, cstack, rank):
         self._tmat={}
         self._cs={} # {cs:[..], ranks:[..]}
 
@@ -22,12 +22,13 @@ class loop (object):
 
         self._iterations = len(self._tmat[self._rank][0])
 
+        assert self._iterations > 0
+
         #import pdb; pdb.set_trace()
     
         # The key of every cs set is the line of the first call of the callstack
         dummy,self._loopdeph=cs_uncommon_part(self._cstack)
 
-        #pdb.set_trace()
         key=self._cstack[0] \
             .split(constants._intra_field_separator)[1::2][self._loopdeph]
 
@@ -109,25 +110,14 @@ class loop (object):
         self._first_line = cskeys[0]
 
     def recomputeFirstLine(self, looplevel):
-        '''
-        for k,v in self._cs.items():
-            # With the first one is enough
-            newkey=v["cs"][0].split(constants._intra_field_separator)[1::2][looplevel]
-            
-            if newkey!=k:
-                self._cs[newkey] = self._cs[k]
-                self._cs.pop(k)
-        
-        cskeys=list(self._cs.keys())
-        sorted(cskeys)
-        self._first_line = cskeys[0]
-        '''
-
         cskeys=list(self._cs.keys())
         cskeys.sort(key=float)
         firstk=cskeys[0]
 
-        self._first_line=self._cs[firstk]["cs"][0]\
+        if type(self._cs[firstk]["cs"]) == loop:
+            self._cs[firstk]["cs"].recomputeFirstLine(looplevel)
+        else:
+            self._first_line=self._cs[firstk]["cs"][0]\
                 .split(constants._intra_field_separator)[1::2][looplevel]
 
     def mergeS(self, subloop):
@@ -137,8 +127,11 @@ class loop (object):
         # because the level of loop base (i.e. shared calls) in subloop
         # will be potentially highest than the superloop
 
+        assert subloop._iterations > self._iterations
+
         subloop.recomputeFirstLine(self._loopdeph)
         subloop._iterations/=self._iterations
+
         sline = subloop.getFirstLine()
 
         # This subloop has to be pushed in some place, inside a set of 
@@ -151,32 +144,36 @@ class loop (object):
             superset = (subranks==superranks)
 
             if superset:
-                # TODO: Speedup search by dicotomical search
-                inject_at=0
-                for i in range(len(v["cs"])):
-                    if type(v["cs"][i])==loop:
-                        v["cs"][i].recomputeFirstLine(self._loopdeph)
-                        line=v["cs"][i].getFirstLine()
-                    else:
-                        callstack=v["cs"][i].split(constants._intra_field_separator)
-                        line = callstack[1::2][self._loopdeph]
+                if type(v["cs"]) == loop:
+                    v["cs"].mergeS(subloop)
+                    done = True
+                else:
+                    # TODO: Speedup search by dicotomical search
+                    inject_at=0
+                    for i in range(len(v["cs"])):
+                        if type(v["cs"][i])==loop:
+                            v["cs"][i].recomputeFirstLine(self._loopdeph)
+                            line=v["cs"][i].getFirstLine()
+                        else:
+                            callstack=v["cs"][i].split(constants._intra_field_separator)
+                            line = callstack[1::2][self._loopdeph]
 
-                    if int(line) > int(sline):
-                        v["cs"].insert(i, subloop)
-                        done=True; break
-                    elif int(line) == int(sline):
-                        for j in range(self._loopdeph,len(callstack[0::2])):
-                            subloop.recomputeFirstLine(j)
-                            new_line=callstack[1::2][j]
-                            new_sline=subloop.getFirstLine()
+                        if int(line) > int(sline):
+                            v["cs"].insert(i, subloop)
+                            done=True; break
+                        elif int(line) == int(sline):
+                            for j in range(self._loopdeph,len(callstack[0::2])):
+                                subloop.recomputeFirstLine(j)
+                                new_line=callstack[1::2][j]
+                                new_sline=subloop.getFirstLine()
 
-                            if int(new_sline) < int(new_line):
-                                v["cs"].insert(i, subloop)
-                                done=True; break;
+                                if int(new_sline) < int(new_line):
+                                    v["cs"].insert(i, subloop)
+                                    done=True; break;
 
-                if not done:
-                    done=True
-                    v["cs"].append(subloop)
+                    if not done:
+                        done=True
+                        v["cs"].append(subloop)
 
             if done: break
 
@@ -374,10 +371,16 @@ def cs_uncommon_part(scalls):
 
     if len(scalls)==1: 
         level=0
+        find = False
         for call in scalls[0].split(constants._intra_field_separator)[0::2]:
-            if call == "main": 
+            if call == "main":
+                find = True
                 break
             level+=1
+
+        if not find:
+            level = 0
+
         return scalls[0].split(constants._intra_field_separator), level
 
     pos=0

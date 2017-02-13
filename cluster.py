@@ -6,6 +6,7 @@ import sys, random
 import numpy as np
 import constants
 from temp_matrix import tmatrix
+from loop import loop
 
 import pdb
 
@@ -21,24 +22,31 @@ class cluster (object):
         ranks_loops=[]
         for rank in range(self._ranks):
             # Filter by rank
-            filtered=[]
-            for cs in self._cluster: 
-                k=cs.keys()[0]
-                if cs[k]["rank"] == rank: filtered.append(cs)
+            filtered = filter(
+                    lambda x: int(x[x.keys()[0]]["rank"]) == rank, 
+                    self._cluster)
+            
+            if len(filtered) > 0:
+                self._tmatrix = tmatrix.fromCallstackList(filtered)
 
-            if not len(filtered) == 0:
-                self._tmatrix = tmatrix(filtered)
-
-                if not self._tmatrix.isTransformed():
-                    ranks_loops.append(loop(self._tmatrix, rank))
+                # Means there are not subloops
+                if not self._tmatrix.isTransformed() or True:
+                    ranks_loops.append(
+                            loop(tmat=self._tmatrix.getMatrix(), 
+                                 cstack=self._tmatrix.getCallstacks(),
+                                 rank=rank))
                 else:
                     partitions = self._tmatrix.getPartitions()
 
                     loops=[]
                     for i in range(len(partitions)):
-                        loops.append(loop(partitions[i], rank))
+                        loops.append(
+                            loop(
+                                tmat=partitions[i].getMatrix(), 
+                                cstack=partitions[i].getCallstacks(),
+                                rank=rank))
 
-                    self.__loops_level_merge(self, loops)
+                    self.__loops_level_merge(loops)
 
         # Ranks merge level
         self.__ranks_level_merge(ranks_loops)
@@ -54,12 +62,21 @@ class cluster (object):
     
 
     def __times_m(self):
+        '''
         total_times=0
         for callstack in self._cluster:
             values = callstack[callstack.keys()[0]]
             total_times += values["times"]
 
         return total_times/len(self._cluster)
+        '''
+        max_times = 0
+        for callstack in self._cluster:
+            values = callstack[callstack.keys()[0]]
+            if values["times"] > max_times:
+                max_times = values["times"]
+
+        return max_times
     
     def getPeriod(self):
         return self._time_mean
@@ -82,6 +99,8 @@ class cluster (object):
         for i in range(1, len(ranks_loops)):
             ranks_loops[0].merge(ranks_loops[i])
 
+        assert ranks_loops[0]._iterations > 0
+
         self._merged_rank_loops=ranks_loops[0]
         self._first_line = self._merged_rank_loops.getFirstLine()
     
@@ -96,18 +115,17 @@ class cluster (object):
         return self._first_line
 
     def merge(self, ocluster):
-        self._merges += 1
-
-        # Is it a subloop ?
+        # Is it a subloop
         assert(ocluster.getOccurrences() > self._times)
         #assert(ocluster.getFirstLine() >= self._first_line)
 
         subloop = ocluster.getLoop()
 
         # We have to merge this subloop with our __ranks_level_merge
+
         # TODO: (??) We need the times of the callstacks!! and the overall time 
         # of the loop in order to fit it in its correct place!!!!
-       
+
         self._merged_rank_loops.mergeS(subloop)
         self._merges+=1
 

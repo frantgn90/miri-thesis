@@ -9,39 +9,32 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import DBSCAN
 
+from cluster import cluster
 import constants
-
-
-'''
-def graph(formula, x_range, color):  
-    x = np.array(x_range)  
-    y = eval(formula)
-    plt.plot(x, y, color+'--')  
-'''
 
 def plot_data(data):
     fig=plt.figure()
-    #ax2d=fig.add_subplot(111)
-    ax3d=fig.add_subplot(111,projection="3d")
+    ax2d=fig.add_subplot(111)
+    #ax3d=fig.add_subplot(111,projection="3d")
 
     xs=[];ys=[];zs=[]
     for point in data:
             xs.append(point[0])
             ys.append(point[1])
-            zs.append(point[2])
-    #ax2d.scatter(xs,ys)
-    ax3d.scatter(xs,ys,zs)
+            #zs.append(point[2])
+    ax2d.scatter(xs,ys)
+    #ax3d.scatter(xs,ys,zs)
     
-    #ax2d.set_xlabel(constants._x_axis)
-    #ax2d.set_ylabel(constants._y_axis)
+    ax2d.set_xlabel(constants._x_axis)
+    ax2d.set_ylabel(constants._y_axis)
 
-    ax3d.set_xlabel(constants._x_axis)
-    ax3d.set_ylabel(constants._y_axis)
-    ax3d.set_zlabel(constants._z_axis)
+    #ax3d.set_xlabel(constants._x_axis)
+    #ax3d.set_ylabel(constants._y_axis)
+    #ax3d.set_zlabel(constants._z_axis)
     
-    ax3d.set_xlim([-0.1,1.1])
-    ax3d.set_ylim([-0.1,1.1])
-    ax3d.set_zlim([-0.1,1.1])
+    #ax3d.set_xlim([-0.1,1.1])
+    #ax3d.set_ylim([-0.1,1.1])
+    #ax3d.set_zlim([-0.1,1.1])
 
     plt.show()
 
@@ -83,29 +76,33 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_):
     plt.legend(handles=plt_labels)
     plt.show()
 
-def clustering(cdist, show_plot):
+def clustering(cdist, ranks, show_plot):
 
+    #
     # 1. Preparing data
+    #
     data=[]
     for cs in cdist:
         for k,v in cs.items():
-            #data.append([v[constants._x_axis],v[constants._y_axis]])
-            data.append([ v[constants._x_axis],
-                          v[constants._y_axis],
-                          v[constants._z_axis] ])
+            data.append([v[constants._x_axis],v[constants._y_axis]])
+            #data.append([ v[constants._x_axis],
+            #              v[constants._y_axis],
+            #              v[constants._z_axis] ])
 
     normdata=normalize_data(data)
+    #plot_data(data)
 
-    plot_data(normdata)
-
+    #
     # 2. Perform clustering
+    #
     db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(normdata)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels=db.labels_
 
     clustered_cs={}
-    for l in labels: clustered_cs.update({l:[]})
+    for l in labels: 
+        clustered_cs.update({l:[]})
 
     label_index=0
     for cs in cdist:
@@ -115,7 +112,9 @@ def clustering(cdist, show_plot):
 
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
+    #
     # 3. Show plots 
+    #
     if show_plot:
         show_plot_thread=multiprocessing.Process(
                 target=show_clustering,
@@ -123,4 +122,11 @@ def clustering(cdist, show_plot):
 
         show_plot_thread.start()
 
-    return n_clusters_, clustered_cs
+    #
+    # 4. Build up cluster objects with clustered data
+    #
+    cluster_set=[]
+    for k in clustered_cs.keys():
+        cluster_set.append(cluster(clustered_cs[k], ranks))
+
+    return n_clusters_, cluster_set

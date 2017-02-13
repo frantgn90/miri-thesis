@@ -10,7 +10,9 @@ At Accurate source code attribution (4.5), pag.82
 '''
 
 import constants
-import sys
+import sys, logging
+
+from utilities import is_sublist
 
 _cs_per_thread=100
 
@@ -54,6 +56,44 @@ def searchMostFrequentRoutine(vs):
 
     return max_rout,max_index
 
+def selectPivot(vs):
+    routines = {}
+    index=0
+    for i_stack in range(len(vs)):
+        stack = vs[i_stack]
+        for rout in stack:
+            if rout in routines:
+                for i_i_contains_call in routines[rout]["i_contains_call"]:
+                    repeated = False
+                    if rout in vs[i_i_contains_call]:
+                        repeated = True
+                        break
+
+                if not repeated:
+                    routines[rout]["cnt"]+=1
+                    routines[rout]["i_contains_call"].append(i_stack)
+            else:
+                routines.update({
+                    rout:
+                    {
+                        "cnt":1,
+                        "findex":index,
+                        "i_contains_call":[i_stack]
+                    }})
+        index+=1
+
+    max_times=0
+    max_rout=None
+    max_index=0
+    for r,c in routines.items():
+        if c["cnt"]>max_times:
+            max_times=c["cnt"]
+            max_index=c["findex"]
+            max_rout=r
+
+    return max_rout,max_index
+
+
 def getCsContains(vs, pivot):
     result=[]
 
@@ -66,12 +106,12 @@ def height_call(callstack, call):
     index = callstack.index(call) # This function raise an exception if value does not exists
     return index
 
-def perform_alignement_st1(vs):
-    pivot,firstpivot = searchMostFrequentRoutine(vs)
-    #vtmps = getCsContains(vs, pivot)
+def perform_alignement_st1(vs, vl):
+    #pivot,firstpivot = searchMostFrequentRoutine(vs)
+    pivot, firstpivot = selectPivot(vs)
 
-    #print("-> Pivot: {0}".format(pivot))
-    #print("-> Findex: {0}".format(firstpivot))
+    logging.debug("Aligning step 1: Pivot={0} findex={1}"\
+            .format(pivot, firstpivot))
 
     ignored_index=[]
     last_cc_index=firstpivot
@@ -92,14 +132,24 @@ def perform_alignement_st1(vs):
             vs[i]=to_inject+vs[i]
         last_cc_index=i
 
-    return vs,ignored_index
+    logging.debug("{0}/{1} callstacks aligned"
+            .format((len(vs)-len(ignored_index)), len(vs)))
+    return ignored_index
 
-def perform_alignement_st2(vs, ignored_indexes):
+def perform_alignement_st2(vs, vl, ignored_indexes):
     cs_discarded=0
     cs_aligned=0
+
+    logging.debug("Aligning step 2: Realigning {0} ignored stacks"\
+                .format(len(ignored_indexes)))
+
+    cnt=0
     for i in ignored_indexes:
         success=False
         discarded=0
+        logging.debug("Realignement {0}/{1}: Success={2} Discarded={3}"
+                .format(cnt, len(ignored_indexes), cs_aligned, cs_discarded))
+        cnt+=1
         while not success:
             sublist=vs[i][discarded:]
 
@@ -110,7 +160,8 @@ def perform_alignement_st2(vs, ignored_indexes):
                     success=True
                     if iindex==0: # Fit at the bottom of the callstack
                         if discarded == 0:
-                            #print("{0} has been discarded".format(str(vs[i])))
+                            logging.debug("{0} has been discarded"
+                                    .format(str(vs[i])))
                             vs[i]=[]; cs_discarded+=1; success=True
                             break
                         
@@ -126,7 +177,8 @@ def perform_alignement_st2(vs, ignored_indexes):
                         break
                     else:
                         if discarded>0:
-                            #print("{0} has been discarded".format(str(vs[i])))
+                            logging.debug("{0} has been discarded"
+                                    .format(str(vs[i])))
                             vs[i]=[]; cs_discarded+=1; success=True
                             break
 
@@ -141,22 +193,8 @@ def perform_alignement_st2(vs, ignored_indexes):
             discarded+=1
 
             if discarded==len(vs[i]):
-                #print("{0} has been discarded".format(str(vs[i])))
+                logging.debug("{0} has been discarded".format(str(vs[i])))
                 vs[i]=[]; cs_discarded+=1
                 break
 
-    return vs, cs_discarded, cs_aligned
-                    
-def is_sublist(sl, ll):
-    findex=0
-    eindex=0
-
-    for i in range(len(ll)):
-        if ll[i]==sl[eindex]: 
-            if eindex==0: findex=i
-            eindex+=1
-        else: eindex=0
-
-        if eindex==len(sl): return findex
-
-    return -1
+    return cs_discarded, cs_aligned
