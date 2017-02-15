@@ -107,8 +107,8 @@ def height_call(callstack, call):
     return index
 
 def perform_alignement_st1(vs, vl):
-    #pivot,firstpivot = searchMostFrequentRoutine(vs)
-    pivot, firstpivot = selectPivot(vs)
+    pivot,firstpivot = searchMostFrequentRoutine(vs)
+    #pivot, firstpivot = selectPivot(vs)
 
     logging.debug("Aligning step 1: Pivot={0} findex={1}"\
             .format(pivot, firstpivot))
@@ -120,16 +120,22 @@ def perform_alignement_st1(vs, vl):
             ignored_index.append(i)
             continue
         c_c=vs[i]
+        c_cl=vl[i]
         p_c=vs[last_cc_index]
+        p_cl=vl[last_cc_index]
         h_cc=height_call(c_c, pivot)
         h_pc=height_call(p_c, pivot)
         if h_cc > h_pc: # Gap back-propataion
             for j in range(i-1,-1,-1):
                 to_inject=c_c[:(h_cc-h_pc)]
+                to_injectl=c_cl[:(h_cc-h_pc)]
                 vs[j]=to_inject+vs[j]
+                vl[j]=to_injectl+vl[j]
         elif h_pc > h_cc: # Gap forward propagation
             to_inject=p_c[:(h_pc-h_cc)]
+            to_injectl=p_cl[:(h_pc-h_cc)]
             vs[i]=to_inject+vs[i]
+            vl[i]=to_inject+vl[i]
         last_cc_index=i
 
     logging.debug("{0}/{1} callstacks aligned"
@@ -162,31 +168,39 @@ def perform_alignement_st2(vs, vl, ignored_indexes):
                         if discarded == 0:
                             logging.debug("{0} has been discarded"
                                     .format(str(vs[i])))
-                            vs[i]=[]; cs_discarded+=1; success=True
+                            vs[i]=[] 
+                            vl[i]=[]
+                            cs_discarded+=1
+                            success=True
                             break
                         
                         #assert(discarded > 0)
                         cs_aligned+=1
                         to_inject=vs[i][0:discarded]
+                        to_injectl=vl[i][0:discarded]
 
                         #Propagation of the low frames of the ignored callstack
                         #Assuming all callstacks are equals on its low frames
                         for k in list(set(range(len(vs)))-set(ignored_indexes)):
                             vs[k]=to_inject+vs[k]
+                            vl[k]=to_injectl+vl[k]
                         success=True
                         break
                     else:
                         if discarded>0:
                             logging.debug("{0} has been discarded"
                                     .format(str(vs[i])))
-                            vs[i]=[]; cs_discarded+=1; success=True
+                            vs[i]=[]
+                            vl[i]=[]
+                            cs_discarded+=1
+                            success=True
                             break
-
-                        #assert(discarded==0)
 
                         cs_aligned+=1
                         to_inject=list(set(vs[j][:iindex])-set(vs[i]))
+                        to_injectl=list(set(vl[j][:iindex])-set(vl[i]))
                         vs[i]=to_inject+vs[i]
+                        vl[i]=to_injectl+vl[i]
                         success=True
                         break
 
@@ -194,7 +208,9 @@ def perform_alignement_st2(vs, vl, ignored_indexes):
 
             if discarded==len(vs[i]):
                 logging.debug("{0} has been discarded".format(str(vs[i])))
-                vs[i]=[]; cs_discarded+=1
+                vs[i]=[] 
+                vl[i]=[]
+                cs_discarded+=1
                 break
 
     return cs_discarded, cs_aligned

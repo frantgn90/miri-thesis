@@ -481,7 +481,7 @@ def get_callstacks(trace, level, image_filter):
                             lines,constants._inter_field_separator,
                             cstack, constants._inter_field_separator))
 
-    if constants._verbose: print("[Generating function map file]")
+    logging.info("Generating function map file")
 
     ofile = open(constants.FUNC_MAP_FILE, "w")
     json.dump(CALL_NAMES, ofile)

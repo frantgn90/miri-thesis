@@ -77,7 +77,8 @@ def getCsDistributions(filecs):
                 "time_mean":tmean,
                 "when":data["when"],
                 "rank":data["rank"],
-                "times":len(data["occu"])}
-                })
+                "times":len(data["occu"]),
+                "delta":None
+            }})
 
     return cstack_res

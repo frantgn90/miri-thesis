@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-import sys, random
+import sys, random, logging
 import numpy as np
 import constants
 from temp_matrix import tmatrix
@@ -21,11 +21,8 @@ class loop (object):
         self._first_line = 0
 
         self._iterations = len(self._tmat[self._rank][0])
+        assert self._iterations > 1
 
-        assert self._iterations > 0
-
-        #import pdb; pdb.set_trace()
-    
         # The key of every cs set is the line of the first call of the callstack
         dummy,self._loopdeph=cs_uncommon_part(self._cstack)
 
@@ -34,6 +31,7 @@ class loop (object):
 
         self._first_line = key
         self._cs.update({key:{"cs":list(self._cstack), "ranks":[self._rank]}})
+        logging.debug("New loop with {0} iterations.".format(self._iterations))
 
     def get_tmat(self):
         return self._tmat[self._rank]
@@ -53,8 +51,6 @@ class loop (object):
 
         self._tmat[newrank] = oloop._tmat[newrank]
     
-        # print("MERGING {0} with {1}".format(self._rank, newrank))
-
         for key, cset in self._cs.items():
             if len(newcs) == 0: break
             if newrank in cset["ranks"]: continue
@@ -115,10 +111,16 @@ class loop (object):
         firstk=cskeys[0]
 
         if type(self._cs[firstk]["cs"]) == loop:
-            self._cs[firstk]["cs"].recomputeFirstLine(looplevel)
+            self._first_line = self._cs[firstk]["cs"]\
+                .recomputeFirstLine(looplevel)
+        elif type(self._cs[firstk]["cs"][0]) == loop:
+            self._first_line = self._cs[firstk]["cs"][0]\
+                .recomputeFirstLine(looplevel)
         else:
             self._first_line=self._cs[firstk]["cs"][0]\
                 .split(constants._intra_field_separator)[1::2][looplevel]
+
+        return self._first_line
 
     def mergeS(self, subloop):
         subranks = subloop.get_ranks()
@@ -144,43 +146,38 @@ class loop (object):
             superset = (subranks==superranks)
 
             if superset:
-                if type(v["cs"]) == loop:
-                    v["cs"].mergeS(subloop)
-                    done = True
-                else:
-                    # TODO: Speedup search by dicotomical search
-                    inject_at=0
-                    for i in range(len(v["cs"])):
-                        if type(v["cs"][i])==loop:
-                            v["cs"][i].recomputeFirstLine(self._loopdeph)
-                            line=v["cs"][i].getFirstLine()
-                        else:
-                            callstack=v["cs"][i].split(constants._intra_field_separator)
-                            line = callstack[1::2][self._loopdeph]
+                inject_at=0
+                for i in range(len(v["cs"])):
+                    if type(v["cs"][i])==loop:
+                        v["cs"][i].recomputeFirstLine(self._loopdeph)
+                        line=v["cs"][i].getFirstLine()
+                    else:
+                        callstack=v["cs"][i].split(constants._intra_field_separator)
+                        line = callstack[1::2][self._loopdeph]
 
-                        if int(line) > int(sline):
-                            v["cs"].insert(i, subloop)
-                            done=True; break
-                        elif int(line) == int(sline):
-                            for j in range(self._loopdeph,len(callstack[0::2])):
-                                subloop.recomputeFirstLine(j)
-                                new_line=callstack[1::2][j]
-                                new_sline=subloop.getFirstLine()
+                    if int(line) > int(sline):
+                        v["cs"].insert(i, subloop)
+                        done=True; break
+                    elif int(line) == int(sline):
+                        for j in range(self._loopdeph,len(callstack[0::2])):
+                            subloop.recomputeFirstLine(j)
+                            new_line=callstack[1::2][j]
+                            new_sline=subloop.getFirstLine()
 
-                                if int(new_sline) < int(new_line):
-                                    v["cs"].insert(i, subloop)
-                                    done=True; break;
+                            if int(new_sline) < int(new_line):
+                                v["cs"].insert(i, subloop)
+                                done=True; break;
 
-                    if not done:
-                        done=True
-                        v["cs"].append(subloop)
+                if not done:
+                    done=True
+                    v["cs"].append(subloop)
 
             if done: break
 
         # If the execution arrives here without injecting the subloop, then
         # it means that we need to create a new callstack group
         if not done:
-            self._cs.update({sline:{ "cs": subloop, "ranks": subranks}})
+            self._cs.update({sline:{ "cs": [subloop], "ranks": subranks}})
 
     def __get_common_cs(self, cs1, cs2):
         res=[]
@@ -249,15 +246,8 @@ class loop (object):
             ranks=self._cs[key]["ranks"]
             cs=self._cs[key]["cs"]
 
-            if type(self._cs[key]["cs"])==loop:
-                '''
-                loop_pseudocode, dummy=self._cs[key]["cs"].str(rel_relative_tabs, 
-                            self._loopdeph+1)
-                pseudocode += loop_pseudocode
-                lastsc=dummy[:-1]
-                continue
-                '''
-                assert False, "CHECK IT OUT: Strange situation"
+            assert type(self._cs[key]["cs"])!=loop,\
+                    "CS can not be a loop"
 
             suncommon=[]
             for cs in self._cs[key]["cs"]:
@@ -292,16 +282,19 @@ class loop (object):
             callchain=""
             for sc in suncommon:
                 if type(sc) == loop:
-                    loop_pseudocode, dummy=sc.str(rel_relative_tabs, 
+                    loop_pseudocode, dummy=sc.str(
+                            rel_relative_tabs, 
                             self._loopdeph+1)
                     callchain += loop_pseudocode
                     lastsc=dummy[:-1]
                 else:
+
+                    if len(sc) == 0: continue
                     line=[]
                     for i in sc:
                         if not i in lastsc: 
                             line.append(i)
-                    
+
                     n_common_calls=len(sc)-len(line)
                     rel_relative_calls=n_common_calls
     

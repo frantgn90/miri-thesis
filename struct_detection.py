@@ -91,9 +91,19 @@ def main(argc, argv):
             type=float,
             required=False,
             default=[0.01],
-            help="The clusters that explains a portion below this boundary will be ignored",
+            help="The clusters that explains a portion below this boundary will"\
+                    " be ignored",
             metavar="BOUND",
             dest="bottom_bound")
+
+    parser.add_argument("--epsilon",
+            action="store",
+            nargs=1,
+            type=float,
+            required=False,
+            default=[0.01],
+            help="When delta analysis is performed, the epsilon is the relative"\
+                    " tolerated area.")
 
     parser.add_argument("--log",
             action="store",
@@ -117,7 +127,7 @@ def main(argc, argv):
 
     numeric_level = getattr(logging, arguments.log_level[0].upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
+        raise ValueError("Invalid log level: {0}".format(loglevel))
 
     logging.basicConfig(level=numeric_level)
 
@@ -152,46 +162,36 @@ def main(argc, argv):
     # 2. Getting callstack metrics
     #
     logging.info("Merging repeated callstacks and deriving information")
-
-    mean_delta=0; 
-    filtered_data=[];
+    
+    depured_data = []
     for csf in cs_files:
-        cdist=getCsDistributions(filecs=csf)
-        cdist_filtered = filterIrrelevant(
-                cdist, 
+        depured_csf = getCsDistributions(csf)
+        depured_csf = filter_under_delta(
+                depured_csf, 
                 app_time, 
                 arguments.bottom_bound[0])
-        if len(cdist_filtered) > 0:
-            new_delta=getDelta(
-                    cdist_filtered, 
-                    app_time, 
-                    arguments.bottom_bound[0])
-        else:
-            new_delta = 0
-        
-        logging.debug("[{0}]:Bound={1} Delta = {2} Discarded = {3}"\
-                .format(
-                    csf, 
-                    arguments.bottom_bound[0],
-                    new_delta, len(cdist)-len(cdist_filtered)))
+        depured_data.append(depured_csf)
 
-        mean_delta+=new_delta
-        filtered_data.append(cdist_filtered)
-    mean_delta/=len(filtered_data)
-
-    if mean_delta == 0:
-        logging.info("{0} boundary is filtering all data"\
-                .format(arguments.bottom_bound[0]))
-        return 0
+    logging.info("Detecting super-loops")
+    deltas = set_deltas(
+            depured_data, 
+            app_time,
+            arguments.bottom_bound[0],
+            arguments.epsilon[0])
     
     #
     # 3. Clustering
     #
     logging.info("Performing clustering")
     nclusters, cluster_objects=clustering(
-            filtered_data, 
+            #filtered_data, 
+            depured_data,
+
             nranks, 
-            arguments.show_clustering)
+            arguments.show_clustering, 
+            app_time, 
+            deltas,
+            arguments.bottom_bound[0])
     logging.info("{0} clusters detected".format(nclusters))
 
     #
@@ -199,15 +199,9 @@ def main(argc, argv):
     #
     logging.info("Merging clusters")
 
-    #cnt=0
-    #for clt in clustere_objects:
-    #    logging.debug("Pseudo-code for cluster {0}".format(cnt))
-    #    logging.debug(clt.str())
-    #    cnt+=1
-
-    merged_cluster = merge_clusters(
-            cluster_set=cluster_objects,
-            ranks=nranks)
+    top_level_clusters = merge_clusters(
+                            cluster_set=cluster_objects,
+                            ranks=nranks)
 
     # 4.1. Getting random iterations for every cluster
     if arguments.nrandits > 0:
@@ -221,8 +215,12 @@ def main(argc, argv):
     #
     # 5. Generating pseudocode
     #
-    logging.info("Generating pseudocode")
-    pseudocode = merged_cluster.str()
+    logging.info("Generating pseudocode for {0} top level clusters"
+            .format(len(top_level_clusters)))
+
+    pseudocode=""
+    for cluster in top_level_clusters:
+        pseudocode += cluster.str()
 
     pretty_print(pseudocode, trace)
 
@@ -232,9 +230,10 @@ def main(argc, argv):
     if ri > 0:
         print_iterations(iterations)
 
-    final_stats="> {0} clusters detected\n".format(nclusters)
-    final_stats+="> Time in pseudocode: {0:.2f} % \n".format(mean_delta*100)
-    final_stats+="> Discarded calls time: {0:.2f} % \n".format(100-(mean_delta*100))
+    final_stats=  ">> {0} clusters detected\n".format(nclusters)
+    final_stats+=(">> Time in pseudocode: {0}%\n".format(sum(deltas)*100))
+    for i, delta in zip(range(len(deltas)),deltas):
+        final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
 
     pretty_print(final_stats, "Final stats")
 

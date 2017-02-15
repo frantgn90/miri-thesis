@@ -35,10 +35,11 @@ _empty_cell=0
 
 _x_axis_label     ="Number of occurrences"
 _y_axis_label     ="Mean period bw occurrences"
+_z_axis_label     ="delta"
 
 _x_axis           ="times"
 _y_axis           ="time_mean"
-_z_axis           ="when_mean"
+_z_axis           ="delta"
 
 _eps              =0.05
 _min_samples      =1

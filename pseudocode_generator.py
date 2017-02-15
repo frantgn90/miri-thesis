@@ -5,32 +5,8 @@
 import sys, logging
 import numpy as np
 
-import constants
+import constants, logging
 from cluster import cluster
-
-def print_matrix(matrix, infile):
-    if type(matrix)==list:
-        mat=matrix
-    else:
-        mat=matrix.tolist()
-
-    def format_nums(val):
-        return str(val).zfill(12)
-
-    if infile:
-        filen=int(np.random.rand()*1000)
-        filename="matrix_{0}.txt".format(filen)
-        print("---> SAVING TO {0}".format(filename))
-
-        ff=open(filename, "w")
-        for row in mat:
-            ff.write("\t".join(map(format_nums,row)))
-            ff.write("\n")
-        ff.close()
-    else:
-        for row in mat:
-            print("\t".join(map(format_nums,row)))
-
 
 def get_random_iters(clusters, n_random_iterations):
     random_iters=[]
@@ -42,27 +18,45 @@ def get_random_iters(clusters, n_random_iterations):
     return random_iters
 
 def merge_clusters(cluster_set, ranks):
-    
+ 
+    # clusters should be classified by delta. Every delta is an
+    # entire big loop
+    logging.info("Classifying clusters by delta.")
+
+    cluster_by_delta = {}
+    for cluster in cluster_set:
+        delta = cluster._delta
+        if delta in cluster_by_delta:
+            cluster_by_delta[delta].append(cluster)
+        else:
+            cluster_by_delta.update({delta:[cluster]})
+
     # Now, the clusters are sorted by number of occurrences
     # it means that the clusters that are first are the subloops ones
     # and those clusters that are at the end are the superloops ones.
     # (For now we are not taking into account the data conditionals)
-    cluster_set.sort(key=lambda x: x.getOccurrences(), reverse=True)
-    
+
+    for k,v in cluster_by_delta.items():
+        logging.debug("Sorting clusters with delta={0}".format(k))
+        v.sort(key=lambda x: x.getOccurrences(), reverse=True)
+    logging.debug("Clusters sorted for merging.")
+
     # Then, the merge must be done from the little one to the biggest one.
-    for i in range(len(cluster_set)-1):
+    top_level_clusters=[]
 
-        done=False
-        for j in range(i+1,len(cluster_set)):
-            if cluster_set[j].getOccurrences() < cluster_set[i].getOccurrences():
-                logging.debug("{0} occ. -> {1} occ.".format(
-                    cluster_set[i].getOccurrences(),
-                    cluster_set[j].getOccurrences()))
-                
-                cluster_set[j].merge(cluster_set[i])
-                done=True
+    for delta,clusters in cluster_by_delta.items():
+        logging.info("Merging clusters with delta={0}".format(delta))
 
-        assert done, "Error at cluster level merge"
+        for i in range(len(clusters)-1):
+            done=False
+            for j in range(i+1,len(clusters)):
+                if cluster_set[j].getOccurrences() < cluster_set[i].getOccurrences():
+                    clusters[j].merge(clusters[i])
+                    done=True
+                    break
+
+            assert done, "Error at cluster level merge"
+        top_level_clusters.append(cluster_by_delta[delta][-1])
 
     # Finally, the last one will have all the merged clusters
-    return cluster_set[-1]
+    return top_level_clusters

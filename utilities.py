@@ -90,3 +90,27 @@ class progress_bar(object):
             print("|{0}>{1}| {2}% {3}/{4}".format("="*(pbar_syms), " "*pbar_spac, str(percent), str(self.progression),str(self.total)), end=endc)
             self.count = 0
 
+
+def print_matrix(matrix, infile):
+    if type(matrix)==list:
+        mat=matrix
+    else:
+        mat=matrix.tolist()
+
+    def format_nums(val):
+        return str(val).zfill(12)
+
+    if infile:
+        filen=int(np.random.rand()*1000)
+        filename="matrix_{0}.txt".format(filen)
+        print("---> SAVING TO {0}".format(filename))
+
+        ff=open(filename, "w")
+        for row in mat:
+            ff.write("\t".join(map(format_nums,row)))
+            ff.write("\n")
+        ff.close()
+    else:
+        for row in mat:
+            print("\t".join(map(format_nums,row)))
+
