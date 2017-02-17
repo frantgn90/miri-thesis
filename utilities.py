@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 from __future__ import print_function # Needed by the progress bar
-
+import numpy as np
 def is_sublist(sl, ll):
     findex=0
     eindex=0
@@ -111,6 +111,8 @@ def print_matrix(matrix, infile):
             ff.write("\n")
         ff.close()
     else:
+        print(mat)
+        return
         for row in mat:
             print("\t".join(map(format_nums,row)))
 

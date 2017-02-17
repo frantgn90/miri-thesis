@@ -10,6 +10,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN
 
 from cluster import cluster
+from utilities import print_matrix
 import constants
 
 def plot_data(data):
@@ -159,6 +160,7 @@ def clustering(cdist, ranks, show_plot, total_time, delta, bound):
                           v[constants._y_axis],
                           v[constants._z_axis] ])
 
+    
     normdata=normalize_data(data)
     #plot_data(data)
 

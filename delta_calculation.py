@@ -69,6 +69,19 @@ def getDelta(cdist, total_time, bottom_bound):
 
     return optimal
 
+def mean_distance_from_delta(data, total_time, delta):
+    mean_distance = 0
+    if len(data) == 0: return 0
+
+    for k,v in data.items():
+        mean_distance = abs(getCost(
+                                v["times"],
+                                total_time,
+                                v["time_mean"],
+                                delta))
+
+    return mean_distance/len(data)
+
 def set_deltas(depured_data, total_time, bottom_bound, epsilon):
 
     deltas=[]
@@ -81,8 +94,11 @@ def set_deltas(depured_data, total_time, bottom_bound, epsilon):
     total_covered = 0
     while not total_covered == total_callstacks:
         max_covered = 0
-        for current_delta in numpy.arange(1, bottom_bound, -delta_step):
+        min_mean_distances = sys.maxint
+        for current_delta in numpy.arange(0, 1, delta_step):
             calls_covered=0
+            mean_distances=0
+
             for data in depured_data:
                 for d in deltas: # Filtering the current covered calls
                     data = {k: v for k, v in data.items() if v["delta"] == None}
@@ -90,13 +106,24 @@ def set_deltas(depured_data, total_time, bottom_bound, epsilon):
                 filtered = filter_by_delta_range(
                         data, 
                         total_time, 
+                        #current_delta-current_delta*epsilon,
+                        #current_delta+current_delta*epsilon)
                         current_delta-epsilon,
                         current_delta+epsilon)
                 calls_covered+=len(filtered)
 
-            if calls_covered > max_covered:
+                mean_distances += mean_distance_from_delta(
+                        filtered,
+                        total_time,
+                        current_delta)
+
+            mean_distances/=len(depured_data)
+            
+            if calls_covered > max_covered or (calls_covered == max_covered \
+                        and mean_distances < min_mean_distances):
                 max_covered = calls_covered
                 optimum_delta = current_delta
+                min_mean_distances = mean_distances 
 
         if max_covered > 0:
             deltas.append(optimum_delta)
@@ -106,6 +133,8 @@ def set_deltas(depured_data, total_time, bottom_bound, epsilon):
                 to_set_delta = filter_by_delta_range(
                         data,
                         total_time,
+                        #optimum_delta-optimum_delta*epsilon,
+                        #optimum_delta+optimum_delta*epsilon)
                         optimum_delta-epsilon,
                         optimum_delta+epsilon)
 

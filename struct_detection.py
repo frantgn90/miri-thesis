@@ -178,6 +178,9 @@ def main(argc, argv):
             app_time,
             arguments.bottom_bound[0],
             arguments.epsilon[0])
+
+    # TODO: This values for ../tests/traces/OpenIFS.128x1/oifs40r1_T511.128x1
+    deltas=[0.005,0.04,0.7]
     
     #
     # 3. Clustering
