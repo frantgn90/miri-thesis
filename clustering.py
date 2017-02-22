@@ -155,12 +155,11 @@ def clustering(cdist, ranks, show_plot, total_time, delta, bound):
     data=[]
     for cs in cdist:
         for k,v in cs.items():
-            #data.append([v[constants._x_axis],v[constants._y_axis]])
-            data.append([ v[constants._x_axis],
-                          v[constants._y_axis],
-                          v[constants._z_axis] ])
+            data.append([v[constants._x_axis],v[constants._y_axis]])
+            #data.append([ v[constants._x_axis],
+            #              v[constants._y_axis],
+            #              v[constants._z_axis] ])
 
-    
     normdata=normalize_data(data)
     #plot_data(data)
 

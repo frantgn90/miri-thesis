@@ -9,7 +9,13 @@ initializations and last treatments of data.
 '''
 
 import sys
-import numpy
+import numpy,math
+
+from sympy.solvers import solve
+from sympy import Symbol
+
+import logging
+import constants
 
 _upper_bound=1
 _init_delta=0.5
@@ -82,7 +88,7 @@ def mean_distance_from_delta(data, total_time, delta):
 
     return mean_distance/len(data)
 
-def set_deltas(depured_data, total_time, bottom_bound, epsilon):
+def calcule_deltas_heuristic(depured_data, total_time, bottom_bound, epsilon):
 
     deltas=[]
     delta_step=epsilon
@@ -144,3 +150,59 @@ def set_deltas(depured_data, total_time, bottom_bound, epsilon):
                     
     
     return deltas
+
+def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
+    # For the moment, we want to generate the input CPLEX data file
+
+    big_m=100000
+    delta_accuracy = 0.02
+    nDeltas = 1/delta_accuracy
+
+    deltas=[]
+    for i in numpy.arange(delta_accuracy, 1, delta_accuracy):
+        deltas.append(i)
+
+    points=[]
+    for cs in depured_data:
+        for k,v in cs.items():
+            points.append([v[constants._x_axis],v[constants._y_axis]])
+
+    distance_dp = []
+    for delta in deltas:
+        distance_delta=[]
+        for point in points:
+            min_distance = get_minimum_distance(delta, total_time, point)
+            distance_delta.append(min_distance)
+
+
+            logging.info("Distances from point ({0},{1}) to delta {2} = {3}"
+                    .format(point[0], point[1], delta, min_distance))
+        distance_dp.append(distance_delta)
+
+    ff = open("cplex.dat", "w")
+    ff.write("bigM={0};\n".format(big_m))
+    ff.write("nDeltas={0};\n".format(len(deltas)))
+    ff.write("nPoints={0};\n".format(len(points)))
+    ff.write("Deltas={0};\n".format(deltas))
+    ff.write("Points={0};\n".format(points))
+    ff.write("Distance_dp={0};\n".format(distance_dp))
+    ff.close()
+
+# Inspired on (last comment): http://math.stackexchange.com/questions/967268/
+# finding-the-closest-distance-between-a-point-a-curve
+def get_minimum_distance(delta,total_time, point):
+    T=delta*total_time
+    X=point[0]
+    Y=point[1]
+
+    x=Symbol("x",real=True)
+    solutions = solve(2*x**4 - 2*X*x**3 + 2*T*Y*x - 2*T**2, x)
+    
+    # Once we have de solutions we want to get the minimum distance
+    min_distance = float("inf")
+    for solution in solutions:
+        distance = math.sqrt((solution-X)**2 + ((T/solution)-Y)**2)
+        if distance < min_distance:
+            min_distance = distance
+
+    return min_distance

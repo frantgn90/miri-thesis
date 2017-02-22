@@ -115,6 +115,13 @@ def main(argc, argv):
             metavar="LOG",
             dest="log_level")
 
+    parser.add_argument("--cplex",
+            action="store_true",
+            help="Whether you want that the delta calculation will be done by"\
+                    " CPLEX optimization engine or by a heuristics.",
+            dest="use_cplex")
+
+
 
     argcomplete.autocomplete(parser)
     arguments = parser.parse_args(args=argv[1:])
@@ -173,14 +180,27 @@ def main(argc, argv):
         depured_data.append(depured_csf)
 
     logging.info("Detecting super-loops")
-    deltas = set_deltas(
-            depured_data, 
-            app_time,
-            arguments.bottom_bound[0],
-            arguments.epsilon[0])
+
+    if not arguments.use_cplex:
+        logging.info("Calculating delta by mean of heuristics.")
+        deltas = calcule_deltas_heuristic(
+                depured_data, 
+                app_time,
+                arguments.bottom_bound[0],
+                arguments.epsilon[0])
+    else:
+        logging.info("Calculating delta by mean of CPLEX.")
+        deltas = calcule_deltas_cplex(
+                depured_data,
+                app_time,
+                arguments.bottom_bound[0])
+
+        
+        return 0
 
     # TODO: This values for ../tests/traces/OpenIFS.128x1/oifs40r1_T511.128x1
-    deltas=[0.005,0.04,0.7]
+    #deltas=[0.01,0.02,0.03, 0.12, 0.33, 0.46]
+    deltas=[0.02,0.2, 0.22, 0.24, 0.26]
     
     #
     # 3. Clustering
