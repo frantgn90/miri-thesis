@@ -173,21 +173,31 @@ def main(argc, argv):
     depured_data = []
     for csf in cs_files:
         depured_csf = getCsDistributions(csf)
-        depured_csf = filter_under_delta(
-                depured_csf, 
-                app_time, 
-                arguments.bottom_bound[0])
-        depured_data.append(depured_csf)
+        if len(depured_csf) > 0:
+            depured_csf = filter_under_delta(
+                    depured_csf, 
+                    app_time, 
+                    arguments.bottom_bound[0])
+
+            depured_data.append(depured_csf)
+
+    depured_data = sorted(depured_data, key=lambda x: x[x.keys()[0]]["rank"])
+    depured_data = [depured_data[1]]
+
 
     logging.info("Detecting super-loops")
 
     if not arguments.use_cplex:
         logging.info("Calculating delta by mean of heuristics.")
+
         deltas = calcule_deltas_heuristic(
                 depured_data, 
                 app_time,
                 arguments.bottom_bound[0],
                 arguments.epsilon[0])
+
+        deltas.sort()
+        logging.info("Deltas: {0}".format(deltas))
     else:
         logging.info("Calculating delta by mean of CPLEX.")
         deltas = calcule_deltas_cplex(
@@ -197,11 +207,7 @@ def main(argc, argv):
 
         
         return 0
-
-    # TODO: This values for ../tests/traces/OpenIFS.128x1/oifs40r1_T511.128x1
-    #deltas=[0.01,0.02,0.03, 0.12, 0.33, 0.46]
-    deltas=[0.02,0.2, 0.22, 0.24, 0.26]
-    
+        
     #
     # 3. Clustering
     #

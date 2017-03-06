@@ -13,6 +13,72 @@ from cluster import cluster
 from utilities import print_matrix
 import constants
 
+"""
+This is a customized matplotlib scale.
+Maps to a cubic scale
+"""
+
+from matplotlib import scale as mscale
+from matplotlib import transforms as mtransforms
+
+class CubicScale(mscale.ScaleBase):
+    name="cubic"
+
+    def __init__(self, axis, **kwargs):
+        mscale.ScaleBase.__init__(self)
+        self.total_time = float(kwargs.pop("total_time", 52196391100))
+
+        print self.total_time
+
+    def get_transform(self):
+        return self.CubicTransform(self.total_time)
+
+    def set_default_locators_and_formatters(self, axis):
+        pass
+        #mscale.ScaleBase.set_default_locators_and_formatters(axis)
+
+    class CubicTransform(mtransforms.Transform):
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self, total_time):
+            mtransforms.Transform.__init__(self)
+            self.total_time = total_time
+
+        def rescale_cubic(self, x, total_time):
+            return (x-total_time**(float(1)/4))**3\
+                    + total_time/total_time**(float(1)/4)
+
+        def transform_non_affine(self, a):
+            return np.array(map(
+                lambda x: self.rescale_cubic(x, self.total_time), a))
+
+        def inverted(self):
+            return CubicScale.InvertedCubicTransform(self.total_time)
+
+    class InvertedCubicTransform(mtransforms.Transform):
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self, total_time):
+            mtransforms.Transform.__init__(self)
+            self.total_time = total_time
+
+        def invert_rescale_cubic(self, y, total_time):
+            return ((y-total_time**(float(3)/4))**(float(1)/3)\
+                    - total_time**(float(1)/4))
+       
+        def transform_non_affine(self, a):
+            return np.array(map(
+                lambda y: self.invert_rescale_cubic(y, self.total_time), a))
+
+        def inverted(self):
+            return CubicScale.CubicTransform(self.total_time)
+
+mscale.register_scale(CubicScale)
+
 def plot_data(data):
     fig=plt.figure()
     #ax2d=fig.add_subplot(111)
@@ -64,7 +130,7 @@ def multi_normalize_data(data_set):
  
 
 def show_clustering(data, labels, core_samples_mask, n_clusters_, 
-        total_time, deltas, bound):
+        total_time, deltas, bound):    
     X=np.array(data)
 
     #
@@ -113,23 +179,14 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_,
                 "k", color=col, lw=1, label="delta={0}".format(delta))
         plt_labels.append(lab)
 
+    occurrences = X[:, 0]
+    occurrences.sort()
+
     # Upper boundary
-    plt.plot((total_time/periods),periods, 
-            "k--", color="blue", lw=1) 
+    plt.plot(occurrences, (total_time/occurrences),"k--", color="blue", lw=1)
 
     # Bottom boundary
-    plt.plot(((bound*total_time)/periods),periods, "k-", color="red", lw=1) 
-
-    '''
-    for ndelta in np.arange(1,0,-0.25):
-        data_f = (ndelta*total_time)/periods
-        plt.plot(
-                data_f, 
-                periods,
-                'k--', 
-                color='deepskyblue', 
-                lw=1)
-    '''
+    plt.plot(((bound*total_time)/periods),periods, "k--", color="red", lw=1) 
 
     plt.title("Number of clusters: {0} (eps={1}, mins={2})"
             .format(n_clusters_, 
@@ -142,9 +199,12 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_,
     plt.xlabel(constants._x_axis_label)
     plt.ylabel(constants._y_axis_label)
     plt.legend(handles=plt_labels)
+    #plt.gca().set_yscale("linear") #cubic
+    
     plt.ylim([-0.1,np.max(X[:,1])])
     plt.xlim([-0.1,np.max(X[:,0])])
 
+    plt.grid(True)
     plt.show()
 
 def clustering(cdist, ranks, show_plot, total_time, delta, bound):
@@ -155,10 +215,10 @@ def clustering(cdist, ranks, show_plot, total_time, delta, bound):
     data=[]
     for cs in cdist:
         for k,v in cs.items():
-            data.append([v[constants._x_axis],v[constants._y_axis]])
-            #data.append([ v[constants._x_axis],
-            #              v[constants._y_axis],
-            #              v[constants._z_axis] ])
+            #data.append([v[constants._x_axis],v[constants._y_axis]])
+            data.append([ v[constants._x_axis],
+                          v[constants._y_axis],
+                          v[constants._z_axis] ])
 
     normdata=normalize_data(data)
     #plot_data(data)

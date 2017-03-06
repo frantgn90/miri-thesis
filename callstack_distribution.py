@@ -8,6 +8,8 @@ import constants
 from utilities import merge_arrays
 from spectrum import *
 
+from scipy.stats import mode
+
 random.seed(constants.RANDOM_SEED)
 
 def get_distances(times):
@@ -53,27 +55,22 @@ def getCsDistributions(filecs):
 
     cstack_res={}
     for callstack, data in callstacks.items():
+        sorted(data["when"])
         do=get_distances(data["occu"])
         tt=get_distances(data["when"])
 
         if not len(do) == 0:
-            dmean=numpy.mean(do)
-            dsdev=numpy.std(do)
-
+            #dmean=numpy.mean(do)
+            #dsdev=numpy.std(do)
+            #tsdev=numpy.std(tt)
+            #tmean=numpy.median(tt)
             tmean=numpy.mean(tt)
-            tsdev=numpy.std(tt)
-
-            # Calcule the center in a timeline of the first time this
-            # call is iterating (think about nested loops)
-            
-            sorted(data["when"])
-            wmean=1    
             
             cstack_res.update({callstack:{
                 #"dist_mean":dmean,
                 #"dist_std" :dsdev,
                 #"time_std" :tsdev,
-                "when_mean":wmean,
+                #"when_mean":wmean,
                 "time_mean":tmean,
                 "when":data["when"],
                 "rank":data["rank"],
