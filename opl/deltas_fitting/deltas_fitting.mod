@@ -47,10 +47,7 @@
  
  // The maximum distance from function delta to points that are
  // covered by it
- dvar float maxDeltaDistance[d in D];
- 
- // Maximum of the delta mean distances with points
- //dvar float maxDistance;
+ dvar float+ maxDeltaDistance[d in D];
  
  
  /**********************
@@ -58,7 +55,9 @@
   **********************/
 
   minimize
-  	sum(d in D) UsedDelta[d] + (sum (d in D) maxDeltaDistance[d])*bigM;
+  	//sum(d in D) UsedDelta[d] + maxDistance;
+  	//sum(d in D) UsedDelta[d];
+  	sum(d in D) maxDeltaDistance[d] - sum(d in D) UsedDelta[d]*bigM;
  
   subject to {
   	
@@ -68,15 +67,15 @@
   	// The sumation of used delta never can exceed 1.
   	sum (d in D) maxl(Deltas[d] - bigM*(1-UsedDelta[d]), 0) <= 1;
   	  
-  	// Good value for UsedDelta
-  	forall (d in D) sum (p in P) Cover_dp[d,p] <= UsedDelta[d]*nPoints;
+  	// Good relation for Cover_dp and UsedDelta
+  	forall (d in D) {
+  		sum (p in P) Cover_dp[d,p] <= UsedDelta[d]*nPoints;
+  		UsedDelta[d] <= sum (p in P) Cover_dp[d,p];
+    }  		
   	
   	// Good value for maxDeltaDistance
-  	// TODO: This should not be just the maximum distance but the maximum distance
-  	// for the covered points!!!!!
-  	forall (d in D)
-  	  forall (p in P)
-  	  	Distance_dp[d,p] <= maxDeltaDistance[d];
+  	forall (d in D, p in P)
+  	  	Distance_dp[d,p] - (1-Cover_dp[d,p])*bigM <= maxDeltaDistance[d];
   	  
   }
   
