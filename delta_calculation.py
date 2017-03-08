@@ -11,7 +11,7 @@ initializations and last treatments of data.
 import sys
 import numpy,math
 
-from sympy.solvers import solve
+from sympy.solvers import solve,nsolve
 from sympy import Symbol
 
 import logging
@@ -275,6 +275,10 @@ def concentrate_deltas(count_deltas, deltas):
 def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
     # For the moment, we want to generate the input CPLEX data file
 
+    #
+    # Preparing data for CPLEX
+    #
+    logging.info("Preparing data for CPLEX")
     big_m=100000
     delta_accuracy = 0.02
     nDeltas = 1/delta_accuracy
@@ -282,6 +286,7 @@ def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
     deltas=[]
     for i in numpy.arange(delta_accuracy, 1, delta_accuracy):
         deltas.append(i)
+    deltas.append(1)
 
     points=[]
     for cs in depured_data:
@@ -296,7 +301,7 @@ def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
             distance_delta.append(min_distance)
 
 
-            logging.info("Distances from point ({0},{1}) to delta {2} = {3}"
+            logging.debug("Distances from point ({0},{1}) to delta {2} = {3}"
                     .format(point[0], point[1], delta, min_distance))
         distance_dp.append(distance_delta)
 
@@ -309,23 +314,35 @@ def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
     ff.write("Distance_dp={0};\n".format(distance_dp))
     ff.close()
 
+    #
+    # Launching CPLEX
+    #
+    logging.info("Launching CPLEX...")
+    # TODO
+
+    #
+    # Parse CPLEX result
+    #
+    logging.info("Parsing CPLEX results...")
+    # TODO
+
+
+
 # Inspired on (last comment): http://math.stackexchange.com/questions/967268/
 # finding-the-closest-distance-between-a-point-a-curve
 def get_minimum_distance(delta,total_time, point):
     T=delta*total_time
     X=point[0]
     Y=point[1]
-    a=-1/T; b=X/T; c=T; d=-Y
+    a=2; b=-2*X; c=2*T*Y; d=-2*T**2
 
     x=Symbol("x",real=True)
-    solutions = solve(2*x**4 - 2*X*x**3 + 2*T*Y*x - 2*T**2, x)
-    #solutions = solve(a*x**3 + b*x**2 + c*(1/x) + d, x)
+    solutions = solve(a*x**4 + b*x**3 + c*x + d, x)
 
     # Once we have de solutions we want to get the minimum distance
     min_distance = float("inf")
     for solution in solutions:
-        #distance = math.sqrt((solution-X)**2 + ((T/solution)-Y)**2)
-        distance = (solution-X)**2 + ((T/solution)-Y)**2
+        distance = math.sqrt((solution-X)**2 + ((T/solution)-Y)**2)
 
         if distance < min_distance:
             min_distance = distance

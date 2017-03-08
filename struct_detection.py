@@ -182,7 +182,7 @@ def main(argc, argv):
             depured_data.append(depured_csf)
 
     depured_data = sorted(depured_data, key=lambda x: x[x.keys()[0]]["rank"])
-    depured_data = [depured_data[1]]
+    #depured_data = [depured_data[1]]
 
 
     logging.info("Detecting super-loops")

@@ -23,7 +23,7 @@
   * Input data *
   **************/
   
- int bigM=...; 
+ float bigM=...; 
  int nPoints=...;
  int nDeltas=...;
  
@@ -50,14 +50,26 @@
  dvar float+ maxDeltaDistance[d in D];
  
  
+ execute {
+ 	var i,j;
+ 	var maxDistance = Distance_dp[1][1]
+ 	
+ 	for (i=1; i<=nDeltas; ++i)
+ 		for (j=1; j<=nPoints; ++j)
+ 		{
+ 			if (Distance_dp[i][j] > maxDistance)
+ 				maxDistance = Distance_dp[i][j]; 		
+ 		}
+ 	bigM = maxDistance;
+ 	writeln("The maximum distance is: ", bigM);
+ }
+ 
  /**********************
   * Objective function *
   **********************/
 
   minimize
-  	//sum(d in D) UsedDelta[d] + maxDistance;
-  	//sum(d in D) UsedDelta[d];
-  	sum(d in D) maxDeltaDistance[d] - sum(d in D) UsedDelta[d]*bigM;
+  	sum(d in D) maxDeltaDistance[d] + sum(d in D) UsedDelta[d];
  
   subject to {
   	
@@ -65,7 +77,7 @@
   	forall (p in P) sum (d in D) Cover_dp[d,p] == 1;
   	
   	// The sumation of used delta never can exceed 1.
-  	sum (d in D) maxl(Deltas[d] - bigM*(1-UsedDelta[d]), 0) <= 1;
+  	sum (d in D) maxl(0,Deltas[d] - (1-UsedDelta[d])) <= 1;
   	  
   	// Good relation for Cover_dp and UsedDelta
   	forall (d in D) {
@@ -73,10 +85,10 @@
   		UsedDelta[d] <= sum (p in P) Cover_dp[d,p];
     }  		
   	
-  	// Good value for maxDeltaDistance
-  	forall (d in D, p in P)
-  	  	Distance_dp[d,p] - (1-Cover_dp[d,p])*bigM <= maxDeltaDistance[d];
-  	  
+  	// Good value for maxDeltaDistance (assuming we are minimizing it)
+  	forall (d in D) {
+  	  	sum(p in P) maxl(Distance_dp[d,p] - (1-Cover_dp[d,p])*bigM, 0) <= maxDeltaDistance[d];
+    }  	  	
   }
   
   /***************
@@ -90,18 +102,34 @@
   	//writeln("Maximum distance: ", maxDistance);
   	var nUsedDeltas = 0;
   	var total_delta = 0;
+  	var maxDistance = maxDeltaDistance[1];
+  	var maxDDistance = 1;
   	
+  	writeln("----------");
   	for (i=1; i<=nDeltas; ++i)
   	{
   		if (UsedDelta[i] == 1)
   		{
+  			var pointsCovered = 0;
+  			var j;
+  			for (j=1; j <= nPoints; j++)
+  				pointsCovered += Cover_dp[i][j];
+  			
   			writeln("- Used delta[",i,"] = ", Deltas[i], " , Max distance = ", 
-  				maxDeltaDistance[i]);
+  				maxDeltaDistance[i], " ud. Covers ", pointsCovered, " points");
+  				
+  			if (maxDeltaDistance[i] > maxDistance)
+  			{
+  				maxDistance = maxDeltaDistance[i];
+  				maxDDistance = i;
+    		}  				
+  			
   			total_delta += Deltas[i];
   			nUsedDeltas+=1;
   		}
   	}
-  	writeln("\n");
+  	writeln("----------");
   	writeln("Number of used deltas: ", nUsedDeltas);
+  	writeln("Max distance [Delta=", maxDDistance ,"] : ", maxDistance);
   	writeln((total_delta*100), "% of the application is described.");
   }
