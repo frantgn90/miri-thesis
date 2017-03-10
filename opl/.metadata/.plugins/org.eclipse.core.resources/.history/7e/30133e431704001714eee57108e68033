@@ -22,8 +22,6 @@
 		<config category="opl" default="false" name="real_problem">
 			<ref name="deltas_fitting.mod" type="model">
 			</ref>
-			<ref name="input_problem.dat" type="data">
-			</ref>
 		</config>
 	</configs>
 	

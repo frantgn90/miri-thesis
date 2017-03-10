@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="ASCII"?><project>
 	<version>1.0</version>
 	<configs>
+		<config category="opl" default="false" name="Configuraci&amp;#243;n 3">
+			<ref name="deltas_fitting.mod" type="model">
+			</ref>
+			<ref name="fitting_med.dat" type="data">
+			</ref>
+		</config>
 		<config category="opl" default="true" name="small_example">
 			<ref name="deltas_fitting.mod" type="model">
 			</ref>
@@ -17,12 +23,6 @@
 			<ref name="deltas_fitting.mod" type="model">
 			</ref>
 			<ref name="fitting_med.dat" type="data">
-			</ref>
-		</config>
-		<config category="opl" default="false" name="real_problem">
-			<ref name="deltas_fitting.mod" type="model">
-			</ref>
-			<ref name="input_problem.dat" type="data">
 			</ref>
 		</config>
 	</configs>

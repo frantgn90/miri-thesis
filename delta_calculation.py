@@ -318,7 +318,7 @@ def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
     # Launching CPLEX
     #
     logging.info("Launching CPLEX...")
-    # TODO
+    
 
     #
     # Parse CPLEX result

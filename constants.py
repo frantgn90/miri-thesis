@@ -14,7 +14,9 @@ CALLSTACK_SIZE=10
 _intra_field_separator="|"
 _inter_field_separator="#"
 
+###############
 ### PARAVER ###
+###############
 
 CALLER_EVENT_BASE ="3000000"
 CALLIN_EVENT_BASE ="3000010"
@@ -31,7 +33,9 @@ MPI_LIB_FILE      ="libmpi_injected.c"
 
 _empty_cell=0
 
+####################
 #### CLUSTERING ####
+####################
 
 _x_axis_label     ="Number of occurrences"
 _y_axis_label     ="Mean period bw occurrences"
@@ -44,18 +48,32 @@ _z_axis           ="delta"
 _eps              =0.05
 _min_samples      =1
 
+###############
 #### LOOPS ####
+###############
 
 PURELOOP          =0
 MULTILOOP         =1
 
+#####################
 #### PSEUDO-CODE ####
+#####################
 
 FORLOOP           ="for loop 1 to {0}: [{1}]\n"
 IF                ="if {0}:\n"
 ELSE              ="elif {0}:\n"
 TAB               =":  "
 
-
+##############
 ### RANDOM ###
-RANDOM_SEED=5748473
+##############
+
+RANDOM_SEED       =5748473
+
+#############
+### CPLEX ###
+#############
+
+OPL_RUN_SCRIPT    ="/home/jmartinez/MIRI/master-thesis/src/opl/run.sh"
+OPL_PROBLEM_INPUT ="/home/jmartinez/MIRI/master-thesis/src/opl/deltas_fitting/"\
+        "input_problem.dat"
