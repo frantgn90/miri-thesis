@@ -107,8 +107,8 @@ def height_call(callstack, call):
     return index
 
 def perform_alignement_st1(vs, vl):
-    #pivot,firstpivot = searchMostFrequentRoutine(vs)
-    pivot, firstpivot = selectPivot(vs)
+    pivot,firstpivot = searchMostFrequentRoutine(vs)
+    #pivot, firstpivot = selectPivot(vs)
 
     logging.debug("Aligning step 1: Pivot={0} findex={1}"\
             .format(pivot, firstpivot))

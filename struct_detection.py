@@ -121,6 +121,13 @@ def main(argc, argv):
                     " CPLEX optimization engine or by a heuristics.",
             dest="use_cplex")
 
+    parser.add_argument("--delta-accuracy",
+            action="store",
+            nargs=1,
+            type=float,
+            required=False,
+            default=[0.1],
+            help="Inverse of number of deltas provided to cplex.")
 
 
     argcomplete.autocomplete(parser)
@@ -203,7 +210,8 @@ def main(argc, argv):
         deltas = calcule_deltas_cplex(
                 depured_data,
                 app_time,
-                arguments.bottom_bound[0])
+                arguments.bottom_bound[0],
+                arguments.delta_accuracy[0])
 
         
         return 0

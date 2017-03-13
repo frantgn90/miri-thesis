@@ -75,5 +75,18 @@ RANDOM_SEED       =5748473
 #############
 
 OPL_RUN_SCRIPT    ="/home/jmartinez/MIRI/master-thesis/src/opl/run.sh"
-OPL_PROBLEM_INPUT ="/home/jmartinez/MIRI/master-thesis/src/opl/deltas_fitting/"\
+OPL_PROBLEM_IN    ="/home/jmartinez/MIRI/master-thesis/src/opl/deltas_fitting/"\
         "input_problem.dat"
+OPL_PROBLEM_OUT   ="cplex.out"
+OPL_PROBLEM_ERR   ="cplex.err"
+
+OPL_ARG_BIGM    = "bigM"
+OPL_ARG_NDELTAS = "nDeltas"
+OPL_ARG_NPOINTS = "nPoints"
+OPL_ARG_DELTAS  = "Deltas"
+OPL_ARG_POINTS  = "Points"
+OPL_ARG_DISTDP  = "Distance_dp"
+
+OPL_DELTA_DIST    ="maxDeltaDistance"
+OPL_USED_DELTA    ="UsedDelta"
+OPL_POINT_DELTA   ="Cover_dp"

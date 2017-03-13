@@ -17,6 +17,8 @@ from sympy import Symbol
 import logging
 import constants
 
+from cplex_interface import CplexInterface
+
 _upper_bound=1
 _init_delta=0.5
 
@@ -104,49 +106,6 @@ def get_near_points(data, total_time,  delta, epsilon):
     mean_square_distances = sum_square_distances/len(points)
     return points, mean_square_distances
 
-
-#def calcule_deltas_heuristic(depured_data, total_time, bottom_bound, epsilon):
-#    deltas=[]
-#    delta_step=epsilon
-#   
-#    total_callstacks = 0
-#    for data in depured_data:
-#        total_callstacks+=len(data)
-#
-#    total_covered = 0
-#    while not total_covered == total_callstacks:
-#        logging.info("{0}% of points covered with {1} deltas".format(
-#            total_covered/total_callstacks*100, len(deltas)))
-#
-#        max_covered = 0
-#        min_mean_distance = sys.maxint
-#
-#        for current_delta in numpy.arange(0.1, 1, delta_step):
-#            near_points, mean_distance = 
-#                get_near_points(depured_data, total_time, current_delta, epsilon)
-#            calls_covered = len(near_points)
-#
-#            if calls_covered > max_covered or \
-#                (calls_covered == max_covered and mean_distance < min_mean_distance):
-#                max_covered = calls_covered
-#                optimum_delta = current_delta
-#                min_mean_distance = mean_distance
-#
-#        if max_covered > 0:
-#            deltas.append(optimum_delta)
-#            total_covered+=max_covered
-#
-#            for data in depured_data:
-#                set_to_delta = filter_by_distance(data, total_time,
-#                        optimum_delta,
-#                        epsilon)
-#
-#                for k,v in to_set_delta.items():
-#                    data[k]["delta"] = optimum_delta
-#
-#                    
-#    
-#    return deltas
 
 def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):
     delta_step = 0.001
@@ -272,15 +231,14 @@ def concentrate_deltas(count_deltas, deltas):
         count_deltas[delta]["count"] = aggregated_count
         count_deltas[delta]["callstacks"] = aggregated_callstacks
 
-def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
+def calcule_deltas_cplex(depured_data, total_time, bottom_bound, delta_accuracy):
     # For the moment, we want to generate the input CPLEX data file
 
     #
     # Preparing data for CPLEX
     #
     logging.info("Preparing data for CPLEX")
-    big_m=100000
-    delta_accuracy = 0.02
+    #delta_accuracy = 0.1
     nDeltas = 1/delta_accuracy
 
     deltas=[]
@@ -293,6 +251,7 @@ def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
         for k,v in cs.items():
             points.append([v[constants._x_axis],v[constants._y_axis]])
 
+    big_m = 0
     distance_dp = []
     for delta in deltas:
         distance_delta=[]
@@ -300,33 +259,42 @@ def calcule_deltas_cplex(depured_data, total_time, bottom_bound):
             min_distance = get_minimum_distance(delta, total_time, point)**2
             distance_delta.append(min_distance)
 
+            if min_distance > big_m:
+                big_m = min_distance
 
             logging.debug("Distances from point ({0},{1}) to delta {2} = {3}"
                     .format(point[0], point[1], delta, min_distance))
         distance_dp.append(distance_delta)
 
-    ff = open("cplex.dat", "w")
-    ff.write("bigM={0};\n".format(big_m))
-    ff.write("nDeltas={0};\n".format(len(deltas)))
-    ff.write("nPoints={0};\n".format(len(points)))
-    ff.write("Deltas={0};\n".format(deltas))
-    ff.write("Points={0};\n".format(points))
-    ff.write("Distance_dp={0};\n".format(distance_dp))
-    ff.close()
+    arguments = {
+            constants.OPL_ARG_BIGM:    big_m,
+            constants.OPL_ARG_NDELTAS: len(deltas),
+            constants.OPL_ARG_NPOINTS: len(points),
+            constants.OPL_ARG_DELTAS:  deltas,
+            constants.OPL_ARG_POINTS:  points,
+            constants.OPL_ARG_DISTDP:  distance_dp
+    }
 
     #
     # Launching CPLEX
     #
-    logging.info("Launching CPLEX...")
+    logging.info("Launching CPLEX for delta clasification...")
+    cplex_int = CplexInterface()
+    cplex_int.set_args(arguments)
+    cplex_int.run()
     
 
     #
-    # Parse CPLEX result
+    # Update points delta
     #
-    logging.info("Parsing CPLEX results...")
-    # TODO
-
-
+    logging.info("Updating points delta clasification...")
+    point_cnt = 0
+    for cs in depured_data:
+        for k,v in cs.items():
+            v["delta"] = cplex_int.get_delta_point_map(point_cnt)
+            point_cnt += 1
+            
+    return cplex_int.get_used_deltas()
 
 # Inspired on (last comment): http://math.stackexchange.com/questions/967268/
 # finding-the-closest-distance-between-a-point-a-curve
