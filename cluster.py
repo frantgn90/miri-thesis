@@ -18,6 +18,7 @@ class cluster (object):
         self._ranks=ranks
         self._cluster=cluster
         self._time_mean = self.__time_mean_m()
+        self._time_median = self.__time_median_m()
         self._times = self.__times_m()
         
         self._delta = self._cluster[0][self._cluster[0].keys()[0]]["delta"]
@@ -42,10 +43,10 @@ class cluster (object):
                     logging.debug("{0} cluster generates new loop for rank {1}."
                             .format(self._id, rank))
 
-                    ranks_loops.append(
-                            loop(tmat=self._tmatrix.getMatrix(), 
-                                 cstack=self._tmatrix.getCallstacks(),
-                                 rank=rank))
+                    ranks_loops.append(loop(
+                        tmat=self._tmatrix.getMatrix(), 
+                        cstack=self._tmatrix.getCallstacks(),
+                        rank=rank))
                 else:
                     partitions = self._tmatrix.getPartitions()
 
@@ -71,16 +72,15 @@ class cluster (object):
 
         return total_time/len(self._cluster)
     
-
-    def __times_m(self):
-        '''
-        total_times=0
+    def __time_median_m(self):
+        total_time=0
         for callstack in self._cluster:
             values = callstack[callstack.keys()[0]]
-            total_times += values["times"]
+            total_time += values["time_median"]
 
-        return total_times/len(self._cluster)
-        '''
+        return total_time/len(self._cluster)
+
+    def __times_m(self):
         max_times = 0
         for callstack in self._cluster:
             values = callstack[callstack.keys()[0]]
@@ -92,12 +92,16 @@ class cluster (object):
     def getPeriod(self):
         return self._time_mean
 
+    def getTimesMedian(self):
+        return self._time_median
+
     def getOccurrences(self):
         return self._times
 
     def str(self):
         pseudocode, dummy=self._merged_rank_loops\
                 .str(0, self._merged_rank_loops._loopdeph)
+        pseudocode="[[{0}]]\n{1}".format(self._delta, pseudocode)
         return pseudocode
 
         
@@ -139,16 +143,17 @@ class cluster (object):
         return self._first_line
 
     def merge(self, ocluster):
-        # Is it a subloop
-        assert(ocluster.getOccurrences() > self._times)
+        assert(ocluster.getTimesMedian() > self.getTimesMedian())
+
+        # This assertion is not useful since a subloop could have less
+        # iterations than the superloop because data conditions.
+        #assert(ocluster.getOccurrences() > self._times)
+
         #assert(ocluster.getFirstLine() >= self._first_line)
 
         subloop = ocluster.getLoop()
 
-        # TODO: (??) We need the times of the callstacks!! and the overall time 
-        # of the loop in order to fit it in its correct place!!!!
-
-        self._merged_rank_loops.mergeS(subloop)
+        self._merged_rank_loops.merge_subloop(subloop)
         self._merges+=1
 
         logging.debug("New loop with {0} iterations merging {1} and {2} clusters"

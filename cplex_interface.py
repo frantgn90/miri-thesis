@@ -8,7 +8,6 @@ import tempfile
 import constants
 
 class CplexInterface(object):
-    runned = False
 
     def __init__(self):
         self.outdir  = tempfile.mkdtemp(prefix="struct-gen.cplex.")
@@ -17,10 +16,9 @@ class CplexInterface(object):
         self.infile  = "{0}/{1}".format(self.outdir, 
                 constants.OPL_PROBLEM_IN.split("/")[-1])
 
-        print self.infile
+        self.executed = False
 
     def set_args(self, args):
-
         self.deltas = args[constants.OPL_ARG_DELTAS]
 
         ff = open(self.infile, "w")
@@ -31,6 +29,24 @@ class CplexInterface(object):
         ff.write("{0}={1};\n".format(constants.OPL_ARG_POINTS, args[constants.OPL_ARG_POINTS]))
         ff.write("{0}={1};\n".format(constants.OPL_ARG_DISTDP, args[constants.OPL_ARG_DISTDP]))
         ff.close()
+
+        return self.infile
+
+    def get_errfile(self):
+        return self.errfile
+
+    def get_outfile(self):
+        return self.outfile
+
+    def set_infile(self, infile):
+        assert infile[0] == "/", "CPLEX input file path should be absolute!"
+
+        self.infile = infile
+        os.remove(constants.OPL_PROBLEM_IN)
+        os.symlink(self.infile, constants.OPL_PROBLEM_IN)
+        self.deltas = self.parse_field_from_file(
+                constants.OPL_ARG_DELTAS,
+                self.infile)
 
     def run(self):
         assert os.path.isfile(self.infile)
@@ -52,7 +68,9 @@ class CplexInterface(object):
     def get_used_deltas(self):
         assert self.executed, "Problem not yet executed."
 
-        used_deltas = self.parse_field_from_file(constants.OPL_USED_DELTA)
+        used_deltas = self.parse_field_from_file(
+                constants.OPL_USED_DELTA,
+                self.outfile)
         result = []
 
         for used_delta, delta in zip(used_deltas, self.deltas):
@@ -64,7 +82,9 @@ class CplexInterface(object):
     def get_delta_point_map(self, point):
         assert self.executed, "Problem not yet executed."
 
-        delta_point_map = self.parse_field_from_file(constants.OPL_POINT_DELTA)
+        delta_point_map = self.parse_field_from_file(
+                constants.OPL_POINT_DELTA,
+                self.outfile)
 
         idelta=0
         for delta_map in delta_point_map:
@@ -75,36 +95,51 @@ class CplexInterface(object):
         
         return self.deltas[idelta]
 
-    def parse_field_from_file(self, field_name):
-        assert field_name in [constants.OPL_DELTA_DIST,
-                constants.OPL_USED_DELTA, constants.OPL_POINT_DELTA]
+    def parse_field_from_file(self, field_name, infile_path):
+        assert field_name in [
+                constants.OPL_ARG_DELTAS,
+                constants.OPL_DELTA_DIST,
+                constants.OPL_USED_DELTA, 
+                constants.OPL_POINT_DELTA]
         
-        print field_name
-        with open(self.outfile) as infile:
+        with open(infile_path) as infile:
             lines=infile.readlines()
 
             infield=False
             field_data=""
             for l in lines:
+                if "<<<" in l or "//" in l:
+                    continue
+
+                l=l.strip()+" "
                 if infield == False and not "=" in l:
                     continue
 
                 elif infield == False and "=" in l:
                     equal_index=l.index("=")
                     fieldName=l[:equal_index]
-
+                    fieldName=fieldName.strip()
+                    
                     if fieldName == field_name:
                         infield=True
+                        l=l.replace(" ", ",")
                         field_data=l[equal_index+1:]
 
                 elif infield == True and "=" not in l:
+
+                    l=l.replace(" ", ",")
                     field_data+=l
 
                 elif infield == True and "=" in l:
                     break
 
+            assert len(field_data) > 0, "{0} @ {1} does not exist"\
+                    .format(field_name, infile_path)
+
             field_data=field_data.replace("\n"," ")
             field_data=field_data.replace(";","")
             field_data=field_data.strip()
+
+            field_data=field_data[field_data.index("["):-field_data[::-1].index("]")]
 
         return eval(field_data)

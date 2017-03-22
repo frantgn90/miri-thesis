@@ -45,7 +45,7 @@ _x_axis           ="times"
 _y_axis           ="time_mean"
 _z_axis           ="delta"
 
-_eps              =0.05
+_eps              =0.10
 _min_samples      =1
 
 ###############
@@ -59,9 +59,10 @@ MULTILOOP         =1
 #### PSEUDO-CODE ####
 #####################
 
-FORLOOP           ="for loop 1 to {0}: [{1}]\n"
-IF                ="if {0}:\n"
-ELSE              ="elif {0}:\n"
+FORLOOP           ="for loop 1 to {0}: [{1}] [[rits:{2}]]\n"
+IF_RANK           ="if RANK in {0}:\n"
+IF_DATA           ="if CHANCE is ({0:.3f}):\n"
+ELSE_RANK         ="elif RANK in {0}:\n"
 TAB               =":  "
 
 ##############

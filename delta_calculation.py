@@ -18,7 +18,7 @@ import logging
 import constants
 
 from cplex_interface import CplexInterface
-
+from utilities import ProgressBar
 _upper_bound=1
 _init_delta=0.5
 
@@ -231,68 +231,92 @@ def concentrate_deltas(count_deltas, deltas):
         count_deltas[delta]["count"] = aggregated_count
         count_deltas[delta]["callstacks"] = aggregated_callstacks
 
-def calcule_deltas_cplex(depured_data, total_time, bottom_bound, delta_accuracy):
-    # For the moment, we want to generate the input CPLEX data file
-
+def calcule_deltas_cplex(
+        depured_data, total_time, bottom_bound, delta_accuracy, cplex_input):
     #
     # Preparing data for CPLEX
     #
-    logging.info("Preparing data for CPLEX")
-    #delta_accuracy = 0.1
-    nDeltas = 1/delta_accuracy
 
-    deltas=[]
-    for i in numpy.arange(delta_accuracy, 1, delta_accuracy):
-        deltas.append(i)
-    deltas.append(1)
-
-    points=[]
+    npoints = 0
     for cs in depured_data:
         for k,v in cs.items():
-            points.append([v[constants._x_axis],v[constants._y_axis]])
+            npoints+=1
 
-    big_m = 0
-    distance_dp = []
-    for delta in deltas:
-        distance_delta=[]
-        for point in points:
-            min_distance = get_minimum_distance(delta, total_time, point)**2
-            distance_delta.append(min_distance)
+    if cplex_input == None:
+        logging.info("Preparing data for CPLEX")
+        nDeltas = 1/delta_accuracy
+        deltas=[]
+        for i in numpy.arange(delta_accuracy, 1, delta_accuracy):
+            deltas.append(i)
+        deltas.append(1)
 
-            if min_distance > big_m:
-                big_m = min_distance
+        pbar = ProgressBar("Generating CPLEX input", npoints*len(deltas))
 
-            logging.debug("Distances from point ({0},{1}) to delta {2} = {3}"
-                    .format(point[0], point[1], delta, min_distance))
-        distance_dp.append(distance_delta)
+        points=[]
+        for cs in depured_data:
+            for k,v in cs.items():
+                points.append([v[constants._x_axis],v[constants._y_axis]])
 
-    arguments = {
-            constants.OPL_ARG_BIGM:    big_m,
-            constants.OPL_ARG_NDELTAS: len(deltas),
-            constants.OPL_ARG_NPOINTS: len(points),
-            constants.OPL_ARG_DELTAS:  deltas,
-            constants.OPL_ARG_POINTS:  points,
-            constants.OPL_ARG_DISTDP:  distance_dp
-    }
+        big_m = 0
+        distance_dp = []
+
+        for delta in deltas:
+            distance_delta=[]
+            for point in points:
+                min_distance = get_minimum_distance(delta, total_time, point)**2
+                distance_delta.append(min_distance)
+
+                if min_distance > big_m:
+                    big_m = min_distance
+
+                logging.debug("Distances from point ({0},{1}) to delta {2} = {3}"
+                        .format(point[0], point[1], delta, min_distance))
+                pbar.progress_by(1)
+                pbar.show()
+
+            distance_dp.append(distance_delta)
+
+        arguments = {
+                constants.OPL_ARG_BIGM:    big_m,
+                constants.OPL_ARG_NDELTAS: len(deltas),
+                constants.OPL_ARG_NPOINTS: len(points),
+                constants.OPL_ARG_DELTAS:  deltas,
+                constants.OPL_ARG_POINTS:  points,
+                constants.OPL_ARG_DISTDP:  distance_dp
+        }
+
+        cplex_int = CplexInterface()
+        infile = cplex_int.set_args(arguments)
+
+        logging.info("CPLEX infile generated: {0}".format(infile))
+    else:
+        logging.info("Using CPLEX input: {0}".format(cplex_input))
+        cplex_int = CplexInterface()
+        cplex_int.set_infile(cplex_input)
 
     #
     # Launching CPLEX
     #
     logging.info("Launching CPLEX for delta clasification...")
-    cplex_int = CplexInterface()
-    cplex_int.set_args(arguments)
-    cplex_int.run()
-    
+
+    logging.info("Using CPLEX outfile: {0}".format(cplex_int.get_outfile()))
+    logging.info("Using CPLEX errfile: {0}".format(cplex_int.get_errfile()))
+
+    cplex_int.run()  
 
     #
     # Update points delta
     #
     logging.info("Updating points delta clasification...")
     point_cnt = 0
+    pbar = ProgressBar("Updating points", npoints)
+    pbar.show()
     for cs in depured_data:
         for k,v in cs.items():
             v["delta"] = cplex_int.get_delta_point_map(point_cnt)
             point_cnt += 1
+            pbar.progress_by(1)
+            pbar.show()
             
     return cplex_int.get_used_deltas()
 

@@ -3,14 +3,20 @@
 # vim:fenc=utf-8
 
 import sys, multiprocessing
+import numpy as np
+
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
+from matplotlib.text import Text
+from matplotlib.image import AxesImage
 
-import numpy as np
 from sklearn.cluster import DBSCAN
 
 from cluster import cluster
 from utilities import print_matrix
+from utilities import pretty_print
 import constants
 
 """
@@ -129,9 +135,32 @@ def multi_normalize_data(data_set):
     return new_data_set
  
 
-def show_clustering(data, labels, core_samples_mask, n_clusters_, 
+def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_, 
         total_time, deltas, bound):    
     X=np.array(data)
+    
+    fig, ax = plt.subplots()
+    def onpick1(event):
+        if isinstance(event.artist, Line2D):
+            thisline = event.artist
+            xdata = thisline.get_xdata()
+            ydata = thisline.get_ydata()
+
+            ind = event.ind
+
+            # Look for the information for this point
+            points_info = ""
+            for i in ind:
+                xd = xdata[i]
+                yd = ydata[i]
+
+                for rank_callstack in cdist:
+                    for callstack, values in rank_callstack.items():
+                        if values[constants._x_axis] == xd  and values[constants._y_axis] == yd:
+                            points_info += "[{0}] {1}\n".format(values["rank"],callstack)
+            pretty_print(points_info, "Points info")
+
+            #print('onpick1 line:', zip(np.take(xdata, ind), np.take(ydata, ind)))
 
     #
     # Show clustered data
@@ -145,7 +174,7 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_,
 
         class_member_mask = (labels == k)
         xy = X[class_member_mask & core_samples_mask]
-        lab,=plt.plot(
+        lab,=ax.plot(
                 xy[:, 0], 
                 xy[:, 1], 
                 'o', 
@@ -153,12 +182,14 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_,
                 markeredgecolor=col, 
                 markersize=5, 
                 marker='o', 
-                label="Cluster {0}".format(k))
+                label="Cluster {0}".format(k),
+                picker=5)
+
         plt_labels.append(lab)
 
         
         xy = X[class_member_mask & ~core_samples_mask]
-        lab,=plt.plot(
+        lab,=ax.plot(
                 xy[:, 0], 
                 xy[:, 1],
                 'o', 
@@ -175,7 +206,7 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_,
     periods.sort()
 
     for delta, col in zip(deltas,colors[::-1]): # Functions to be shown
-        lab,=plt.plot(((delta*total_time)/periods),periods, 
+        lab,=ax.plot(((delta*total_time)/periods),periods, 
                 "k", color=col, lw=1, label="delta={0}".format(delta))
         plt_labels.append(lab)
 
@@ -183,12 +214,12 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_,
     occurrences.sort()
 
     # Upper boundary
-    plt.plot(occurrences, (total_time/occurrences),"k--", color="blue", lw=1)
+    ax.plot(occurrences, (total_time/occurrences),"k--", color="blue", lw=1)
 
     # Bottom boundary
-    plt.plot(((bound*total_time)/periods),periods, "k--", color="red", lw=1) 
+    ax.plot(((bound*total_time)/periods),periods, "k--", color="red", lw=1) 
 
-    plt.title("Number of clusters: {0} (eps={1}, mins={2})"
+    ax.set_title("Number of clusters: {0} (eps={1}, mins={2})"
             .format(n_clusters_, 
             constants._eps, 
             constants._min_samples))
@@ -204,24 +235,25 @@ def show_clustering(data, labels, core_samples_mask, n_clusters_,
     plt.ylim([-0.1,np.max(X[:,1])])
     plt.xlim([-0.1,np.max(X[:,0])])
 
+    fig.canvas.mpl_connect('pick_event', onpick1)
+
     plt.grid(True)
     plt.show()
 
 def clustering(cdist, ranks, show_plot, total_time, delta, bound):
-
+    import math
     #
     # 1. Preparing data
     #
     data=[]
     for cs in cdist:
         for k,v in cs.items():
-            #data.append([v[constants._x_axis],v[constants._y_axis]])
-            data.append([ v[constants._x_axis],
-                          v[constants._y_axis],
-                          v[constants._z_axis] ])
+            data.append([ v[constants._x_axis], v[constants._y_axis],
+                          #v["time_median"]
+                          math.log(v[constants._z_axis])])
 
-    normdata=normalize_data(data)
     #plot_data(data)
+    normdata=normalize_data(data)
 
     #
     # 2. Perform clustering
@@ -249,7 +281,7 @@ def clustering(cdist, ranks, show_plot, total_time, delta, bound):
     if show_plot:
         show_plot_thread=multiprocessing.Process(
                 target=show_clustering,
-                args=(data, labels, core_samples_mask, n_clusters_, 
+                args=(data, cdist, labels, core_samples_mask, n_clusters_, 
                     total_time, delta, bound))
 
         show_plot_thread.start()

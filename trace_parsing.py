@@ -7,7 +7,7 @@ import sys, json, re, os
 import logging
 import constants
 from callstack_alignement import *
-from utilities import progress_bar
+from utilities import ProgressBar
 
 
 ####### GLOBAL
@@ -302,13 +302,13 @@ def get_callstacks(trace, level, image_filter):
     MPI_EVENT=re.compile(constants.MPI_EVENT_BASE + ".")
 
     file_size = os.stat(trace).st_size
-    if constants._verbose: pbar = progress_bar(file_size)
+    pbar = ProgressBar("Parsing trace", file_size)
     
     with open(trace) as tr:
         header = tr.readline()
         appd = get_app_description(header)
 
-        if constants._verbose: pbar.progress_by(len(header))
+        pbar.progress_by(len(header))
 
         total_threads = 0
         for task in appd:
@@ -379,7 +379,7 @@ def get_callstacks(trace, level, image_filter):
 
         events_buffer = {}
         for line in tr:
-            if constants._verbose: pbar.progress_by(len(line))
+            pbar.progress_by(len(line))
 
             line = line[:-1] # Remove the final \n
             line_fields = line.split(":")
@@ -423,7 +423,7 @@ def get_callstacks(trace, level, image_filter):
                     lines_series[task-1].append(flines)
 
 
-            if constants._verbose: pbar.show()
+            pbar.show()
 
 
     # TODO: Terminar de vaciar el events_buffer
@@ -487,13 +487,9 @@ def get_callstacks(trace, level, image_filter):
     json.dump(CALL_NAMES, ofile)
     ofile.close()
 
-    
+    logging.info("Generating temporal data at {0}".format(tmp_files_dir))
 
-    if constants._verbose:
-        print("[Generating temporal data at {0}]".format(tmp_files_dir))
     for i in range(0, total_threads):
         task_outfiles_d[i].close()
 
     return task_outfiles_names
-
-

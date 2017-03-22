@@ -63,7 +63,7 @@ def getCsDistributions(filecs):
             #dmean=numpy.mean(do)
             #dsdev=numpy.std(do)
             #tsdev=numpy.std(tt)
-            #tmean=numpy.median(tt)
+            tmedian=numpy.median(tt)
             tmean=numpy.mean(tt)
             
             cstack_res.update({callstack:{
@@ -72,6 +72,7 @@ def getCsDistributions(filecs):
                 #"time_std" :tsdev,
                 #"when_mean":wmean,
                 "time_mean":tmean,
+                "time_median":tmedian,
                 "when":data["when"],
                 "rank":data["rank"],
                 "times":len(data["occu"]),

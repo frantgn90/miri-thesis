@@ -38,8 +38,14 @@ def merge_clusters(cluster_set, ranks):
 
     for k,v in cluster_by_delta.items():
         logging.debug("Sorting clusters ({0}) with delta={1}".format(len(v), k))
-        v.sort(key=lambda x: x.getOccurrences(), reverse=True)
+        
+        # When there is any data contion could be that inner loops have
+        # less overall iterations, so lets sort by time median.
+        v.sort(key=lambda x: x.getTimesMedian(), reverse=True)
+
+        #v.sort(key=lambda x: x.getOccurrences(), reverse=True)
     logging.debug("Clusters sorted for merging.")
+
 
     # Then, the merge must be done from the little one to the biggest one.
     top_level_clusters=[]
@@ -50,11 +56,18 @@ def merge_clusters(cluster_set, ranks):
         for i in range(len(clusters)-1):
             done=False
             for j in range(i+1,len(clusters)):
-                if clusters[j].getOccurrences() < clusters[i].getOccurrences():
+                #if clusters[j].getOccurrences() < clusters[i].getOccurrences():
+                #    logging.debug("Cluster {0} ({1}) merged with {2} ({3})".
+                #            format(i, clusters[i].getOccurrences(),
+                #                   j, clusters[j].getOccurrences()))
+                #    clusters[j].merge(clusters[i])
+
+                if clusters[j].getTimesMedian() < clusters[i].getTimesMedian():
                     logging.debug("Cluster {0} ({1}) merged with {2} ({3})".
-                            format(i, clusters[i].getOccurrences(),
-                                   j, clusters[j].getOccurrences()))
+                            format(i, clusters[i].getTimesMedian(),
+                                   j, clusters[j].getTimesMedian()))
                     clusters[j].merge(clusters[i])
+
                     done=True
                     break
 

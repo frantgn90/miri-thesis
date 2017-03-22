@@ -12,25 +12,30 @@ import pdb
 class loop (object):
     def __init__(self, tmat, cstack, rank):
         self._tmat={}
-        self._cs={} # {cs:[..], ranks:[..]}
+        self._cs={}
 
         self._rank=rank
         self._tmat[rank]=tmat
         self._cstack = cstack
         self._merge = 1 # myself
         self._first_line = 0
+        self._is_condition = False
+        self._condition_propability = 0
 
         self._iterations = len(self._tmat[self._rank][0])
+        self._original_iterations = len(self._tmat[self._rank][0])
+
         assert self._iterations > 1
 
         # The key of every cs set is the line of the first call of the callstack
         dummy,self._loopdeph=cs_uncommon_part(self._cstack)
-
-        key=self._cstack[0] \
-            .split(constants._intra_field_separator)[1::2][self._loopdeph]
-
+        key=self._cstack[0].split(
+                constants._intra_field_separator)[1::2][self._loopdeph]
         self._first_line = key
-        self._cs.update({key:{"cs":list(self._cstack), "ranks":[self._rank]}})
+        self._cs.update({
+            int(key):{"cs":list(self._cstack), 
+                 "ranks":[self._rank]}})
+
         logging.debug("New loop with {0} iterations.".format(self._iterations))
 
     def get_tmat(self):
@@ -44,44 +49,43 @@ class loop (object):
         return list(set(ranks)) # Removing repetitions
 
     def merge(self, oloop):
+        # Assert if it loop has not been merged before
         assert len(oloop._cs) == 1, "TODO: Merge merged loops (tree-merge)"
 
         newcs = oloop._cstack
         newrank = oloop._rank
 
         self._tmat[newrank] = oloop._tmat[newrank]
-    
+
         for key, cset in self._cs.items():
             if len(newcs) == 0: break
             if newrank in cset["ranks"]: continue
 
             commoncs = self.__get_common_cs(cset["cs"], newcs)
-            uncommoncs_a = self.__substract_cs(self._cs[key]["cs"],commoncs)
-            uncommoncs_b = self.__substract_cs(newcs, commoncs)
+            uncommoncs_a = self.__substract_cs(cset["cs"],commoncs)
 
-            if len(commoncs) == len(cset["cs"]): # all is common
-                self._cs[key]["ranks"].append(newrank)
+            if len(commoncs) == len(cset["cs"]):
+                cset["ranks"].append(newrank)
             elif len(commoncs) > 0 and len(commoncs) < len(cset["cs"]):
-
-                # Create common new cset
-                newkey=commoncs[0] \
-                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
-                newcset=list(cset["ranks"]) # copy
-                newcset.append(newrank)
-                self._cs.update({
-                    newkey:{ 
-                        "cs": commoncs, 
-                        "ranks": newcset}})
-
+                
                 # Update uncommon cset
-                self._cs[key]["cs"] = uncommoncs_a
-                newkey=self._cs[key]["cs"][0] \
-                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
-
+                cset["cs"] = uncommoncs_a
+                newkey=int(cset["cs"][0] \
+                    .split(constants._intra_field_separator)[1::2][self._loopdeph])
 
                 if key != newkey:
                     self._cs[newkey]=dict(self._cs[key]) # copy
                     del(self._cs[key]) # removing the old entry
+
+                # Create common new cset
+                newkey=commoncs[0]\
+                        .split(constants._intra_field_separator)[1::2][self._loopdeph]
+                newcset=list(cset["ranks"]) # copy
+                newcset.append(newrank)
+                self._cs.update({
+                    int(newkey):{ 
+                        "cs": commoncs, 
+                        "ranks": newcset}})
 
             # Every time a part of this newcs is merged, then it have to be
             # substracted in order to no merge it again
@@ -93,9 +97,8 @@ class loop (object):
                 newkey=newcs[0] \
                     .split(constants._intra_field_separator)[1::2][self._loopdeph]
                 self._cs.update({
-                    newkey:{
-                    "cs": newcs,
-                    "ranks": [newrank]}})
+                    int(newkey):{"cs": newcs,
+                            "ranks": [newrank]}})
 
         self._merge += 1
 
@@ -105,79 +108,101 @@ class loop (object):
         # Every time a merge is done, recompute the first line
         self._first_line = cskeys[0]
 
-    def recomputeFirstLine(self, looplevel):
+    def recompute_first_line(self, looplevel):
         cskeys=list(self._cs.keys())
         cskeys.sort(key=float)
         firstk=cskeys[0]
 
         if type(self._cs[firstk]["cs"]) == loop:
             self._first_line = self._cs[firstk]["cs"]\
-                .recomputeFirstLine(looplevel)
+                .recompute_first_line(looplevel)
         elif type(self._cs[firstk]["cs"][0]) == loop:
             self._first_line = self._cs[firstk]["cs"][0]\
-                .recomputeFirstLine(looplevel)
+                .recompute_first_line(looplevel)
         else:
             self._first_line=self._cs[firstk]["cs"][0]\
                 .split(constants._intra_field_separator)[1::2][looplevel]
 
         return self._first_line
 
-    def mergeS(self, subloop):
+    def merge_subloop(self, subloop):
         subranks = subloop.get_ranks()
         # It means that potentially, the subloop will be placed here.
         # Is important to recompute the keys of the cs at the subloop
         # because the level of loop base (i.e. shared calls) in subloop
         # will be potentially highest than the superloop
 
-        assert subloop._iterations > self._iterations
+        # This assertion is not useful since a subloop could have less
+        # iterations than the superloop because data conditions.
+        #
+        #assert subloop._iterations > self._iterations
 
-        subloop.recomputeFirstLine(self._loopdeph)
-        subloop._iterations/=self._iterations
+        subloop.recompute_first_line(self._loopdeph)
 
-        sline = subloop.getFirstLine()
+        if subloop._iterations < self._iterations:
+            subloop._is_condition = True # Maybe a loop into a condition
+            subloop._condition_propability = float(subloop._iterations)/self._iterations
+        else:
+            subloop._iterations/=self._iterations
 
-        # This subloop has to be pushed in some place, inside a set of 
-        # callstacks that is a superset of sranks.
+        subloop_first_line = int(subloop.getFirstLine()) # TODO: It should return an 'int'
 
         done=False
-        for k,v in self._cs.items():
+        keys_sorted = sorted(self._cs.keys(), reverse=True)
+
+        # From bottom to top
+        for k in keys_sorted:
+            v=self._cs[k]
             superranks = v["ranks"]
-            #superset = (set(superranks).intersection(subranks)==set(subranks))
-            superset = (subranks==superranks)
+            superset = (subranks==superranks) # TODO: Revise. With a superset is enough?
 
-            if superset:
-                inject_at=0
-                for i in range(len(v["cs"])):
-                    if type(v["cs"][i])==loop:
-                        v["cs"][i].recomputeFirstLine(self._loopdeph)
-                        line=v["cs"][i].getFirstLine()
-                    else:
-                        callstack=v["cs"][i].split(constants._intra_field_separator)
-                        line = callstack[1::2][self._loopdeph]
+            # Init line block
+            if type(v["cs"][0])==loop:
+                v["cs"][0].recompute_first_line(self._loopdeph)
+                init_line_block = int(v["cs"][0].getFirstLine())
+            else:
+                callstack=v["cs"][0].split(constants._intra_field_separator)
+                init_line_block = int(callstack[1::2][self._loopdeph])
 
-                    if int(line) > int(sline):
-                        v["cs"].insert(i, subloop)
-                        done=True; break
-                    elif int(line) == int(sline):
-                        for j in range(self._loopdeph,len(callstack[0::2])):
-                            subloop.recomputeFirstLine(j)
-                            new_line=callstack[1::2][j]
-                            new_sline=subloop.getFirstLine()
+            # If its place is in/between this block
+            if subloop_first_line > init_line_block:
+                if superset:
+                    
+                    done = False
+                    for i, callstack in zip(range(len(v["cs"])),v["cs"])[::-1]:
+                        cs_fields = callstack.split(constants._intra_field_separator)
+                        cs_line = int(cs_fields[1::2][self._loopdeph])
 
-                            if int(new_sline) < int(new_line):
-                                v["cs"].insert(i, subloop)
-                                done=True; break;
+                        if subloop_first_line > cs_line:
+                            v["cs"].insert(i, subloop)
+                            done = True
+                            break
+                    
+                    if not done:
+                        v["cs"].insert(0, subloop)
+                else:
+                    after_rank_line = -1
+                    after_rank_block = []
 
-                if not done:
-                    done=True
-                    v["cs"].append(subloop)
+                    for callstack in v["cs"]:
+                        cs_fields = callstack.split(constants._intra_field_separator)
+                        cs_line = int(cs_fields[1::2][self._loopdeph])
+                        
+                        if subloop_first_line < cs_line:
+                            after_rank_block.append(callstack)
+                            if after_rank_line == -1: after_rank_line = cs_line
 
-            if done: break
+                    # Insert the subloop in the middle of a block
+                    self._cs.update({
+                        subloop_first_line: 
+                            {"cs":[subloop], "ranks": subloop.get_ranks()}})
 
-        # If the execution arrives here without injecting the subloop, then
-        # it means that we need to create a new callstack group
-        if not done:
-            self._cs.update({sline:{ "cs": [subloop], "ranks": subranks}})
+                    # The block has been splitted. This is the second part.
+                    if after_rank_line != -1:
+                        self._cs.update({
+                            after_rank_line:
+                                {"cs":after_rank_block, "ranks": v["ranks"]}})               
+                break
 
     def __get_common_cs(self, cs1, cs2):
         res=[]
@@ -196,10 +221,6 @@ class loop (object):
         return res
 
     def str(self,block_tabs, base):
-        #if self._rank == 0:
-        #print self._cs
-        #print
-
         relative_tabs=0
 
         ##############################################################
@@ -229,8 +250,16 @@ class loop (object):
         loop_base=self._cstack[0].split\
                 (constants._intra_field_separator)[0::2][self._loopdeph]
 
-        pseudocode+=constants.TAB*(relative_tabs)\
-                + constants.FORLOOP.format(self._iterations,loop_base)
+        if self._is_condition == False:
+            pseudocode+=constants.TAB*(relative_tabs)\
+                 + constants.FORLOOP.format(
+                         self._iterations,
+                         loop_base,
+                         self._original_iterations)
+        else:
+            pseudocode+=constants.TAB*(relative_tabs)\
+                + constants.IF_DATA.format(self._condition_propability)
+
 
         relative_tabs+=1
 
@@ -264,13 +293,13 @@ class loop (object):
             if len(ranks) < self._merge:
                 if some_if == True:
                     pseudocode += constants.TAB*relative_tabs\
-                        + constants.ELSE.format("rank in "+str(ranks))
+                        + constants.ELSE_RANK.format(ranks)
                 else:
                     # TODO: Not should be elif for all cases.. only for those
                     # cases that the conditions are completely complementary
                     some_if=True
                     pseudocode += constants.TAB*relative_tabs\
-                        + constants.IF.format("rank in "+str(ranks))
+                        + constants.IF_RANK.format(ranks)
 
 
                 if_tabs=1

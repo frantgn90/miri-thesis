@@ -3,7 +3,10 @@
 # vim:fenc=utf-8
 
 from __future__ import print_function # Needed by the progress bar
+import logging
+
 import numpy as np
+
 def is_sublist(sl, ll):
     findex=0
     eindex=0
@@ -64,20 +67,33 @@ class Printer():
         sys.stdout.write("\x1b[K"+data.__str__())
         sys.stdout.flush()
 
-class progress_bar(object):
-    def __init__(self, total):
+class ProgressBar(object):
+    def __init__(self, msg, total):
         self.total = total
         self.progression = 0
         self.bar_size=20
-        self.update_every=2000
+        self.msg_size=30
+        self.update_every_percent=5
         self.count = 0
+        self.msg = msg
+
+        if len(self.msg) > self.msg_size:
+            self.msg = self.msg[:self.msg_size-4]+"... "
+        else:
+            self.msg = self.msg + " "*(self.msg_size-len(self.msg))
+
+        self.show()
+
 
     def progress_by(self, by):
         self.progression += by
 
     def show(self):
         self.count += 1
-        if self.count >= self.update_every or self.progression == self.total:
+        if self.count >= self.update_every_percent/100*self.total \
+            or self.progression == self.total\
+            or self.progression == 0:
+
             percent = (self.progression*100)/self.total
             pbar_syms = (self.progression*self.bar_size)/self.total
             pbar_spac = self.bar_size-pbar_syms
@@ -87,9 +103,22 @@ class progress_bar(object):
             else:
                 endc="\r"
 
-            print("|{0}>{1}| {2}% {3}/{4}".format("="*(pbar_syms), " "*pbar_spac, str(percent), str(self.progression),str(self.total)), end=endc)
-            self.count = 0
+#            print("{0} [{1}>{2}] {3}% {4}/{5}"
+#                    .format(
+#                        self.msg,
+#                        "="*(pbar_syms), 
+#                        " "*pbar_spac, 
+#                        str(percent), 
+#                        str(self.progression),
+#                        str(self.total)), end=endc)
 
+            print("{0} [{1}>{2}] {3}%".format(
+                self.msg,
+                "="*(pbar_syms), 
+                " "*pbar_spac, 
+                str(percent)), end=endc)
+            
+            self.count = 0
 
 def print_matrix(matrix, infile):
     if type(matrix)==list:

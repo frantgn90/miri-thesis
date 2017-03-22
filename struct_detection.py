@@ -121,6 +121,17 @@ def main(argc, argv):
                     " CPLEX optimization engine or by a heuristics.",
             dest="use_cplex")
 
+    parser.add_argument("--cplex-input",
+            action="store",
+            nargs=1,
+            type=str,
+            required=False,
+            default=[None],
+            help="Whether you want to use already generated input for CPLEX, you "\
+                    "must specify here the path to it.",
+            metavar="CPLEXINPUT",
+            dest="cplex_input")
+
     parser.add_argument("--delta-accuracy",
             action="store",
             nargs=1,
@@ -138,8 +149,8 @@ def main(argc, argv):
     image_filter = arguments.image_filter
     ri = arguments.nrandits
     tmp_files_dir = arguments.tmp_files[0]
-
     numeric_level = getattr(logging, arguments.log_level[0].upper(), None)
+
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: {0}".format(loglevel))
 
@@ -211,11 +222,11 @@ def main(argc, argv):
                 depured_data,
                 app_time,
                 arguments.bottom_bound[0],
-                arguments.delta_accuracy[0])
+                arguments.delta_accuracy[0],
+                arguments.cplex_input[0])
 
-        
-        return 0
-        
+    logging.info("Used deltas: {0}".format(deltas))
+
     #
     # 3. Clustering
     #
@@ -267,10 +278,12 @@ def main(argc, argv):
     if ri > 0:
         print_iterations(iterations)
 
-    final_stats=  ">> {0} clusters detected\n".format(nclusters)
-    final_stats+=(">> Time in pseudocode: {0}%\n".format(sum(deltas)*100))
+    final_stats =  ">> {0} clusters detected\n".format(nclusters)
+    final_stats+=  ">> Grouped in {0} super-loops\n".format(len(deltas))
+
     for i, delta in zip(range(len(deltas)),deltas):
         final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
+    final_stats+=(">> Time in pseudocode: {0}%\n".format(sum(deltas)*100))
 
     pretty_print(final_stats, "Final stats")
 
