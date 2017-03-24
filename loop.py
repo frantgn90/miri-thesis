@@ -253,9 +253,7 @@ class loop (object):
         if self._is_condition == False:
             pseudocode+=constants.TAB*(relative_tabs)\
                  + constants.FORLOOP.format(
-                         self._iterations,
-                         loop_base,
-                         self._original_iterations)
+                         self._iterations)
         else:
             pseudocode+=constants.TAB*(relative_tabs)\
                 + constants.IF_DATA.format(self._condition_propability)

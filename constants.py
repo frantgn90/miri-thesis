@@ -59,7 +59,7 @@ MULTILOOP         =1
 #### PSEUDO-CODE ####
 #####################
 
-FORLOOP           ="for loop 1 to {0}: [{1}] [[rits:{2}]]\n"
+FORLOOP           ="for loop 1 to {0}:\n"
 IF_RANK           ="if RANK in {0}:\n"
 IF_DATA           ="if CHANCE is ({0:.3f}):\n"
 ELSE_RANK         ="elif RANK in {0}:\n"
@@ -91,3 +91,5 @@ OPL_ARG_DISTDP  = "Distance_dp"
 OPL_DELTA_DIST    ="maxDeltaDistance"
 OPL_USED_DELTA    ="UsedDelta"
 OPL_POINT_DELTA   ="Cover_dp"
+
+MAX_ITERATIONS = 2

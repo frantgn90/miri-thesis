@@ -263,7 +263,10 @@ def calcule_deltas_cplex(
         for delta in deltas:
             distance_delta=[]
             for point in points:
-                min_distance = get_minimum_distance(delta, total_time, point)**2
+                min_distance = get_minimum_distance(delta, total_time, point)
+                min_distance_2 = get_minimum_distance_2(delta, total_time, point)
+
+                print "{0} ~ {1}".format(min_distance, min_distance_2)
                 distance_delta.append(min_distance)
 
                 if min_distance > big_m:
@@ -340,3 +343,62 @@ def get_minimum_distance(delta,total_time, point):
             min_distance = distance
     
     return min_distance
+
+def get_minimum_distance_2(delta, total_time, point):
+    result = _get_minimum_distance_2(delta, total_time, point, 0, 0)
+    return result
+
+def _get_minimum_distance_2(delta, total_time, point, accumulated, iteration):
+    # Calculation of the distance to delta function by mean of approximations
+    # using the same technique as whith linear functions but in a recursive way
+
+    X=point[0]
+    Y=point[1]
+
+    B=[X,(delta*total_time)/float(X)]
+    C=[(delta*total_time)/float(Y),Y]
+
+    is_below=(B[1] > Y)
+
+    b=abs(X-C[0])
+    c=abs(Y-B[1])
+    a=math.sqrt(b**2+c**2)
+
+    h=(b*c)/a
+    h = (-h if is_below else h)
+    
+    print "Below={0} : {1}".format(is_below, h)
+
+    print "A={0}".format(point)
+    print "B={0}".format(B)
+    print "C={0}".format(C)
+
+    if iteration < constants.MAX_ITERATIONS:
+        #m=(b**2)/a
+        #n=(c**2)/a
+
+        m = math.sqrt(b**2-h**2)
+        n = math.sqrt(c**2-h**2)
+
+        print "n={0}; m={1}".format(n,m)
+
+        if not is_below:
+            coeff=float(m)/a
+            new_point = [C[0]+b*coeff, C[1]+c*coeff]
+        else:
+            coeff=float(n)/a
+            new_point = [X+b*coeff, Y+c*coeff]
+
+        print "E={0}".format(new_point)
+
+        print "--------------"
+        return _get_minimum_distance_2(
+                delta, 
+                total_time, 
+                new_point, 
+                h+accumulated, 
+                iteration+1)
+    else:
+        print "______________"
+        return abs(h+accumulated)
+

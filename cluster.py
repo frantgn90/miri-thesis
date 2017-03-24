@@ -101,7 +101,7 @@ class cluster (object):
     def str(self):
         pseudocode, dummy=self._merged_rank_loops\
                 .str(0, self._merged_rank_loops._loopdeph)
-        pseudocode="[[{0}]]\n{1}".format(self._delta, pseudocode)
+        pseudocode="<{0}%>\n{1}".format(self._delta*100, pseudocode)
         return pseudocode
 
         
