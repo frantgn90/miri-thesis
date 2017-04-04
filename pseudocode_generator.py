@@ -57,7 +57,7 @@ def merge_clusters(cluster_set, ranks):
             done=False
             for j in range(i+1,len(clusters)):
                 if clusters[j].getTimesMedian() > clusters[i].getTimesMedian():
-                    logging.info("Cluster {0} ({1}) merged with {2} ({3})".
+                    logging.info("Cluster {0} ({1}) merged to {2} ({3})".
                             format(i, clusters[i].getTimesMedian(),
                                    j, clusters[j].getTimesMedian()))
                     clusters[j].merge(clusters[i])

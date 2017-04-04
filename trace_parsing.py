@@ -452,8 +452,8 @@ def get_callstacks(trace, level, image_filter):
                 new_stack_call.append(callstack_series[rank_index][i_stack][i_call])
                 new_stack_line.append(lines_series[rank_index][i_stack][i_call])
 
-                if "mpl" in callstack_series[rank_index][i_stack][i_call]:
-                    break
+                #if "mpl_" in callstack_series[rank_index][i_stack][i_call]:
+                #    break
 
             callstack_series[rank_index][i_stack] = new_stack_call
             lines_series[rank_index][i_stack] = new_stack_line

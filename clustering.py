@@ -246,6 +246,9 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
     plt.ylim([-0.1,np.max(X[:,1])])
     plt.xlim([-0.1,np.max(X[:,0])])
 
+    plt.axhline(0, color='black')
+    plt.axvline(0, color='black')
+
     fig.canvas.mpl_connect('pick_event', onpick1)
 
     plt.grid(True)

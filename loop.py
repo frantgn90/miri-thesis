@@ -147,12 +147,20 @@ class loop (object):
         keys_sorted = sorted(self._cs.keys(), reverse=True)
         
         # From bottom to top
+        done = False
         for k in keys_sorted:
+            if done: break
+
             v=self._cs[k]
             superranks = v["ranks"]
 
-            # TODO: Revise. With a superset is enough?
-            superset = (subranks==superranks) 
+            allranks = (subranks==superranks)
+
+            # TODO: When allranks is false, it still could form part of the
+            # superloop but with an extra conditional that is the subset
+            subset = set.intersection(*[set(subranks),set(superranks)])
+            subset = list(subset)
+
 
             # Init line block
             if type(v["cs"][0])==loop:
@@ -163,49 +171,72 @@ class loop (object):
                 init_line_block = int(callstack[1::2][self._loopdeph])
 
             # If its place is in/between this block
-            if subloop_first_line > init_line_block:
-                if superset:           
-                    done = False
-                    for i, callstack in zip(range(len(v["cs"])),v["cs"])[::-1]:
-                        cs_fields = callstack.split(constants._intra_field_separator)
-                        cs_line = int(cs_fields[1::2][self._loopdeph])
+            #if subloop_first_line >= init_line_block:
+            #pdb.set_trace()
 
-                        # TODO: If is the same line, in order to have a good sort
-                        # it must be checked the callstack next levels
-                        if subloop_first_line == cs_line:
-                            print "WARNING: Deeper levels of the callstacks must be checked"\
-                                    " the order of the calls could be disordered."
-                        if subloop_first_line > cs_line:
-                            v["cs"].insert(i+1, subloop)
-                            done = True
-                            break
+            if allranks:
+                for i, callstack in zip(range(len(v["cs"])),v["cs"])[::-1]:
+                    if done: break
+                    cs_fields = callstack.split(constants._intra_field_separator)
+                    cs_line = int(cs_fields[1::2][self._loopdeph])
+
+                    if subloop_first_line == cs_line:
+                        for next_loopdeph in range(self._loopdeph+1,len(cs_fields[1::2])):
+                            if done: break
+                            cs_next_level_line = cs_fields[1::2][next_loopdeph]
+                            cs_next_level_call = cs_fields[0::2][next_loopdeph]
+
+                            subloop_next_line = subloop.get_first_line_at_level(
+                                    next_loopdeph)
+                            subloop_next_call = subloop.get_first_call_at_level(
+                                    next_loopdeph)
+
+
+                            assert cs_next_level_call == subloop_next_call
+
+                            if cs_next_level_line > subloop_next_line:
+                                v["cs"].insert(i, subloop)
+                                done = True
+                            elif cs_next_level_line < subloop_next_line:
+                                v["cs"].insert(i+1, subloop)
+                                done = True
+
+                    elif subloop_first_line > cs_line:
+                        v["cs"].insert(i+1, subloop)
+                        done = True
+                
+                if not done:
+                    v["cs"].insert(0, subloop)
+                    done = True
+            else:
+                after_rank_line = -1
+                after_rank_block = []
+
+                for callstack in v["cs"]:
+                    cs_fields = callstack.split(constants._intra_field_separator)
+                    cs_line = int(cs_fields[1::2][self._loopdeph])
                     
-                    if not done:
-                        v["cs"].insert(0, subloop)
-                else:
-                    after_rank_line = -1
-                    after_rank_block = []
+                    if subloop_first_line == cs_line:
+                        print("WARNING: Deeper levels of the callstacks"\
+                                " must be checked the order of the calls"\
+                                "could be disordered. (2)")
+                    if subloop_first_line < cs_line:
+                        after_rank_block.append(callstack)
+                        if after_rank_line == -1: after_rank_line = cs_line
 
-                    for callstack in v["cs"]:
-                        cs_fields = callstack.split(constants._intra_field_separator)
-                        cs_line = int(cs_fields[1::2][self._loopdeph])
-                        
-                        if subloop_first_line < cs_line:
-                            after_rank_block.append(callstack)
-                            if after_rank_line == -1: after_rank_line = cs_line
+                # Insert the subloop in the middle of a block
+                self._cs.update({
+                    subloop_first_line: 
+                        {"cs":[subloop], "ranks": subloop.get_ranks()}})
 
-                    # Insert the subloop in the middle of a block
+                # The block has been splitted. This is the second part.
+                if after_rank_line != -1:
                     self._cs.update({
-                        subloop_first_line: 
-                            {"cs":[subloop], "ranks": subloop.get_ranks()}})
-
-                    # The block has been splitted. This is the second part.
-                    if after_rank_line != -1:
-                        self._cs.update({
-                            after_rank_line:
-                                {"cs":after_rank_block, "ranks": v["ranks"]}}) 
+                        after_rank_line:
+                            {"cs":after_rank_block, "ranks": v["ranks"]}}) 
+                done=True
                 break
-
+            
         assert done
 
     def __get_common_cs(self, cs1, cs2):
@@ -303,7 +334,6 @@ class loop (object):
                     pseudocode += constants.TAB*relative_tabs\
                         + constants.IF_RANK.format(ranks)
 
-
                 if_tabs=1
                 #relative_tabs+=1
 
@@ -380,6 +410,23 @@ class loop (object):
     def getIteration(self, rank, it):
         assert it < len(self._tmat[rank][0]), "This iteration does not exist."
         return [self._tmat[rank][0][it], self._tmat[rank][0][it+1]]
+
+    def get_first_line_at_level(self, level):
+        stack_lines = self._cstack[0].split(constants._intra_field_separator)[1::2]
+        return stack_lines[level]
+
+    def get_last_line_at_level(self, level):
+        stack_lines = self._cstack[-1].split(constants._intra_field_separator)[1::2]
+        return stack_lines[level]
+
+    def get_first_call_at_level(self, level):
+        stack_calls = self._cstack[0].split(constants._intra_field_separator)[0::2]
+        return stack_calls[level]
+
+    def get_last_call_at_level(self, level):
+        stack_calls = self._cstack[-1].split(constants._intra_field_separator)[0::2]
+        return stack_calls[level]
+
 
 
 ############################
