@@ -63,6 +63,7 @@ class cluster (object):
         # Ranks merge level
         logging.debug("{0} cluster merging loops".format(self._id))
         self.__ranks_level_merge(ranks_loops)
+
   
     def __time_mean_m(self):
         total_time=0
@@ -100,8 +101,10 @@ class cluster (object):
 
     def str(self):
         pseudocode, dummy=self._merged_rank_loops\
-                .str(0, self._merged_rank_loops._loopdeph)
-        pseudocode="<{0}%>\n{1}".format(self._delta*100, pseudocode)
+                .str(0,0)
+                #.str(0, self._merged_rank_loops._loopdeph)
+        pseudocode="\n[ClusterID={0}; Expains={1}%]\n{2}".format(\
+                self._id, self._delta*100, pseudocode)
         return pseudocode
 
         
@@ -109,17 +112,6 @@ class cluster (object):
         assert False, "It is not developed yet."
 
     def __ranks_level_merge(self, ranks_loops):
-        # Merging all ranks with first one
-        '''
-        ranks_loops.sort(key=lambda x: x._iterations, reverse=True)
-
-        for i in range(len(ranks_loops)-1):
-            ranks_loops[i].merge(ranks_loops[i+1])
-
-        self._merged_rank_loops=ranks_loops[-1]
-        self._first_line = self._merged_rank_loops.getFirstLine()
-        '''
-        
         for i in range(1, len(ranks_loops)):
             ranks_loops[0].merge(ranks_loops[i])
 
@@ -128,10 +120,8 @@ class cluster (object):
         self._merged_rank_loops=ranks_loops[0]
         self._first_line = self._merged_rank_loops.getFirstLine()
         
-
         logging.debug("All partial loops merged into {0} iterations loop."
                 .format(self._merged_rank_loops._iterations))
-    
 
     def getLoop(self):
         return self._merged_rank_loops
@@ -143,22 +133,14 @@ class cluster (object):
         return self._first_line
 
     def merge(self, ocluster):
-        assert(ocluster.getTimesMedian() > self.getTimesMedian())
-
-        # This assertion is not useful since a subloop could have less
-        # iterations than the superloop because data conditions.
-        #assert(ocluster.getOccurrences() > self._times)
-
+        assert(self.getTimesMedian() > ocluster.getTimesMedian())
         #assert(ocluster.getFirstLine() >= self._first_line)
 
-        subloop = ocluster.getLoop()
-
-        self._merged_rank_loops.merge_subloop(subloop)
+        self._merged_rank_loops.merge_subloop(ocluster.getLoop())
         self._merges+=1
 
         logging.debug("New loop with {0} iterations merging {1} and {2} clusters"
-                .format(self._merged_rank_loops._iterations,
-                    self._id, ocluster._id))
+                .format(self._merged_rank_loops._iterations, self._id, ocluster._id))
 
     def getRandomIterations(self, n):
         niters = self._merged_rank_loops._iterations

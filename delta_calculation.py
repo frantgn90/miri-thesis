@@ -80,7 +80,7 @@ def getDelta(cdist, total_time, bottom_bound):
 
 def filter_by_distance(callstacks, total_time, delta, epsilon):
     result = {k:v for k,v in callstacks.items() \
-                if get_minimum_distance(delta, total_time, [v["times"],v["time_mean"]]) <= epsilon}
+                if get_minimum_distance(delta, total_time, [v["times"],v["time_mean"]])[0] <= epsilon}
 
     return result
 
@@ -101,7 +101,7 @@ def get_near_points(data, total_time,  delta, epsilon):
 
     sum_square_distances=0
     for point in points:
-        sum_square_distances += get_minimum_distance(delta, total_time, point)
+        sum_square_distances += get_minimum_distance(delta, total_time, point)[0]
 
     mean_square_distances = sum_square_distances/len(points)
     return points, mean_square_distances
@@ -161,6 +161,7 @@ def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):
 
 def concentrate_deltas(count_deltas, deltas):
 
+    assert False, "Not done yet, use --cplex"
     ### Clustering ###
     points=[]
     for delta, value in count_deltas.items():
@@ -263,10 +264,9 @@ def calcule_deltas_cplex(
         for delta in deltas:
             distance_delta=[]
             for point in points:
-                min_distance = get_minimum_distance(delta, total_time, point)
-                min_distance_2 = get_minimum_distance_2(delta, total_time, point)
+                min_distance = get_minimum_distance(delta, total_time, point)[0]
+                #min_distance = get_minimum_distance_2(delta, total_time, point)[0]
 
-                print "{0} ~ {1}".format(min_distance, min_distance_2)
                 distance_delta.append(min_distance)
 
                 if min_distance > big_m:
@@ -336,17 +336,18 @@ def get_minimum_distance(delta,total_time, point):
 
     # Once we have de solutions we want to get the minimum distance
     min_distance = float("inf")
+    min_solution = 0
     for solution in solutions:
         distance = math.sqrt((solution-X)**2 + ((T/solution)-Y)**2)
 
         if distance < min_distance:
             min_distance = distance
+            min_solution = [solution, T/solution]
     
-    return min_distance
+    return min_distance, min_solution
 
 def get_minimum_distance_2(delta, total_time, point):
-    result = _get_minimum_distance_2(delta, total_time, point, 0, 0)
-    return result
+    return _get_minimum_distance_2(delta, total_time, point, 0, 0)
 
 def _get_minimum_distance_2(delta, total_time, point, accumulated, iteration):
     # Calculation of the distance to delta function by mean of approximations
@@ -364,34 +365,34 @@ def _get_minimum_distance_2(delta, total_time, point, accumulated, iteration):
     c=abs(Y-B[1])
     a=math.sqrt(b**2+c**2)
 
+    if a==0: 
+        return accumulated, point
+    if accumulated > 0 and is_below:
+        return accumulated, point
+
     h=(b*c)/a
     h = (-h if is_below else h)
     
-    print "Below={0} : {1}".format(is_below, h)
+    #print "Below={0} : {1}\n".format(is_below, h+accumulated)
+    #print "A={0}".format(point)
+    #print "B={0}".format(B)
+    #print "C={0}".format(C)
 
-    print "A={0}".format(point)
-    print "B={0}".format(B)
-    print "C={0}".format(C)
+    m=(b**2)/a
+    n=(c**2)/a
+
+    if not is_below:
+        coeff=float(m)/a
+        new_point = [C[0]+b*coeff, C[1]-c*coeff]
+    else:
+        coeff=float(n)/a
+        new_point = [B[0]+b*coeff, B[1]-c*(1-coeff)]
 
     if iteration < constants.MAX_ITERATIONS:
-        #m=(b**2)/a
-        #n=(c**2)/a
+        #print "\nn={0}; m={1}".format(n,m)
+        #print "E={0}".format(new_point)
+        #print "--------------"
 
-        m = math.sqrt(b**2-h**2)
-        n = math.sqrt(c**2-h**2)
-
-        print "n={0}; m={1}".format(n,m)
-
-        if not is_below:
-            coeff=float(m)/a
-            new_point = [C[0]+b*coeff, C[1]+c*coeff]
-        else:
-            coeff=float(n)/a
-            new_point = [X+b*coeff, Y+c*coeff]
-
-        print "E={0}".format(new_point)
-
-        print "--------------"
         return _get_minimum_distance_2(
                 delta, 
                 total_time, 
@@ -399,6 +400,5 @@ def _get_minimum_distance_2(delta, total_time, point, accumulated, iteration):
                 h+accumulated, 
                 iteration+1)
     else:
-        print "______________"
-        return abs(h+accumulated)
+        return abs(h+accumulated), new_point
 

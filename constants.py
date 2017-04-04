@@ -45,7 +45,7 @@ _x_axis           ="times"
 _y_axis           ="time_mean"
 _z_axis           ="delta"
 
-_eps              =0.10
+_eps              =0.5
 _min_samples      =1
 
 ###############
@@ -92,4 +92,4 @@ OPL_DELTA_DIST    ="maxDeltaDistance"
 OPL_USED_DELTA    ="UsedDelta"
 OPL_POINT_DELTA   ="Cover_dp"
 
-MAX_ITERATIONS = 2
+MAX_ITERATIONS = 1

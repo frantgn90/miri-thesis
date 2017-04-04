@@ -205,8 +205,14 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
     periods = X[:, 1]
     periods.sort()
 
+    inter_arrival = np.array(\
+            range(\
+                int(min(periods)),\
+                int(max(periods)),\
+                int((max(periods)-min(periods))/50)))
+
     for delta, col in zip(deltas,colors[::-1]): # Functions to be shown
-        lab,=ax.plot(((delta*total_time)/periods),periods, 
+        lab,=ax.plot(((delta*total_time)/inter_arrival),inter_arrival, 
                 "k", color=col, lw=1, label="delta={0}".format(delta))
         plt_labels.append(lab)
 
@@ -214,10 +220,15 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
     occurrences.sort()
 
     # Upper boundary
-    ax.plot(occurrences, (total_time/occurrences),"k--", color="blue", lw=1)
+    occ_points = np.array(\
+            range(\
+                int(min(occurrences)),\
+                int(max(occurrences)),\
+                int((max(occurrences)-min(occurrences))/50)))
+    ax.plot(occ_points, (total_time/occ_points),"k--", color="blue", lw=1)
 
     # Bottom boundary
-    ax.plot(((bound*total_time)/periods),periods, "k--", color="red", lw=1) 
+    ax.plot(occ_points,(bound*total_time)/occ_points, "k--", color="red", lw=1) 
 
     ax.set_title("Number of clusters: {0} (eps={1}, mins={2})"
             .format(n_clusters_, 
@@ -250,7 +261,9 @@ def clustering(cdist, ranks, show_plot, total_time, delta, bound):
         for k,v in cs.items():
             data.append([ v[constants._x_axis], v[constants._y_axis],
                           #v["time_median"]
-                          math.log(v[constants._z_axis])])
+                          #math.log(v[constants._z_axis])])
+                          v[constants._z_axis]])
+
 
     #plot_data(data)
     normdata=normalize_data(data)

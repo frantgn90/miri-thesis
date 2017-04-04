@@ -8,7 +8,7 @@ import constants
 from utilities import merge_arrays
 from spectrum import *
 
-from scipy.stats import mode
+from scipy import stats
 
 random.seed(constants.RANDOM_SEED)
 
@@ -63,6 +63,7 @@ def getCsDistributions(filecs):
             #dmean=numpy.mean(do)
             #dsdev=numpy.std(do)
             #tsdev=numpy.std(tt)
+    
             tmedian=numpy.median(tt)
             tmean=numpy.mean(tt)
             

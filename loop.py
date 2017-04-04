@@ -29,6 +29,7 @@ class loop (object):
 
         # The key of every cs set is the line of the first call of the callstack
         dummy,self._loopdeph=cs_uncommon_part(self._cstack)
+
         key=self._cstack[0].split(
                 constants._intra_field_separator)[1::2][self._loopdeph]
         self._first_line = key
@@ -132,11 +133,6 @@ class loop (object):
         # because the level of loop base (i.e. shared calls) in subloop
         # will be potentially highest than the superloop
 
-        # This assertion is not useful since a subloop could have less
-        # iterations than the superloop because data conditions.
-        #
-        #assert subloop._iterations > self._iterations
-
         subloop.recompute_first_line(self._loopdeph)
 
         if subloop._iterations < self._iterations:
@@ -145,16 +141,18 @@ class loop (object):
         else:
             subloop._iterations/=self._iterations
 
-        subloop_first_line = int(subloop.getFirstLine()) # TODO: It should return an 'int'
-
+        # TODO: It should return an 'int'
+        subloop_first_line = int(subloop.getFirstLine()) 
         done=False
         keys_sorted = sorted(self._cs.keys(), reverse=True)
-
+        
         # From bottom to top
         for k in keys_sorted:
             v=self._cs[k]
             superranks = v["ranks"]
-            superset = (subranks==superranks) # TODO: Revise. With a superset is enough?
+
+            # TODO: Revise. With a superset is enough?
+            superset = (subranks==superranks) 
 
             # Init line block
             if type(v["cs"][0])==loop:
@@ -166,15 +164,19 @@ class loop (object):
 
             # If its place is in/between this block
             if subloop_first_line > init_line_block:
-                if superset:
-                    
+                if superset:           
                     done = False
                     for i, callstack in zip(range(len(v["cs"])),v["cs"])[::-1]:
                         cs_fields = callstack.split(constants._intra_field_separator)
                         cs_line = int(cs_fields[1::2][self._loopdeph])
 
+                        # TODO: If is the same line, in order to have a good sort
+                        # it must be checked the callstack next levels
+                        if subloop_first_line == cs_line:
+                            print "WARNING: Deeper levels of the callstacks must be checked"\
+                                    " the order of the calls could be disordered."
                         if subloop_first_line > cs_line:
-                            v["cs"].insert(i, subloop)
+                            v["cs"].insert(i+1, subloop)
                             done = True
                             break
                     
@@ -201,8 +203,10 @@ class loop (object):
                     if after_rank_line != -1:
                         self._cs.update({
                             after_rank_line:
-                                {"cs":after_rank_block, "ranks": v["ranks"]}})               
+                                {"cs":after_rank_block, "ranks": v["ranks"]}}) 
                 break
+
+        assert done
 
     def __get_common_cs(self, cs1, cs2):
         res=[]
@@ -385,7 +389,7 @@ class loop (object):
 def cs_uncommon_part(scalls):
     # odd positions have the lines meanwhile even possitions have calls
 
-    # We can expect that all the stack before the loop is equal, then
+    # We can expect that all the stack before the loop are equal, then
     # the loop is exactly in the first call when the lines differs.
     # The rest of calls are from the loop.
 
@@ -406,6 +410,7 @@ def cs_uncommon_part(scalls):
     pos=0
     globpos=len(scalls[0].split(constants._intra_field_separator))
 
+    # TODO: Not just look at line, also to function!!
     for i in range(1,len(scalls)):
         csprev_lines=scalls[i-1].split(constants._intra_field_separator)[1::2]
         cscurr_lines=scalls[i].split(constants._intra_field_separator)[1::2]

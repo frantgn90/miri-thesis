@@ -442,7 +442,13 @@ def get_callstacks(trace, level, image_filter):
             new_stack_call=[]
             new_stack_line=[]
 
+            main = False
             for i_call in range(len(callstack_series[rank_index][i_stack])):
+                if callstack_series[rank_index][i_stack][i_call] == "main":
+                    main = True
+                if not main:
+                    continue
+
                 new_stack_call.append(callstack_series[rank_index][i_stack][i_call])
                 new_stack_line.append(lines_series[rank_index][i_stack][i_call])
 
