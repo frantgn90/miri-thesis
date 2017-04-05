@@ -65,14 +65,27 @@ class tmatrix(object):
         return self._matrix
 
     def getPartitions(self):
-        partitions=[]
+        subm_map = self.__submatrix(self._matrix)
 
-        p, scs = self.__submatrix(self._matrix)
+        times_partitions=[]
+        calls_partitions=[]
 
-        for i in range(len(p)):
-            partitions.append(tmatrix(p[i],scs[i], 0))
+        for sh_rows, sh_cols in subm_map.items():
+            part=[]
+            for i in range(sh_rows[1]-sh_rows[0]+1): part.append([])
+            for row in range(sh_rows[0], sh_rows[-1]+1):
+                for cols in sh_cols:
+                    data = self._matrix[row][cols[0]:cols[1]+1]
+                    part[row-sh_rows[0]].extend(data)
+            times_partitions.append(part)
+            calls_partitions.append(self._sorted_callstacks[sh_rows[0]:sh_rows[1]+1])
 
-        return partitions
+        result=[]
+        for i in range(len(calls_partitions)):
+            result.append(
+                    tmatrix(times_partitions[i],calls_partitions[i], 0))
+
+        return result
 
     def isTransformed(self):
         return self._transformations == 1
@@ -87,7 +100,9 @@ class tmatrix(object):
         cs_map={}
         for cs in callstacks_list:
             k=cs.keys()[0]
-
+            
+            # TODO: Eventually they can happen at same first time
+            # so the key is not completelly unique. Use the position of the list
             cs_map.update({cs[k]["when"][0]:k})
 
             if len(cs[k]["when"]) > max_size:
@@ -125,33 +140,28 @@ class tmatrix(object):
         mat=tmat.tolist()
 
         mheight=len(mat)
-        mwidth=len(mat[0])
 
         last=mat[0][0]
-        lastcol=0
-        lastrow=0
-
-        i=0
+        lastcol=lastrow=col=0
         matrix_complexity=0
     
-        while i < len(mat[0]):
-            for j in range(mheight):
-                if mat[j][i]==0: continue
-                if mat[j][i] < last:
+        while col < len(mat[0]):
+            for row in range(mheight):
+                if mat[row][col]==0: continue
+                if mat[row][col] < last:
                     matrix_complexity=1
                     jj=lastrow
-                    while mat[jj][lastcol] > mat[j][i]:
+                    while mat[jj][lastcol] > mat[row][col]:
                         mat[jj].insert(lastcol,0)
                         jj-=1
-                        if jj < 0: break
-
-                lastcol=i
-                lastrow=j
-                last=mat[j][i]
+                        if jj < 0:
+                            col-=1;break
+                lastcol=col
+                lastrow=row
+                last=mat[row][col]
             cls.__cuadra(mat)
-            i+=1
+            col+=1
 
-        
         # Remove last empty cols
         minzeros=sys.maxint
         for row in mat:
@@ -196,14 +206,16 @@ class tmatrix(object):
                     already_explored=False
                     # Already explored i
                     for sm in subm:
-                        if i > sm[1][0] and i < sm[1][1]:
+                        if i >= sm[1][0] and i <= sm[1][1] and \
+                           j >= sm[0][0] and j <= sm[0][1]:
                             already_explored=True
                             break
+
                     # Already explored j
-                    for sm in subm:
-                        if j > sm[0][0] and j < sm[0][1]:
-                            already_explored=True
-                            break
+#                    for sm in subm:
+#                        if j > sm[0][0] and j <= sm[0][1]:
+#                            already_explored=True
+#                            break
 
                     if not already_explored and self._matrix[i][j] != 0: # Void cell
                         v=h=0
@@ -225,59 +237,75 @@ class tmatrix(object):
                                     v+=1
                                 else: break
                             if v < min_v: min_v=v
-                        subm.append([(j,j+min_h),(i,i+min_v)])
+
+                        subm.append([(j,j+min_h-1),(i,i+min_v-1)])
+
+            # Now group submatrixes into loops
+            if len(subm) > 1:
+                # Merge all submatrix that shares rows
+                subm_merge = {}
+                for sm in subm:
+                    rows = sm[1]
+                    cols = sm[0]
+
+                    if rows in subm_merge:
+                        subm_merge[rows].append(cols)
+                    else:
+                        subm_merge.update({rows:[cols]})
+
+            return subm_merge
 
             # If all partitions are completelly disyunctive and can explain all 
             # the matrix, it means that every partition is a loop
             # TODO: Think about complex cases with conditionals...
 
-            disyunctive=True
-
-            visited_rows=[]
-            visited_cols=[]
-
-            for s in subm:
-                # Let's test the rows
-
-                rows_range=s[1]
-                for i in range(rows_range[0], rows_range[1]):
-                    if not i in visited_rows:
-                        visited_rows.append(i)
-                    else:
-                        disyunctive=False
-                        break
-
-                # Let's test the cols
-                
-                cols_range=s[0]
-                for i in range(cols_range[0], cols_range[1]):
-                    if not i in visited_cols:
-                        visited_cols.append(i)
-                    else:
-                        disyunctive=False
-                        break
-                
-
-            if len(visited_rows)==len(mat[0]) and \
-                    len(visited_cols)==len(mat):
-                        completed=True
-            else:
-                completed=False
-
-            if completed and disyunctive:
-                # The partitioned matrixes have to be returned
-                res=[]
-                rescs=[]
-                for s in subm:
-                    pmat=[]
-                    for i in range(s[1][0], s[1][1]):
-                        pmat.append(mat[i][s[0][0]:(s[0][1])])
-                    
-                    res.append(pmat)
-                    rescs.append(self._sorted_callstacks[s[1][0]:s[1][1]])
-            else:
-                res=[mat]
-                rescs=[self._sorted_callstacks]
-
-            return res, rescs
+#            disyunctive=True
+#
+#            visited_rows=[]
+#            visited_cols=[]
+#
+#            for s in subm:
+#                # Let's test the rows
+#
+#                rows_range=s[1]
+#                for i in range(rows_range[0], rows_range[1]):
+#                    if not i in visited_rows:
+#                        visited_rows.append(i)
+#                    else:
+#                        disyunctive=False
+#                        break
+#
+#                # Let's test the cols
+#                
+#                cols_range=s[0]
+#                for i in range(cols_range[0], cols_range[1]):
+#                    if not i in visited_cols:
+#                        visited_cols.append(i)
+#                    else:
+#                        disyunctive=False
+#                        break
+#                
+#
+#            if len(visited_rows)==len(mat[0]) and \
+#                    len(visited_cols)==len(mat):
+#                        completed=True
+#            else:
+#                completed=False
+#
+#            if completed and disyunctive:
+#                # The partitioned matrixes have to be returned
+#                res=[]
+#                rescs=[]
+#                for s in subm:
+#                    pmat=[]
+#                    for i in range(s[1][0], s[1][1]):
+#                        pmat.append(mat[i][s[0][0]:(s[0][1])])
+#                    
+#                    res.append(pmat)
+#                    rescs.append(self._sorted_callstacks[s[1][0]:s[1][1]])
+#            else:
+#                res=[mat]
+#                rescs=[self._sorted_callstacks]
+#
+#            return res, rescs
 

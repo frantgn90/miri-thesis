@@ -23,7 +23,7 @@ class loop (object):
         self._condition_propability = 0
 
         self._iterations = len(self._tmat[self._rank][0])
-        self._original_iterations = len(self._tmat[self._rank][0])
+        self._original_iterations = self._iterations
 
         assert self._iterations > 1
 
@@ -67,8 +67,7 @@ class loop (object):
 
             if len(commoncs) == len(cset["cs"]):
                 cset["ranks"].append(newrank)
-            elif len(commoncs) > 0 and len(commoncs) < len(cset["cs"]):
-                
+            elif len(commoncs) > 0 and len(commoncs) < len(cset["cs"]):           
                 # Update uncommon cset
                 cset["cs"] = uncommoncs_a
                 newkey=int(cset["cs"][0] \
@@ -134,6 +133,7 @@ class loop (object):
         # will be potentially highest than the superloop
 
         subloop.recompute_first_line(self._loopdeph)
+
 
         if subloop._iterations < self._iterations:
             subloop._is_condition = True # Maybe a loop into a condition

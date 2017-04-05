@@ -38,8 +38,8 @@ class cluster (object):
             if len(filtered) > 0:
                 self._tmatrix = tmatrix.fromCallstackList(filtered)
 
-                # Means there are not subloops
-                if not self._tmatrix.isTransformed() or True:                    
+                # There are not subloops behaving equal
+                if not self._tmatrix.isTransformed(): # or True:
                     logging.debug("{0} cluster generates new loop for rank {1}."
                             .format(self._id, rank))
 
@@ -50,15 +50,21 @@ class cluster (object):
                 else:
                     partitions = self._tmatrix.getPartitions()
 
-                    loops=[]
+                    logging.debug("{0} cluster: detected {1} subloops behaving equal"\
+                            " so clustering have not differentiate them."\
+                            " Solving...")
+
+                    subloops=[]
                     for i in range(len(partitions)):
-                        loops.append(
+                        subloops.append(
                             loop(
                                 tmat=partitions[i].getMatrix(), 
                                 cstack=partitions[i].getCallstacks(),
                                 rank=rank))
 
-                    self.__loops_level_merge(loops)
+                        assert False, "Hoy no... mañana!"
+                    #merged_loop = self.__loops_level_merge(subloops)
+                    #ranks_loops.extend(subloops)
 
         # Ranks merge level
         logging.debug("{0} cluster merging loops".format(self._id))
@@ -109,7 +115,12 @@ class cluster (object):
 
         
     def __loops_level_merge(self, loops):
-        assert False, "It is not developed yet."
+        # They are not subloops between them
+        #assert False, "It is not developed yet."
+
+        for i in range(1,len(loops)):
+            loops[0].merge(loops[i])
+        return loops[0]
 
     def __ranks_level_merge(self, ranks_loops):
         for i in range(1, len(ranks_loops)):
