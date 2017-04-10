@@ -56,10 +56,12 @@ def merge_clusters(cluster_set, ranks):
         for i in range(len(clusters)-1):
             done=False
             for j in range(i+1,len(clusters)):
-                if clusters[j].getTimesMedian() > clusters[i].getTimesMedian():
+                if clusters[j].getTimesMedian() > clusters[i].getTimesMedian()\
+                    and clusters[j].is_subloop(clusters[i]):
+
                     logging.info("Cluster {0} ({1}) merged to {2} ({3})".
-                            format(i, clusters[i].getTimesMedian(),
-                                   j, clusters[j].getTimesMedian()))
+                            format(clusters[i]._id, clusters[i].getTimesMedian(),
+                                   clusters[j]._id, clusters[j].getTimesMedian()))
                     clusters[j].merge(clusters[i])
 
                     done=True

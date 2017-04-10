@@ -186,11 +186,10 @@ def parse_events(events,image_filter):
                     CALL_NAMES[event_value]["name"] # "letter"
         elif not MPILIN_EVENT.match(event_key) is None:
             nimags_m+=1
-            tmp_image_stack[int(event_key[-1])-1]=\
-                    IMAGES[event_value]["image"]
-            tmp_line_stack[int(event_key[-1])-1]=event_value
-            tmp_file_stack[int(event_key[-1])-1]=\
-                    IMAGES[event_value]["file"]
+            tmp_image_stack[int(event_key[-1])-1]=IMAGES[event_value]["image"]
+            #tmp_line_stack[int(event_key[-1])-1]=event_value
+            tmp_line_stack[int(event_key[-1])-1]=IMAGES[event_value]["line"]
+            tmp_file_stack[int(event_key[-1])-1]=IMAGES[event_value]["file"]
         elif not MPI_EVENT.match(event_key) is None:
             #MPI_CALLS[event_value]
             mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["name"] 

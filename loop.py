@@ -39,6 +39,8 @@ class loop (object):
 
         logging.debug("New loop with {0} iterations.".format(self._iterations))
 
+    def getAllRanks(self):
+        return self._tmat.keys()
     def get_tmat(self):
         return self._tmat[self._rank]
 
@@ -134,7 +136,6 @@ class loop (object):
 
         subloop.recompute_first_line(self._loopdeph)
 
-
         if subloop._iterations < self._iterations:
             subloop._is_condition = True # Maybe a loop into a condition
             subloop._condition_propability = float(subloop._iterations)/self._iterations
@@ -170,6 +171,9 @@ class loop (object):
                 callstack=v["cs"][0].split(constants._intra_field_separator)
                 init_line_block = int(callstack[1::2][self._loopdeph])
 
+            # TODO: Also update the iterations of subloops that are into
+            # this subloop
+
             # If its place is in/between this block
             #if subloop_first_line >= init_line_block:
             #pdb.set_trace()
@@ -177,8 +181,11 @@ class loop (object):
             if allranks:
                 for i, callstack in zip(range(len(v["cs"])),v["cs"])[::-1]:
                     if done: break
-                    cs_fields = callstack.split(constants._intra_field_separator)
-                    cs_line = int(cs_fields[1::2][self._loopdeph])
+                    if type(callstack) == loop:
+                        cs_line = callstack.getFirstLine()
+                    else:
+                        cs_fields = callstack.split(constants._intra_field_separator)
+                        cs_line = int(cs_fields[1::2][self._loopdeph])
 
                     if subloop_first_line == cs_line:
                         for next_loopdeph in range(self._loopdeph+1,len(cs_fields[1::2])):
@@ -191,7 +198,19 @@ class loop (object):
                             subloop_next_call = subloop.get_first_call_at_level(
                                     next_loopdeph)
 
+                            cs_next_level_line = int(cs_next_level_line)
+                            subloop_next_line = int(subloop_next_line)
 
+                                                       
+                            # TODO is not working properly when two calls are made
+                            # from same file and line. In this case look to times
+                            if cs_next_level_call != subloop_next_call:
+                                print("WARNING: Two functions called from same file"\
+                                        " and line!!")
+                                v["cs"].insert(i, subloop)
+                                done = True    
+                                break
+ 
                             assert cs_next_level_call == subloop_next_call
 
                             if cs_next_level_line > subloop_next_line:
@@ -200,7 +219,7 @@ class loop (object):
                             elif cs_next_level_line < subloop_next_line:
                                 v["cs"].insert(i+1, subloop)
                                 done = True
-
+                            
                     elif subloop_first_line > cs_line:
                         v["cs"].insert(i+1, subloop)
                         done = True
@@ -208,6 +227,7 @@ class loop (object):
                 if not done:
                     v["cs"].insert(0, subloop)
                     done = True
+
             else:
                 after_rank_line = -1
                 after_rank_block = []
@@ -237,6 +257,11 @@ class loop (object):
                 done=True
                 break
             
+        # Loopdeph have to be recomputed. Loopdeph is this callstack level where 
+        # things starts to change so since now we have mor information, we can
+        # compute it with more accuracy.
+        #subloop._loopdeph = self._loopdeph
+
         assert done
 
     def __get_common_cs(self, cs1, cs2):
@@ -261,7 +286,8 @@ class loop (object):
         ##############################################################
         # Printing the path from the previous level loop to this one #
         ##############################################################
-
+        pseudocode=""
+        
         loop_base_from=""
         if base <= self._loopdeph:
             loop_base_from=constants.TAB*relative_tabs\
@@ -277,6 +303,7 @@ class loop (object):
             relative_tabs+=1
 
         pseudocode=loop_base_from
+        
 
         #############################
         # Printing loop description #
@@ -336,7 +363,7 @@ class loop (object):
 
                 if_tabs=1
                 #relative_tabs+=1
-
+            
             # Loop body calls
             lastsc=[]
             rel_relative_tabs=0
@@ -372,6 +399,7 @@ class loop (object):
                     # If there is more than one call to the same function
                     # we want to see it more than one time
                     lastsc=sc[:-1]
+            
 
 
             callchain=constants.TAB*(relative_tabs+if_tabs)\
@@ -426,6 +454,10 @@ class loop (object):
     def get_last_call_at_level(self, level):
         stack_calls = self._cstack[-1].split(constants._intra_field_separator)[0::2]
         return stack_calls[level]
+
+    def is_subloop(self, loop):
+        # Look for the submatrix on the merged tmat
+        return True
 
 
 

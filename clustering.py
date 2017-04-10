@@ -307,9 +307,10 @@ def clustering(cdist, ranks, show_plot, total_time, delta, bound):
     #
     cluster_set=[]
     for k in clustered_cs.keys():
-        cluster_set.append(cluster(
-            cluster_id=k, 
-            cluster=clustered_cs[k], 
-            ranks=ranks))
+        cluster_s = cluster.initCluster(
+                cluster_id=str(k), 
+                cluster=clustered_cs[k], 
+                ranks=ranks)
+        cluster_set.extend(cluster_s)
 
     return n_clusters_, cluster_set

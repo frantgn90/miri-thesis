@@ -11,7 +11,7 @@ from loop import loop
 import pdb
 
 class cluster (object):
-    def __init__(self, cluster_id, cluster, ranks):
+    def __init__(self, cluster_id, ranks, cluster, merged_loop):
         self._id=cluster_id
         self._merges=0
         self._first_line=0
@@ -20,35 +20,39 @@ class cluster (object):
         self._time_mean = self.__time_mean_m()
         self._time_median = self.__time_median_m()
         self._times = self.__times_m()
-        
         self._delta = self._cluster[0][self._cluster[0].keys()[0]]["delta"]
+        
+        self._merged_rank_loops = merged_loop
+        self._first_line = merged_loop.getFirstLine()
+
         for callstack in self._cluster:
             cs = callstack.keys()[0]
-            data = callstack[cs]
-            
+            data = callstack[cs]   
             assert data["delta"] == self._delta
 
+    @classmethod
+    def initCluster(cls, cluster_id, cluster, ranks):
         ranks_loops=[]
-        for rank in range(self._ranks):
+        ranks_subloops=[]
+        for rank in range(ranks):
             # Filter by rank
             filtered = filter(
-                    lambda x: int(x[x.keys()[0]]["rank"]) == rank, 
-                    self._cluster)
+                    lambda x: int(x[x.keys()[0]]["rank"]) == rank, cluster)
             
             if len(filtered) > 0:
-                self._tmatrix = tmatrix.fromCallstackList(filtered)
+                cluster_tmatrix = tmatrix.fromCallstackList(filtered)
 
                 # There are not subloops behaving equal
-                if not self._tmatrix.isTransformed(): # or True:
+                if not cluster_tmatrix.isTransformed(): # or True:
                     logging.debug("{0} cluster generates new loop for rank {1}."
-                            .format(self._id, rank))
+                            .format(cluster_id, rank))
 
                     ranks_loops.append(loop(
-                        tmat=self._tmatrix.getMatrix(), 
-                        cstack=self._tmatrix.getCallstacks(),
+                        tmat=cluster_tmatrix.getMatrix(), 
+                        cstack=cluster_tmatrix.getCallstacks(),
                         rank=rank))
                 else:
-                    partitions = self._tmatrix.getPartitions()
+                    partitions = cluster_tmatrix.getPartitions()
 
                     logging.debug("{0} cluster: detected {1} subloops behaving equal"\
                             " so clustering have not differentiate them."\
@@ -57,20 +61,68 @@ class cluster (object):
                     subloops=[]
                     for i in range(len(partitions)):
                         subloops.append(
-                            loop(
-                                tmat=partitions[i].getMatrix(), 
-                                cstack=partitions[i].getCallstacks(),
-                                rank=rank))
+                            loop(tmat=partitions[i].getMatrix(), 
+                                 cstack=partitions[i].getCallstacks(),
+                                 rank=rank))
+                    ranks_subloops.append(subloops)
+            else:
+                logging.debug("{0} cluster have not calls for rank {1}"
+                        .format(cluster_id, rank))
 
-                        assert False, "Hoy no... mañana!"
-                    #merged_loop = self.__loops_level_merge(subloops)
-                    #ranks_loops.extend(subloops)
+        if len(ranks_loops) > 0:
+            logging.debug("{0} cluster merging loops".format(cluster_id))
+            merged_rank_loop = cls.__ranks_level_merge(ranks_loops)
+            logging.debug("All partial loops merged into {0} iterations loop."
+                .format(merged_rank_loop._iterations))
 
-        # Ranks merge level
-        logging.debug("{0} cluster merging loops".format(self._id))
-        self.__ranks_level_merge(ranks_loops)
+            return [cls(cluster_id, ranks, cluster, merged_rank_loop)]
 
-  
+        elif len(ranks_subloops) > 0:
+        
+            # Get max lenght
+            max_len=0
+            for rank_sl in ranks_subloops:
+                if len(rank_sl) > max_len: max_len = len(rank_sl)
+
+            clusters=[]
+            clcount=1
+            for i in range(max_len):
+                to_merge = []
+                for rank_sl in ranks_subloops:
+                    if i < len(rank_sl):
+                        to_merge.append(rank_sl[i])
+
+                merged_ranks_loop = cls.__ranks_level_merge(to_merge)
+
+                # Reconstructing partial raw cluster
+                # TODO: Im sure there is a better way to do so
+                
+                partial_ranks = map(lambda x: int(x),merged_ranks_loop.getAllRanks())
+                partial_cluster=[]
+
+                for cs in merged_ranks_loop._cstack:
+                    for call in cluster:
+                        if call.keys()[0] == cs:
+                            partial_cluster.append(call)
+
+                clusters.append(
+                        cls("{0}.{1}".format(cluster_id, clcount), 
+                            partial_ranks, 
+                            partial_cluster, 
+                            merged_ranks_loop))
+                clcount+=1
+
+            return clusters
+        else:
+            assert False, "Not managed situation."
+
+    @classmethod
+    def __ranks_level_merge(cls, ranks_loops):
+        for i in range(1, len(ranks_loops)):
+            ranks_loops[0].merge(ranks_loops[i])
+        assert ranks_loops[0]._iterations > 1
+        return ranks_loops[0]
+ 
     def __time_mean_m(self):
         total_time=0
         for callstack in self._cluster:
@@ -114,26 +166,6 @@ class cluster (object):
         return pseudocode
 
         
-    def __loops_level_merge(self, loops):
-        # They are not subloops between them
-        #assert False, "It is not developed yet."
-
-        for i in range(1,len(loops)):
-            loops[0].merge(loops[i])
-        return loops[0]
-
-    def __ranks_level_merge(self, ranks_loops):
-        for i in range(1, len(ranks_loops)):
-            ranks_loops[0].merge(ranks_loops[i])
-
-        assert ranks_loops[0]._iterations > 1
-
-        self._merged_rank_loops=ranks_loops[0]
-        self._first_line = self._merged_rank_loops.getFirstLine()
-        
-        logging.debug("All partial loops merged into {0} iterations loop."
-                .format(self._merged_rank_loops._iterations))
-
     def getLoop(self):
         return self._merged_rank_loops
 
@@ -142,6 +174,10 @@ class cluster (object):
 
     def getFirstLine(self):
         return self._first_line
+
+    def is_subloop(self,loop):
+        return self.getParent() != loop.getParent()\
+                and self._merged_rank_loops.is_subloop(loop)
 
     def merge(self, ocluster):
         assert(self.getTimesMedian() > ocluster.getTimesMedian())
@@ -162,4 +198,7 @@ class cluster (object):
             result.append(iteration)
 
         return result
+
+    def getParent(self):
+        return self._id.split(".")[0]
 
