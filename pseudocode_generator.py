@@ -56,6 +56,8 @@ def merge_clusters(cluster_set, ranks):
         for i in range(len(clusters)-1):
             done=False
             for j in range(i+1,len(clusters)):
+                logging.info("Cluster {0} merged to {1}?".format(
+                    clusters[i]._id, clusters[j]._id))
                 if clusters[j].getTimesMedian() > clusters[i].getTimesMedian()\
                     and clusters[j].is_subloop(clusters[i]):
 
@@ -66,6 +68,7 @@ def merge_clusters(cluster_set, ranks):
 
                     done=True
                     break
+                logging.info("... No, there is no a subloop")
 
             assert done, "Error at cluster level merge"
         top_level_clusters.append(cluster_by_delta[delta][-1])

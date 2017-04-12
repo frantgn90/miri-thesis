@@ -5,6 +5,8 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.8	//
 Axes3D	clustering.py	/^from mpl_toolkits.mplot3d import Axes3D$/;"	i
+AxesImage	clustering.py	/^from matplotlib.image import AxesImage$/;"	i
+AxesImage	examples/matplotlib_click_event.py	/^from matplotlib.image import AxesImage$/;"	i
 CALLER_EVENT	trace_parsing.py	/^CALLER_EVENT=""$/;"	v
 CALLER_EVENT	trace_parsing.py	/^CALLER_EVENT=None$/;"	v
 CALLER_EVENT_BASE	constants.py	/^CALLER_EVENT_BASE ="3000000"$/;"	v
@@ -15,12 +17,22 @@ CALLSTACK_SIZE	constants.py	/^CALLSTACK_SIZE=10$/;"	v
 CALL_NAMES	trace_parsing.py	/^CALL_NAMES={}$/;"	v
 COUNTER_CALLS	trace_parsing.py	/^COUNTER_CALLS = None$/;"	v
 COUNTER_TYPE_CALLS	trace_parsing.py	/^COUNTER_TYPE_CALLS = None$/;"	v
+CplexInterface	cplex_interface.py	/^class CplexInterface(object):$/;"	c
+CplexInterface	delta_calculation.py	/^from cplex_interface import CplexInterface$/;"	i
+CubicScale	clustering.py	/^class CubicScale(mscale.ScaleBase):$/;"	c
+CubicTransform	clustering.py	/^    class CubicTransform(mtransforms.Transform):$/;"	c	class:CubicScale
 DBSCAN	clustering.py	/^from sklearn.cluster import DBSCAN$/;"	i
-ELSE	constants.py	/^ELSE              ="elif {0}:\\n"$/;"	v
-FORLOOP	constants.py	/^FORLOOP           ="for loop 1 to {0}: [{1}]\\n"$/;"	v
+ELSE_RANK	constants.py	/^ELSE_RANK         ="elif RANK in {0}:\\n"$/;"	v
+FORLOOP	constants.py	/^FORLOOP           ="for loop 1 to {0}:\\n"$/;"	v
 FUNC_MAP_FILE	constants.py	/^FUNC_MAP_FILE     ="functions.map"$/;"	v
-IF	constants.py	/^IF                ="if {0}:\\n"$/;"	v
+IF_DATA	constants.py	/^IF_DATA           ="if CHANCE is ({0:.3f}):\\n"$/;"	v
+IF_RANK	constants.py	/^IF_RANK           ="if RANK in {0}:\\n"$/;"	v
 IMAGES	trace_parsing.py	/^IMAGES={}$/;"	v
+IloOdmsIde	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^}$/;"	c
+InvertedCubicTransform	clustering.py	/^    class InvertedCubicTransform(mtransforms.Transform):$/;"	c	class:CubicScale
+Line2D	clustering.py	/^from matplotlib.lines import Line2D$/;"	i
+Line2D	examples/matplotlib_click_event.py	/^from matplotlib.lines import Line2D$/;"	i
+MAX_ITERATIONS	constants.py	/^MAX_ITERATIONS = 1$/;"	v
 MPICAL_EVENT	trace_parsing.py	/^MPICAL_EVENT=None$/;"	v
 MPICAL_EVENT_BASE	constants.py	/^MPICAL_EVENT_BASE ="7000000"$/;"	v
 MPILIN_EVENT	trace_parsing.py	/^MPILIN_EVENT=None$/;"	v
@@ -31,35 +43,178 @@ MPI_EVENT_BASE	constants.py	/^MPI_EVENT_BASE    ="5000000"$/;"	v
 MPI_LIB_FILE	constants.py	/^MPI_LIB_FILE      ="libmpi_injected.c"$/;"	v
 MULTILOOP	constants.py	/^MULTILOOP         =1$/;"	v
 Needed	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
+OMPCAL_EVENT_BASE	constants.py	/^OMPCAL_EVENT_BASE =""$/;"	v
+OMPLIN_EVENT_BASE	constants.py	/^OMPLIN_EVENT_BASE =""$/;"	v
+OPL_ARG_BIGM	constants.py	/^OPL_ARG_BIGM    = "bigM"$/;"	v
+OPL_ARG_DELTAS	constants.py	/^OPL_ARG_DELTAS  = "Deltas"$/;"	v
+OPL_ARG_DISTDP	constants.py	/^OPL_ARG_DISTDP  = "Distance_dp"$/;"	v
+OPL_ARG_NDELTAS	constants.py	/^OPL_ARG_NDELTAS = "nDeltas"$/;"	v
+OPL_ARG_NPOINTS	constants.py	/^OPL_ARG_NPOINTS = "nPoints"$/;"	v
+OPL_ARG_POINTS	constants.py	/^OPL_ARG_POINTS  = "Points"$/;"	v
+OPL_DELTA_DIST	constants.py	/^OPL_DELTA_DIST    ="maxDeltaDistance"$/;"	v
+OPL_POINT_DELTA	constants.py	/^OPL_POINT_DELTA   ="Cover_dp"$/;"	v
+OPL_PROBLEM_ERR	constants.py	/^OPL_PROBLEM_ERR   ="cplex.err"$/;"	v
+OPL_PROBLEM_IN	constants.py	/^        "input_problem.dat"$/;"	v
+OPL_PROBLEM_OUT	constants.py	/^OPL_PROBLEM_OUT   ="cplex.out"$/;"	v
+OPL_RUN_SCRIPT	constants.py	/^OPL_RUN_SCRIPT    ="\/home\/jmartinez\/MIRI\/master-thesis\/src\/opl\/run.sh"$/;"	v
+OPL_USED_DELTA	constants.py	/^OPL_USED_DELTA    ="UsedDelta"$/;"	v
 PARAVER_EVENT	constants.py	/^PARAVER_EVENT     ="2"$/;"	v
 PURELOOP	constants.py	/^PURELOOP          =0$/;"	v
 Printer	utilities.py	/^class Printer():$/;"	c
-RANDOM_SEED	constants.py	/^RANDOM_SEED=5748473$/;"	v
+ProgressBar	delta_calculation.py	/^from utilities import ProgressBar$/;"	i
+ProgressBar	trace_parsing.py	/^from utilities import ProgressBar$/;"	i
+ProgressBar	utilities.py	/^class ProgressBar(object):$/;"	c
+RANDOM_SEED	constants.py	/^RANDOM_SEED       =5748473$/;"	v
+Rectangle	clustering.py	/^from matplotlib.patches import Rectangle$/;"	i
+Rectangle	examples/matplotlib_click_event.py	/^from matplotlib.patches import Rectangle$/;"	i
+Symbol	delta_calculation.py	/^from sympy import Symbol$/;"	i
 TAB	constants.py	/^TAB               =":  "$/;"	v
 THREAD_DEPH	trace_parsing.py	/^THREAD_DEPH={}$/;"	v
+Text	clustering.py	/^from matplotlib.text import Text$/;"	i
+Text	examples/matplotlib_click_event.py	/^from matplotlib.text import Text$/;"	i
 Usage	struct_detection.py	/^def Usage(cmd):$/;"	f
+_IloOdmsIde_AbsoluteArrayItem	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AbsoluteArrayItem(array,leafIndex) {$/;"	f
+_IloOdmsIde_AddArray	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddArray(out,obj,accessPrefix) {$/;"	f
+_IloOdmsIde_AddExpandable	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddExpandable(out,expandable,access) {$/;"	f
+_IloOdmsIde_AddFrame	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddFrame(out,frameNo,frame,access) {$/;"	f
+_IloOdmsIde_AddObject	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddObject(out,obj,accessPrefix) {$/;"	f
+_IloOdmsIde_AddOneProperty	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddOneProperty(out,obj,property,accessPrefix) {$/;"	f
+_IloOdmsIde_AddProfileNode	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddProfileNode(out,node,level) {$/;"	f
+_IloOdmsIde_AddSet	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddSet(out,obj) {$/;"	f
+_IloOdmsIde_DoExpand	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_DoExpand(out,expandable,access) {$/;"	f
+_IloOdmsIde_DoGetEnv	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_DoGetEnv(env,accessPrefix) {$/;"	f
+_IloOdmsIde_Expand	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_Expand(arg) {$/;"	f
+_IloOdmsIde_ExpandArray	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_ExpandArray(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetConflicts	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetConflicts() { $/;"	f
+_IloOdmsIde_GetConstraintArrayInfo	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetConstraintArrayInfo(array, leafIndex, level) {$/;"	f
+_IloOdmsIde_GetCtArrayDual	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetCtArrayDual(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetCtArrayDual2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetCtArrayDual2(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetCtArraySlack	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetCtArraySlack(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetCtArraySlack2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetCtArraySlack2(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetCtArrayValue	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetCtArrayValue(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetCtArrayValue2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetCtArrayValue2(array,leafIndex){$/;"	f
+_IloOdmsIde_GetEltFile	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetEltFile( elt ) {$/;"	f
+_IloOdmsIde_GetEnv	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetEnv(env) {$/;"	f
+_IloOdmsIde_GetFrame	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetFrame(i) {$/;"	f
+_IloOdmsIde_GetFrameEnv	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetFrameEnv(frame) {$/;"	f
+_IloOdmsIde_GetFrames	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetFrames() {$/;"	f
+_IloOdmsIde_GetFramesArray	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetFramesArray() {$/;"	f
+_IloOdmsIde_GetFunctionMapNumberOfSegments	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetFunctionMapNumberOfSegments( elt ) {$/;"	f
+_IloOdmsIde_GetFunctionMapSegments	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetFunctionMapSegments( elt ) {$/;"	f
+_IloOdmsIde_GetFunctionSegments	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetFunctionSegments(func) { $/;"	f
+_IloOdmsIde_GetInternalFunctionSegments	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetInternalFunctionSegments(func, out) { $/;"	f
+_IloOdmsIde_GetIntervalArrayInfo	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetIntervalArrayInfo(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetNumberOfSegments	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetNumberOfSegments(func) {$/;"	f
+_IloOdmsIde_GetObject	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetObject(obj) {$/;"	f
+_IloOdmsIde_GetProfile	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetProfile() {$/;"	f
+_IloOdmsIde_GetRCValue	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetRCValue(elt) {$/;"	f
+_IloOdmsIde_GetRelaxations	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetRelaxations() {$/;"	f
+_IloOdmsIde_GetSRValue	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetSRValue(elt) {$/;"	f
+_IloOdmsIde_GetScalarConstraintInfo	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetScalarConstraintInfo(ct) {$/;"	f
+_IloOdmsIde_GetVarArrayRC	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetVarArrayRC(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetVarArrayRC2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetVarArrayRC2(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetVarArraySR	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetVarArraySR(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetVarArraySR2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetVarArraySR2(array,leafIndex) {$/;"	f
+_IloOdmsIde_GetZone	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_GetZone() {$/;"	f
+_IloOdmsIde_HasRelaxations	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_HasRelaxations() {$/;"	f
+_IloOdmsIde_IsUpper	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_IsUpper(ch) { $/;"	f
+_IloOdmsIde_LTrim	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_LTrim(str) {$/;"	f
+_IloOdmsIde_OutputScalarConstraintBounds	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_OutputScalarConstraintBounds(out, ct) {$/;"	f
+_IloOdmsIde_OutputScalarConstraintSlackAndDual	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_OutputScalarConstraintSlackAndDual(out, ct) {$/;"	f
+_IloOdmsIde_Save	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_Save( path ) {$/;"	f
+_IloOdmsIde_Save2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_Save2( path, fromServer ) {$/;"	f
+_IloOdmsIde_SaveConflicts	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveConflicts( path ) {$/;"	f
+_IloOdmsIde_SaveConstraintArray	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveConstraintArray(array, row, nbRequested, nbFields) {$/;"	f
+_IloOdmsIde_SaveElt	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveElt( path, elt ) {$/;"	f
+_IloOdmsIde_SaveFunction	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveFunction( path, elt ) {$/;"	f
+_IloOdmsIde_SaveFunctionMap	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveFunctionMap( path, elt ) {$/;"	f
+_IloOdmsIde_SaveIndexer	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveIndexer( path, elt ) {$/;"	f
+_IloOdmsIde_SaveMap	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveMap( path, elt ) {$/;"	f
+_IloOdmsIde_SaveMap2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveMap2( path, elt, isTupleMap ) {$/;"	f
+_IloOdmsIde_SaveNumVarArray	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveNumVarArray(array, row, nbRequested) {$/;"	f
+_IloOdmsIde_SaveProfile	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveProfile( path ) {$/;"	f
+_IloOdmsIde_SaveRelaxations	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveRelaxations( path ) {$/;"	f
+_IloOdmsIde_SaveScalarArray	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveScalarArray(array, row, nbRequested) {$/;"	f
+_IloOdmsIde_SaveSequence	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveSequence( path, elt ) {$/;"	f
+_IloOdmsIde_SaveSet	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveSet( path, elt ) {$/;"	f
+_IloOdmsIde_SaveTuple	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveTuple( path, elt ) {$/;"	f
+_IloOdmsIde_SaveTupleMap	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveTupleMap( path, elt ) {$/;"	f
+_IloOdmsIde_SaveTupleMap2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveTupleMap2( path, elt, realTupleMap ) {$/;"	f
+_IloOdmsIde_SaveTupleMapValues	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveTupleMapValues( outFile, elt ) {$/;"	f
+_IloOdmsIde_SaveTupleSet	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveTupleSet( path, elt ) {$/;"	f
+_IloOdmsIde_SaveTupleSetMap	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveTupleSetMap( path, elt ) {$/;"	f
+_IloOdmsIde_SaveTupleSetValues	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveTupleSetValues(elt, outFile) {$/;"	f
+_IloOdmsIde_SaveVersion	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_SaveVersion( path ) {$/;"	f
+_IloOdmsIde_ToString	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_ToString( item ) {$/;"	f
+_IloOdmsIde_WriteExternalData	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_WriteExternalData(path) {$/;"	f
+_IloOdmsIde_WriteInternalData	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_WriteInternalData(path) {$/;"	f
+_IloOdmsIde_createObject	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_createObject( eltName ) {$/;"	f
+_IloOdmsIde_getFullArraySortInfo	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_getFullArraySortInfo(name, property) {$/;"	f
+_IloOdmsIde_printAllFields	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_printAllFields( aTuple, out ) {$/;"	f
+_IloOdmsIde_printTuple	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_printTuple( aTuple, out ) {$/;"	f
+_IloOdms_ConstraintMap_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_ConstraintMap_request( methodName, eltName ) {$/;"	f
+_IloOdms_ConstraintMap_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_ConstraintMap_request2( methodName, eltName, param1 ) {$/;"	f
+_IloOdms_ConstraintMap_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_ConstraintMap_request3( methodName, eltName, param1, param2 ) {$/;"	f
+_IloOdms_Indexer_getColumnsValue	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Indexer_getColumnsValue( map, dim, row, nbRequested ) {$/;"	f
+_IloOdms_Indexer_getSummaryColumnValue	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Indexer_getSummaryColumnValue( map, dim, row, nbRequested ) {$/;"	f
+_IloOdms_Indexer_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Indexer_request2( methodName, eltName, dim ) {$/;"	f
+_IloOdms_Indexer_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Indexer_request3( methodName, eltName, dim, param1 ) {$/;"	f
+_IloOdms_Indexer_request4	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Indexer_request4( methodName, eltName, dim, param1, param2 ) {$/;"	f
+_IloOdms_Indexer_request5	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Indexer_request5( methodName, eltName, dim, param1, param2, param3 ) {$/;"	f
+_IloOdms_Location	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Location( methodName ) {$/;"	f
+_IloOdms_Location_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Location_request( methodName, eltName ) {$/;"	f
+_IloOdms_Map_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Map_request( methodName, eltName ) {$/;"	f
+_IloOdms_Map_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Map_request2( methodName, eltName, param1 ) {$/;"	f
+_IloOdms_Map_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Map_request3( methodName, eltName, param1, param2 ) {$/;"	f
+_IloOdms_NumVarMap_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_NumVarMap_request( methodName, eltName ) {$/;"	f
+_IloOdms_NumVarMap_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_NumVarMap_request2( methodName, eltName, param1 ) {$/;"	f
+_IloOdms_NumVarMap_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_NumVarMap_request3( methodName, eltName, param1, param2 ) {$/;"	f
+_IloOdms_OplElement_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_OplElement_request( methodName, eltName ) {$/;"	f
+_IloOdms_Set_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Set_request( methodName, eltName ) {$/;"	f
+_IloOdms_Set_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Set_request2( methodName, eltName, index ) {$/;"	f
+_IloOdms_Set_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Set_request3( methodName, eltName, param1, param2 ) {$/;"	f
+_IloOdms_TupleMap_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleMap_request( methodName, eltName ) {$/;"	f
+_IloOdms_TupleMap_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleMap_request2( methodName, eltName, param1 ) {$/;"	f
+_IloOdms_TupleMap_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleMap_request3( methodName, eltName, param1, param2 ) {$/;"	f
+_IloOdms_TupleMap_request4	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleMap_request4( methodName, eltName, param1, param2, param3 ) {$/;"	f
+_IloOdms_TupleMap_request5	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleMap_request5( methodName, eltName, param1, param2, param3, param4 ) {$/;"	f
+_IloOdms_TupleSetMap_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleSetMap_request( methodName, eltName ) {$/;"	f
+_IloOdms_TupleSetMap_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleSetMap_request2( methodName, eltName, param1 ) {$/;"	f
+_IloOdms_TupleSetMap_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleSetMap_request3( methodName, eltName, param1, param2 ) {$/;"	f
+_IloOdms_TupleSet_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleSet_request( methodName, eltName ) {$/;"	f
+_IloOdms_TupleSet_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleSet_request2( methodName, eltName, param1 ) {$/;"	f
+_IloOdms_TupleSet_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleSet_request3( methodName, eltName, param1, param2 ) {$/;"	f
+_IloOdms_Tuple_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Tuple_request( methodName, eltName ) {$/;"	f
+_IloOdms_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_request( methodName ) {$/;"	f
 __boundaries_sort	temp_matrix.py	/^    def __boundaries_sort(cls, tmat):$/;"	m	class:tmatrix	file:
 __cuadra	temp_matrix.py	/^    def __cuadra(cls, mat):$/;"	m	class:tmatrix	file:
 __get_common_cs	loop.py	/^    def __get_common_cs(self, cs1, cs2):$/;"	m	class:loop	file:
 __get_matrix	temp_matrix.py	/^    def __get_matrix(self, callstacks_list):$/;"	m	class:tmatrix	file:
-__init__	cluster.py	/^    def __init__(self, cluster, ranks):$/;"	m	class:cluster
+__init__	cluster.py	/^    def __init__(self, cluster_id, ranks, cluster, merged_loop):$/;"	m	class:cluster
+__init__	clustering.py	/^        def __init__(self, total_time):$/;"	m	class:CubicScale.CubicTransform
+__init__	clustering.py	/^        def __init__(self, total_time):$/;"	m	class:CubicScale.InvertedCubicTransform
+__init__	clustering.py	/^    def __init__(self, axis, **kwargs):$/;"	m	class:CubicScale
+__init__	cplex_interface.py	/^    def __init__(self):$/;"	m	class:CplexInterface
+__init__	examples/matplotlib_draw_tooltip.py	/^    def __init__(self):$/;"	m	class:wxToolTipExample
 __init__	loop.py	/^    def __init__(self, tmat, cstack, rank):$/;"	m	class:loop
 __init__	temp_matrix.py	/^    def __init__(self, matrix, callstacks, transformations):$/;"	m	class:tmatrix
-__init__	utilities.py	/^    def __init__(self, total):$/;"	m	class:progress_bar
+__init__	utilities.py	/^    def __init__(self, msg, total):$/;"	m	class:ProgressBar
 __init__	utilities.py	/^    def __init__(self,data):                     $/;"	m	class:Printer
-__loops_level_merge	cluster.py	/^    def __loops_level_merge(self, loops):$/;"	m	class:cluster	file:
-__ranks_level_merge	cluster.py	/^    def __ranks_level_merge(self, ranks_loops):$/;"	m	class:cluster	file:
+__ranks_level_merge	cluster.py	/^    def __ranks_level_merge(cls, ranks_loops):$/;"	m	class:cluster	file:
 __submatrix	temp_matrix.py	/^    def __submatrix(self, mat):$/;"	m	class:tmatrix	file:
 __substract_cs	loop.py	/^    def __substract_cs(self, cs1, cs2):$/;"	m	class:loop	file:
 __time_mean_m	cluster.py	/^    def __time_mean_m(self):$/;"	m	class:cluster	file:
+__time_median_m	cluster.py	/^    def __time_median_m(self):$/;"	m	class:cluster	file:
 __times_m	cluster.py	/^    def __times_m(self):$/;"	m	class:cluster	file:
 _cs_per_thread	callstack_alignement.py	/^_cs_per_thread=100$/;"	v
 _empty_cell	constants.py	/^_empty_cell=0$/;"	v
-_eps	constants.py	/^_eps              =0.05$/;"	v
+_eps	constants.py	/^_eps              =0.1$/;"	v
+_get_minimum_distance_2	delta_calculation.py	/^def _get_minimum_distance_2(delta, total_time, point, accumulated, iteration):$/;"	f
 _init_delta	delta_calculation.py	/^_init_delta=0.5$/;"	v
 _inter_field_separator	constants.py	/^_inter_field_separator="#"$/;"	v
 _intra_field_separator	constants.py	/^_intra_field_separator="|"$/;"	v
 _min_samples	constants.py	/^_min_samples      =1$/;"	v
+_onMotion	examples/matplotlib_draw_tooltip.py	/^    def _onMotion(self, event):$/;"	m	class:wxToolTipExample
 _upper_bound	delta_calculation.py	/^_upper_bound=1$/;"	v
 _verbose	constants.py	/^    _verbose=False$/;"	v
 _verbose	constants.py	/^    _verbose=True$/;"	v
@@ -67,28 +222,47 @@ _x_axis	constants.py	/^_x_axis           ="times"$/;"	v
 _x_axis_label	constants.py	/^_x_axis_label     ="Number of occurrences"$/;"	v
 _y_axis	constants.py	/^_y_axis           ="time_mean"$/;"	v
 _y_axis_label	constants.py	/^_y_axis_label     ="Mean period bw occurrences"$/;"	v
-_z_axis	constants.py	/^_z_axis           ="when_mean"$/;"	v
+_z_axis	constants.py	/^_z_axis           ="delta"$/;"	v
+_z_axis_label	constants.py	/^_z_axis_label     ="delta"$/;"	v
+allElt	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^	var allElt = _IloOdms_request( "getAllElement" );$/;"	v
+argc	test.py	/^    argc = len(sys.argv)$/;"	v
 argcomplete	struct_detection.py	/^import argparse, argcomplete$/;"	i
 argparse	struct_detection.py	/^import argparse, argcomplete$/;"	i
+argv	test.py	/^    argv = sys.argv$/;"	v
 bar	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
+bars	examples/matplotlib_click_event.py	/^    bars = ax2.bar(range(10), rand(10), picker=True)$/;"	v
 by	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
+calcule_deltas_cplex	delta_calculation.py	/^def calcule_deltas_cplex($/;"	f
+calcule_deltas_heuristic	delta_calculation.py	/^def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):$/;"	f
 cluster	cluster.py	/^class cluster (object):$/;"	c
 cluster	clustering.py	/^from cluster import cluster$/;"	i
 cluster	pseudocode_generator.py	/^from cluster import cluster$/;"	i
-clustering	clustering.py	/^def clustering(cdist, ranks, show_plot):$/;"	f
+clustering	clustering.py	/^def clustering(cdist, ranks, show_plot, total_time, delta, bound):$/;"	f
+col	examples/matplotlib_click_event.py	/^    col = ax.scatter(x, y, 100*s, c, picker=True)$/;"	v
 constants	callstack_alignement.py	/^import constants$/;"	i
 constants	callstack_distribution.py	/^import constants$/;"	i
 constants	cluster.py	/^import constants$/;"	i
 constants	clustering.py	/^import constants$/;"	i
+constants	cplex_interface.py	/^import constants$/;"	i
+constants	delta_calculation.py	/^import constants$/;"	i
 constants	loop.py	/^import constants$/;"	i
-constants	pseudocode_generator.py	/^import constants$/;"	i
+constants	pseudocode_generator.py	/^import constants, logging$/;"	i
 constants	struct_detection.py	/^import constants$/;"	i
 constants	temp_matrix.py	/^import constants$/;"	i
 constants	trace_parsing.py	/^import constants$/;"	i
+copy	loop.py	/^        import copy$/;"	i
+copy	loop.py	/^import copy$/;"	i
 cs_uncommon_part	loop.py	/^def cs_uncommon_part(scalls):$/;"	f
-filterIrrelevant	delta_calculation.py	/^def filterIrrelevant(cdist, total_time, bottom_bound):$/;"	f
-format_nums	pseudocode_generator.py	/^    def format_nums(val):$/;"	f	function:print_matrix
+example	examples/matplotlib_draw_tooltip.py	/^example = wxToolTipExample()$/;"	v
+filter_by_delta	delta_calculation.py	/^def filter_by_delta(cdist, total_time, delta):$/;"	f
+filter_by_delta_range	delta_calculation.py	/^def filter_by_delta_range(cdist, total_time, delta_bottom, delta_top):$/;"	f
+filter_by_distance	delta_calculation.py	/^def filter_by_distance(callstacks, total_time, delta, epsilon):$/;"	f
+filter_under_delta	delta_calculation.py	/^def filter_under_delta(cdist, total_time, delta):$/;"	f
+format_nums	utilities.py	/^    def format_nums(val):$/;"	f	function:print_matrix
 fromCallstackList	temp_matrix.py	/^    def fromCallstackList(cls, callstacks_list):$/;"	m	class:tmatrix
+fromMatrix	temp_matrix.py	/^    def fromMatrix(cls, matrix):$/;"	m	class:tmatrix
+gcfm	examples/matplotlib_draw_tooltip.py	/^from pylab import get_current_fig_manager as gcfm$/;"	i
+getAllRanks	loop.py	/^    def getAllRanks(self):$/;"	m	class:loop
 getCallstacks	temp_matrix.py	/^    def getCallstacks(self):$/;"	m	class:tmatrix
 getCost	delta_calculation.py	/^def getCost(lmbda, T, P, delta):$/;"	f
 getCsContains	callstack_alignement.py	/^def getCsContains(vs, pivot):$/;"	f
@@ -101,91 +275,177 @@ getLastSc	loop.py	/^    def getLastSc(self, base):$/;"	m	class:loop
 getLoop	cluster.py	/^    def getLoop(self):$/;"	m	class:cluster
 getMatrix	temp_matrix.py	/^    def getMatrix(self):$/;"	m	class:tmatrix
 getOccurrences	cluster.py	/^    def getOccurrences(self):$/;"	m	class:cluster
+getParent	cluster.py	/^    def getParent(self):$/;"	m	class:cluster
 getPartitions	temp_matrix.py	/^    def getPartitions(self):$/;"	m	class:tmatrix
 getPeriod	cluster.py	/^    def getPeriod(self):$/;"	m	class:cluster
 getRandomIterations	cluster.py	/^    def getRandomIterations(self, n):$/;"	m	class:cluster
+getTimesMedian	cluster.py	/^    def getTimesMedian(self):$/;"	m	class:cluster
 get_app_description	trace_parsing.py	/^def get_app_description(header):$/;"	f
 get_app_time	trace_parsing.py	/^def get_app_time(trace):$/;"	f
 get_call_names	trace_parsing.py	/^def get_call_names(trace):$/;"	f
 get_callstack	callstack_alignement.py	/^def get_callstack(csfile):$/;"	f
 get_callstacks	trace_parsing.py	/^def get_callstacks(trace, level, image_filter):$/;"	f
+get_delta_point_map	cplex_interface.py	/^    def get_delta_point_map(self, point):$/;"	m	class:CplexInterface
 get_distances	callstack_distribution.py	/^def get_distances(times):$/;"	f
+get_errfile	cplex_interface.py	/^    def get_errfile(self):$/;"	m	class:CplexInterface
+get_first_call_at_level	loop.py	/^    def get_first_call_at_level(self, level):$/;"	m	class:loop
+get_first_cs	loop.py	/^    def get_first_cs(self):$/;"	m	class:loop
+get_first_line_at_level	loop.py	/^    def get_first_line_at_level(self, level):$/;"	m	class:loop
+get_last_call_at_level	loop.py	/^    def get_last_call_at_level(self, level):$/;"	m	class:loop
+get_last_line_at_level	loop.py	/^    def get_last_line_at_level(self, level):$/;"	m	class:loop
 get_line_info	trace_parsing.py	/^def get_line_info(trace):$/;"	f
+get_minimum_distance	delta_calculation.py	/^def get_minimum_distance(delta,total_time, point):$/;"	f
+get_minimum_distance_2	delta_calculation.py	/^def get_minimum_distance_2(delta, total_time, point):$/;"	f
 get_mpi_calls	trace_parsing.py	/^def get_mpi_calls(trace):$/;"	f
+get_near_points	delta_calculation.py	/^def get_near_points(data, total_time,  delta, epsilon):$/;"	f
+get_outfile	cplex_interface.py	/^    def get_outfile(self):$/;"	m	class:CplexInterface
 get_pcf_info	trace_parsing.py	/^def get_pcf_info(event_type, trace):$/;"	f
 get_random_iters	pseudocode_generator.py	/^def get_random_iters(clusters, n_random_iterations):$/;"	f
 get_ranks	loop.py	/^    def get_ranks(self):$/;"	m	class:loop
 get_tmat	loop.py	/^    def get_tmat(self):$/;"	m	class:loop
+get_transform	clustering.py	/^    def get_transform(self):$/;"	m	class:CubicScale
+get_used_deltas	cplex_interface.py	/^    def get_used_deltas(self):$/;"	m	class:CplexInterface
 getnMerges	cluster.py	/^    def getnMerges(self):$/;"	m	class:cluster
 glob	struct_detection.py	/^        import glob$/;"	i
 height_call	callstack_alignement.py	/^def height_call(callstack, call):$/;"	f
+im1	examples/matplotlib_click_event.py	/^    im1 = ax.imshow(rand(10, 5), extent=(1, 2, 1, 2), picker=True)$/;"	v
+im2	examples/matplotlib_click_event.py	/^    im2 = ax.imshow(rand(5, 10), extent=(3, 4, 1, 2), picker=True)$/;"	v
+im3	examples/matplotlib_click_event.py	/^    im3 = ax.imshow(rand(20, 25), extent=(1, 2, 3, 4), picker=True)$/;"	v
+im4	examples/matplotlib_click_event.py	/^    im4 = ax.imshow(rand(30, 12), extent=(3, 4, 3, 4), picker=True)$/;"	v
+initCluster	cluster.py	/^    def initCluster(cls, cluster_id, cluster, ranks):$/;"	m	class:cluster
+input_dims	clustering.py	/^        input_dims = 1$/;"	v	class:CubicScale.CubicTransform
+input_dims	clustering.py	/^        input_dims = 1$/;"	v	class:CubicScale.InvertedCubicTransform
+invert_rescale_cubic	clustering.py	/^        def invert_rescale_cubic(self, y, total_time):$/;"	m	class:CubicScale.InvertedCubicTransform
+inverted	clustering.py	/^        def inverted(self):$/;"	m	class:CubicScale.CubicTransform
+inverted	clustering.py	/^        def inverted(self):$/;"	m	class:CubicScale.InvertedCubicTransform
 isTransformed	temp_matrix.py	/^    def isTransformed(self):$/;"	m	class:tmatrix
+is_separable	clustering.py	/^        is_separable = True$/;"	v	class:CubicScale.CubicTransform
+is_separable	clustering.py	/^        is_separable = True$/;"	v	class:CubicScale.InvertedCubicTransform
 is_sublist	callstack_alignement.py	/^from utilities import is_sublist$/;"	i
 is_sublist	utilities.py	/^def is_sublist(sl, ll):$/;"	f
+is_subloop	cluster.py	/^    def is_subloop(self,cluster):$/;"	m	class:cluster
+is_subloop	loop.py	/^    def is_subloop(self, loop):$/;"	m	class:loop
 json	trace_parsing.py	/^import sys, json, re, os$/;"	i
+line_picker	examples/matplotlib_click_event.py	/^    def line_picker(line, mouseevent):$/;"	f
+logging	callstack_alignement.py	/^import sys, logging$/;"	i
+logging	cluster.py	/^import sys, random, logging$/;"	i
+logging	delta_calculation.py	/^import logging$/;"	i
+logging	loop.py	/^import sys, random, logging$/;"	i
+logging	pseudocode_generator.py	/^import constants, logging$/;"	i
+logging	pseudocode_generator.py	/^import sys, logging$/;"	i
 logging	struct_detection.py	/^import logging$/;"	i
 logging	trace_parsing.py	/^import logging$/;"	i
+logging	utilities.py	/^import logging$/;"	i
 loop	cluster.py	/^from loop import loop$/;"	i
 loop	loop.py	/^class loop (object):$/;"	c
+main	gpu.py	/^def main(argc, argv):$/;"	f
 main	struct_detection.py	/^def main(argc, argv):$/;"	f
+main	test.py	/^def main(argc, argv):$/;"	f
+math	clustering.py	/^    import math$/;"	i
+math	delta_calculation.py	/^import numpy,math$/;"	i
 matplotlib	clustering.py	/^import matplotlib.pyplot as plt$/;"	i
+matplotlib	examples/matplotlib_click_event.py	/^import matplotlib.pyplot as plt$/;"	i
 merge	cluster.py	/^    def merge(self, ocluster):$/;"	m	class:cluster
 merge	loop.py	/^    def merge(self, oloop):$/;"	m	class:loop
-mergeS	loop.py	/^    def mergeS(self, subloop):$/;"	m	class:loop
 merge_arrays	callstack_distribution.py	/^from utilities import merge_arrays$/;"	i
 merge_arrays	utilities.py	/^def merge_arrays(a, b):$/;"	f
 merge_clusters	pseudocode_generator.py	/^def merge_clusters(cluster_set, ranks):$/;"	f
+merge_loop_blocks	loop.py	/^    def merge_loop_blocks(current_block, new_block):$/;"	m	class:loop
+merge_subloop	loop.py	/^    def merge_subloop(self, subloop):$/;"	m	class:loop
+mpl	examples/matplotlib_draw_tooltip.py	/^import matplotlib as mpl$/;"	i
+mscale	clustering.py	/^from matplotlib import scale as mscale$/;"	i
+mtransforms	clustering.py	/^from matplotlib import transforms as mtransforms$/;"	i
+multi_normalize_data	clustering.py	/^def multi_normalize_data(data_set):$/;"	f
 multiprocessing	clustering.py	/^import sys, multiprocessing$/;"	i
+name	clustering.py	/^    name="cubic"$/;"	v	class:CubicScale
 next_letter	trace_parsing.py	/^def next_letter(letter):$/;"	f
 normalize_data	clustering.py	/^def normalize_data(data):$/;"	f
 np	cluster.py	/^import numpy as np$/;"	i
 np	clustering.py	/^import numpy as np$/;"	i
+np	examples/matplotlib_click_event.py	/^import numpy as np$/;"	i
+np	examples/matplotlib_draw_tooltip.py	/^import numpy as np$/;"	i
 np	loop.py	/^import numpy as np$/;"	i
 np	pseudocode_generator.py	/^import numpy as np$/;"	i
 np	temp_matrix.py	/^import numpy as np$/;"	i
+np	utilities.py	/^import numpy as np$/;"	i
+nsolve	delta_calculation.py	/^from sympy.solvers import solve,nsolve$/;"	i
 numpy	callstack_distribution.py	/^import sys,numpy, random$/;"	i
-numpy	delta_calculation.py	/^import numpy$/;"	i
+numpy	delta_calculation.py	/^import numpy,math$/;"	i
 numpy	struct_detection.py	/^import numpy$/;"	i
+onpick1	clustering.py	/^    def onpick1(event):$/;"	f	function:show_clustering
+onpick1	examples/matplotlib_click_event.py	/^    def onpick1(event):$/;"	f
+onpick2	examples/matplotlib_click_event.py	/^    def onpick2(event):$/;"	f
+onpick3	examples/matplotlib_click_event.py	/^    def onpick3(event):$/;"	f
+onpick4	examples/matplotlib_click_event.py	/^    def onpick4(event):$/;"	f
 os	constants.py	/^import os$/;"	i
+os	cplex_interface.py	/^import os, subprocess$/;"	i
 os	struct_detection.py	/^import sys, os$/;"	i
 os	trace_parsing.py	/^import sys, json, re, os$/;"	i
+output_dims	clustering.py	/^        output_dims = 1$/;"	v	class:CubicScale.CubicTransform
+output_dims	clustering.py	/^        output_dims = 1$/;"	v	class:CubicScale.InvertedCubicTransform
 parse_events	trace_parsing.py	/^def parse_events(events,image_filter):$/;"	f
+parse_field_from_file	cplex_interface.py	/^    def parse_field_from_file(self, field_name, infile_path):$/;"	m	class:CplexInterface
 pdb	cluster.py	/^import pdb$/;"	i
 pdb	loop.py	/^import pdb$/;"	i
-perform_alignement_st1	callstack_alignement.py	/^def perform_alignement_st1(vs):$/;"	f
-perform_alignement_st2	callstack_alignement.py	/^def perform_alignement_st2(vs, ignored_indexes):$/;"	f
+perform_alignement_st1	callstack_alignement.py	/^def perform_alignement_st1(vs, vl):$/;"	f
+perform_alignement_st2	callstack_alignement.py	/^def perform_alignement_st2(vs, vl, ignored_indexes):$/;"	f
+pl	examples/matplotlib_draw_tooltip.py	/^import pylab as pl$/;"	i
 plot_data	clustering.py	/^def plot_data(data):$/;"	f
 plt	clustering.py	/^import matplotlib.pyplot as plt$/;"	i
+plt	examples/matplotlib_click_event.py	/^import matplotlib.pyplot as plt$/;"	i
+pprint	test.py	/^import pprint$/;"	i
+pretty_print	clustering.py	/^from utilities import pretty_print$/;"	i
 pretty_print	utilities.py	/^def pretty_print(pseudocode, trace_name):$/;"	f
+print_function	examples/matplotlib_click_event.py	/^from __future__ import print_function$/;"	i
 print_function	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
 print_iterations	utilities.py	/^def print_iterations(iterations):$/;"	f
-print_matrix	pseudocode_generator.py	/^def print_matrix(matrix, infile):$/;"	f
+print_matrix	clustering.py	/^from utilities import print_matrix$/;"	i
+print_matrix	utilities.py	/^def print_matrix(matrix, infile):$/;"	f
 progress	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
-progress_bar	trace_parsing.py	/^from utilities import progress_bar$/;"	i
-progress_bar	utilities.py	/^class progress_bar(object):$/;"	c
-progress_by	utilities.py	/^    def progress_by(self, by):$/;"	m	class:progress_bar
+progress_by	utilities.py	/^    def progress_by(self, by):$/;"	m	class:ProgressBar
+rand	examples/matplotlib_click_event.py	/^from numpy.random import rand$/;"	i
 random	callstack_distribution.py	/^import sys,numpy, random$/;"	i
-random	cluster.py	/^import sys, random$/;"	i
-random	loop.py	/^import sys, random$/;"	i
+random	cluster.py	/^import sys, random, logging$/;"	i
+random	examples/matplotlib_draw_tooltip.py	/^import random$/;"	i
+random	loop.py	/^import sys, random, logging$/;"	i
 re	trace_parsing.py	/^import sys, json, re, os$/;"	i
-recomputeFirstLine	loop.py	/^    def recomputeFirstLine(self, looplevel):$/;"	m	class:loop
+recompute_first_line	loop.py	/^    def recompute_first_line(self, looplevel):$/;"	m	class:loop
+rescale_cubic	clustering.py	/^        def rescale_cubic(self, x, total_time):$/;"	m	class:CubicScale.CubicTransform
+run	cplex_interface.py	/^    def run(self):$/;"	m	class:CplexInterface
 searchMostFrequentRoutine	callstack_alignement.py	/^def searchMostFrequentRoutine(vs):$/;"	f
-show	utilities.py	/^    def show(self):$/;"	m	class:progress_bar
-show_clustering	clustering.py	/^def show_clustering(data, labels, core_samples_mask, n_clusters_):$/;"	f
+selectPivot	callstack_alignement.py	/^def selectPivot(vs):$/;"	f
+set_args	cplex_interface.py	/^    def set_args(self, args):$/;"	m	class:CplexInterface
+set_default_locators_and_formatters	clustering.py	/^    def set_default_locators_and_formatters(self, axis):$/;"	m	class:CubicScale
+set_infile	cplex_interface.py	/^    def set_infile(self, infile):$/;"	m	class:CplexInterface
+show	utilities.py	/^    def show(self):$/;"	m	class:ProgressBar
+show_clustering	clustering.py	/^def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_, $/;"	f
+solve	delta_calculation.py	/^from sympy.solvers import solve,nsolve$/;"	i
+stats	callstack_distribution.py	/^from scipy import stats$/;"	i
 str	cluster.py	/^    def str(self):$/;"	m	class:cluster
 str	loop.py	/^    def str(self,block_tabs, base):$/;"	m	class:loop
-sys	callstack_alignement.py	/^import sys$/;"	i
+subprocess	cplex_interface.py	/^import os, subprocess$/;"	i
+sum	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^	var sum = 0;$/;"	v
+sys	callstack_alignement.py	/^import sys, logging$/;"	i
 sys	callstack_distribution.py	/^import sys,numpy, random$/;"	i
-sys	cluster.py	/^import sys, random$/;"	i
+sys	cluster.py	/^import sys, random, logging$/;"	i
 sys	clustering.py	/^import sys, multiprocessing$/;"	i
 sys	delta_calculation.py	/^import sys$/;"	i
-sys	loop.py	/^import sys, random$/;"	i
-sys	pseudocode_generator.py	/^import sys$/;"	i
+sys	gpu.py	/^import sys$/;"	i
+sys	loop.py	/^import sys, random, logging$/;"	i
+sys	pseudocode_generator.py	/^import sys, logging$/;"	i
 sys	struct_detection.py	/^import sys, os$/;"	i
 sys	temp_matrix.py	/^import sys$/;"	i
+sys	test.py	/^import sys$/;"	i
 sys	trace_parsing.py	/^import sys, json, re, os$/;"	i
+tempfile	cplex_interface.py	/^import tempfile$/;"	i
 tempfile	trace_parsing.py	/^        import tempfile$/;"	i
 the	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
 tmatrix	cluster.py	/^from temp_matrix import tmatrix$/;"	i
 tmatrix	loop.py	/^from temp_matrix import tmatrix$/;"	i
 tmatrix	temp_matrix.py	/^class tmatrix(object):$/;"	c
+tmatrix	test.py	/^from temp_matrix import tmatrix$/;"	i
+transform_non_affine	clustering.py	/^        def transform_non_affine(self, a):$/;"	m	class:CubicScale.CubicTransform
+transform_non_affine	clustering.py	/^        def transform_non_affine(self, a):$/;"	m	class:CubicScale.InvertedCubicTransform
+update_loopdeph	loop.py	/^    def update_loopdeph(self, loopdeph):$/;"	m	class:loop
+wx	examples/matplotlib_draw_tooltip.py	/^import wx$/;"	i
+wxToolTipExample	examples/matplotlib_draw_tooltip.py	/^class wxToolTipExample(object):$/;"	c

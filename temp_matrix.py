@@ -3,7 +3,7 @@
 # vim:fenc=utf-8
 
 '''
-Copyright © 2016 Juan Francisco Martínez <juan.martinez[AT]bsc[dot]es>
+Copyright ÃÂ© 2016 Juan Francisco MartÃÂ­nez <juan.martinez[AT]bsc[dot]es>
 
 *****************************************************************************
 *                        ANALYSIS PERFORMANCE TOOLS                         *
@@ -46,6 +46,13 @@ class tmatrix(object):
         self._sorted_callstacks=callstacks
 
     @classmethod
+    def fromMatrix(cls, matrix):
+        sorted_matrix, transformations = cls.__boundaries_sort(matrix)
+        return cls(matrix=sorted_matrix,
+                   callstacks=None,
+                   transformations=transformations)
+
+    @classmethod
     def fromCallstackList(cls, callstacks_list):
         matrix, cs_map = cls.__get_matrix(callstacks_list)
         
@@ -55,11 +62,11 @@ class tmatrix(object):
             keys_ordered.append(cs_map[row[0]])
 
         # Adding holes if needed
-        sorted_matrix, transformations=cls.__boundaries_sort(matrix)
+        sorted_matrix, transformations = cls.__boundaries_sort(matrix)
 
-        return(cls(matrix=sorted_matrix, 
+        return cls(matrix=sorted_matrix, 
                    callstacks=keys_ordered, 
-                   transformations=transformations))
+                   transformations=transformations)
 
     def getMatrix(self):
         return self._matrix
@@ -143,13 +150,13 @@ class tmatrix(object):
 
         last=mat[0][0]
         lastcol=lastrow=col=0
-        matrix_complexity=0
+        transformed=0
     
         while col < len(mat[0]):
             for row in range(mheight):
                 if mat[row][col]==0: continue
                 if mat[row][col] < last:
-                    matrix_complexity=1
+                    transformed=1
                     jj=lastrow
                     while mat[jj][lastcol] > mat[row][col]:
                         mat[jj].insert(lastcol,0)
@@ -177,7 +184,7 @@ class tmatrix(object):
             for row in mat:
                 del row[-minzeros:]
 
-        return mat, matrix_complexity
+        return mat, transformed
 
 
     @classmethod
@@ -210,12 +217,6 @@ class tmatrix(object):
                            j >= sm[0][0] and j <= sm[0][1]:
                             already_explored=True
                             break
-
-                    # Already explored j
-#                    for sm in subm:
-#                        if j > sm[0][0] and j <= sm[0][1]:
-#                            already_explored=True
-#                            break
 
                     if not already_explored and self._matrix[i][j] != 0: # Void cell
                         v=h=0

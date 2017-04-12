@@ -159,7 +159,7 @@ class cluster (object):
 
     def str(self):
         pseudocode, dummy=self._merged_rank_loops\
-                .str(0,0)
+                .str(0,0,[])
                 #.str(0, self._merged_rank_loops._loopdeph)
         pseudocode="\n[ClusterID={0}; Expains={1}%]\n{2}".format(\
                 self._id, self._delta*100, pseudocode)
@@ -175,9 +175,9 @@ class cluster (object):
     def getFirstLine(self):
         return self._first_line
 
-    def is_subloop(self,loop):
-        return self.getParent() != loop.getParent()\
-                and self._merged_rank_loops.is_subloop(loop)
+    def is_subloop(self,cluster):
+        return self.getParent() != cluster.getParent()\
+                and self._merged_rank_loops.is_subloop(cluster.getLoop())
 
     def merge(self, ocluster):
         assert(self.getTimesMedian() > ocluster.getTimesMedian())
