@@ -145,3 +145,18 @@ def print_matrix(matrix, infile):
         for row in mat:
             print("\t".join(map(format_nums,row)))
 
+def get_call(callstack, level):
+    import constants
+    call=callstack \
+        .split(constants._intra_field_separator)[0::2][level]
+
+    return call
+
+
+def get_line(callstack,level):
+    import constants
+    line=int(callstack \
+        .split(constants._intra_field_separator)[1::2][level])
+
+    return line
+

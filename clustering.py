@@ -219,21 +219,21 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
     occurrences = X[:, 0]
     occurrences.sort()
 
-    # Upper boundary
-    occ_points = np.array(\
-            range(\
-                int(min(occurrences)),\
-                int(max(occurrences)),\
-                int((max(occurrences)-min(occurrences))/50)))
-    ax.plot(occ_points, (total_time/occ_points),"k--", color="blue", lw=1)
-
-    # Bottom boundary
-    ax.plot(occ_points,(bound*total_time)/occ_points, "k--", color="red", lw=1) 
-
-    ax.set_title("Number of clusters: {0} (eps={1}, mins={2})"
-            .format(n_clusters_, 
-            constants._eps, 
-            constants._min_samples))
+#    # Upper boundary
+#    occ_points = np.array(\
+#            range(\
+#                int(min(occurrences)),\
+#                int(max(occurrences)),\
+#                int((max(occurrences)-min(occurrences))/50)))
+#    ax.plot(occ_points, (total_time/occ_points),"k--", color="blue", lw=1)
+#
+#    # Bottom boundary
+#    ax.plot(occ_points,(bound*total_time)/occ_points, "k--", color="red", lw=1) 
+#
+#    ax.set_title("Number of clusters: {0} (eps={1}, mins={2})"
+#            .format(n_clusters_, 
+#            constants._eps, 
+#            constants._min_samples))
     
     #
     # Show plot

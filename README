@@ -4,5 +4,10 @@ README.txt
 :Email: juan.martinez[AT]bsc[dot]es
 :Date: 2016-08-18 11:44
 
-TODO!!
+Dependencies
+============
+numpy
+argcoplete
+sympy
+scikit-learn
 

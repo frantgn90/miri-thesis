@@ -10,6 +10,8 @@ from temp_matrix import tmatrix
 import copy
 import pdb
 
+from utilities import *
+
 class loop (object):
     def __init__(self, tmat, cstack, rank):
         self._tmat={}
@@ -43,10 +45,6 @@ class loop (object):
             else:
                 self._cs.update({key_line:{"cs":[stack],"ranks":[self._rank]}})
 
-            #self._cs.update({
-            #int(key):{"cs":list(self._cstack), 
-            #     "ranks":[self._rank]}})
-
         logging.debug("New loop with {0} iterations.".format(self._iterations))
 
     def getAllRanks(self):
@@ -63,6 +61,18 @@ class loop (object):
         return list(set(ranks)) # Removing repetitions
 
     def merge(self, oloop):
+        print self._cs
+        print "(+)"
+        print oloop._cs
+        print "(=)"
+
+        new_loopdeph = self.check_loopdeph(oloop)
+
+        if (new_loopdeph != self._loopdeph):
+            self.update_loopdeph(new_loopdeph)
+        if (new_loopdeph != oloop._loopdeph):
+            oloop.update_loopdeph(new_loopdeph)
+
         # Assert if it loop has not been merged before
         assert oloop._merge == 1, "TODO: Merge merged loops (tree-merge)"
 
@@ -109,8 +119,24 @@ class loop (object):
         if len(newcs) > 0: 
                 newkey=newcs[0] \
                     .split(constants._intra_field_separator)[1::2][self._loopdeph]
+
+                if int(newkey) in self._cs:
+                    logging.warn("Aliasing while merging. Deep condition...")
+
+                    # Solution 1: Float keys. Every repeated key, add 0,1 to the
+                    # new one
+                    newkey = str(float(newkey)+0.01)
+
+                    
+                    # Solution 2: List of callstakcs
+                    #if type(self._cs[newkey]) != list:
+                    #    self._cs[int(newkey)] = [self._cs[newkey]]
+                    #self._cs[newkey].append({
+                    #int(newkey):{"cs": newcs,
+                    #        "ranks": [newrank]}})
+
                 self._cs.update({
-                    int(newkey):{"cs": newcs,
+                    float(newkey):{"cs": newcs,
                             "ranks": [newrank]}})
 
         self._merge += 1
@@ -120,6 +146,23 @@ class loop (object):
 
         # Every time a merge is done, recompute the first line
         self._first_line = int(cskeys[0])
+
+        print self._cs
+        print "========================="
+
+    def check_loopdeph(self, oloop):
+        global_loopdeph = min(self._loopdeph, oloop._loopdeph)
+
+        # With first callstack should be enough
+        own_callstack=self._cs[self._cs.keys()[0]]["cs"][0]
+        oth_callstack=oloop._cs[oloop._cs.keys()[0]]["cs"][0]
+        
+        for i in range(global_loopdeph,-1,-1):
+            
+                if get_line(own_callstack, i) != get_line(oth_callstack, i):
+                    return i
+
+        return global_loopdeph
 
     def recompute_first_line(self, looplevel):
         cskeys=list(self._cs.keys())
@@ -220,64 +263,65 @@ class loop (object):
 
 
                 if allranks:
-                    self.merge_loop_blocks(superloop_cs,{"cs":[subloop],"ranks":subranks})
-                    done = True
-                    #for i, callstack in zip(range(len(superloop_cs["cs"])),
-                    #                        superloop_cs["cs"])[::-1]:
-                    #    if done: break
+                    #self.merge_loop_blocks(superloop_cs,{"cs":[subloop],"ranks":subranks})
+                    #done = True
+                    for i, callstack in zip(range(len(superloop_cs["cs"])),
+                                            superloop_cs["cs"])[::-1]:
+                        if done: break
 
-                    #    if type(callstack) == loop:
-                    #        # this is an atomic block, so if the new subloop have 
-                    #        # its live above or below the first callstack on this block
-                    #        # it will mean that is allow or bellow the whole block
-                    #        cs_fields = callstack.get_first_cs()
-                    #        cs_line = callstack.getFirstLine()
-                    #    else:
-                    #        cs_fields = callstack.split(constants._intra_field_separator)
-                    #        cs_line = int(cs_fields[1::2][self._loopdeph])
+                        if type(callstack) == loop:
+                            # this is an atomic block, so if the new subloop have 
+                            # its live above or below the first callstack on this block
+                            # it will mean that is allow or bellow the whole block
+                            cs_fields = callstack.get_first_cs()
+                            cs_line = callstack.getFirstLine()
+                        else:
+                            cs_fields = callstack.split(constants._intra_field_separator)
+                            cs_line = int(cs_fields[1::2][self._loopdeph])
 
-                    #    if subloop_first_line == cs_line:
-                    #        for next_loopdeph in range(self._loopdeph+1,len(cs_fields[1::2])):
-                    #            if done: break
+                        if subloop_first_line == cs_line:
+                            for next_loopdeph in range(self._loopdeph+1,len(cs_fields[1::2])):
+                                if done: break
 
-                    #            cs_next_level_line = cs_fields[1::2][next_loopdeph]
-                    #            cs_next_level_call = cs_fields[0::2][next_loopdeph]
+                                cs_next_level_line = cs_fields[1::2][next_loopdeph]
+                                cs_next_level_call = cs_fields[0::2][next_loopdeph]
 
-                    #            subloop_next_line = subloop.get_first_line_at_level(
-                    #                    next_loopdeph)
-                    #            subloop_next_call = subloop.get_first_call_at_level(
-                    #                    next_loopdeph)
+                                subloop_next_line = subloop.get_first_line_at_level(
+                                        next_loopdeph)
+                                subloop_next_call = subloop.get_first_call_at_level(
+                                        next_loopdeph)
 
-                    #            cs_next_level_line = int(cs_next_level_line)
-                    #            subloop_next_line = int(subloop_next_line)
+                                cs_next_level_line = int(cs_next_level_line)
+                                subloop_next_line = int(subloop_next_line)
 
-                    #                                       
-                    #            # TODO is not working properly when two calls are made
-                    #            # from same file and line. In this case look to times
-                    #            if cs_next_level_call != subloop_next_call:
-                    #               print("WARNING: Two functions called from same file"\
-                    #                        " and line!!")
-                    #               # superloop_cs["cs"].insert(i+1, subloop)
-                    #               # done = True    
-                    #               # break
-                    #               assert False, "Not treated"
+                                                           
+                                # TODO is not working properly when two calls are made
+                                # from same file and line. In this case look to times
+                                if cs_next_level_call != subloop_next_call:
+                                   logging.warn("WARNING: Two functions called"\
+                                        " from same file"\
+                                        " and line!!")
+                                   # superloop_cs["cs"].insert(i+1, subloop)
+                                   # done = True    
+                                   # break
+                                   assert False, "Not treated"
      
-                    #            assert cs_next_level_call == subloop_next_call
+                                assert cs_next_level_call == subloop_next_call
 
-                    #            if cs_next_level_line > subloop_next_line:
-                    #                superloop_cs["cs"].insert(i, subloop)
-                    #                done = True
-                    #            elif cs_next_level_line < subloop_next_line:
-                    #                superloop_cs["cs"].insert(i+1, subloop)
-                    #                done = True
-                    #            
-                    #    elif subloop_first_line > cs_line:
-                    #        superloop_cs["cs"].insert(i+1, subloop)
-                    #        done = True
-                    #
-                    #if not done:
-                    #    superloop_cs["cs"].insert(0, subloop)
-                    #    done = True
+                                if cs_next_level_line > subloop_next_line:
+                                    superloop_cs["cs"].insert(i, subloop)
+                                    done = True
+                                elif cs_next_level_line < subloop_next_line:
+                                    superloop_cs["cs"].insert(i+1, subloop)
+                                    done = True
+                                
+                        elif subloop_first_line > cs_line:
+                            superloop_cs["cs"].insert(i+1, subloop)
+                            done = True
+                    
+                    if not done:
+                        superloop_cs["cs"].insert(0, subloop)
+                        done = True
 
                 else:
                     after_rank_line = -1
@@ -288,9 +332,9 @@ class loop (object):
                         cs_line = int(cs_fields[1::2][self._loopdeph])
                         
                         if subloop_first_line == cs_line:
-                            print("WARNING: Deeper levels of the callstacks"\
-                                    " must be checked the order of the calls"\
-                                    "could be disordered. (2)")
+                            logging.warn("Deeper levels of the callstacks"\
+                                    " must be checked. The calls"\
+                                    " could be disordered.")
                         if subloop_first_line < cs_line:
                             after_rank_block.append(callstack)
                             if after_rank_line == -1: after_rank_line = cs_line
@@ -568,7 +612,6 @@ class loop (object):
             done = True
 
         assert done
-        print current_block
 
 
 ############################

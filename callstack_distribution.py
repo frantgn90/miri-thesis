@@ -6,9 +6,8 @@
 import sys,numpy, random
 import constants
 from utilities import merge_arrays
-from spectrum import *
-
-from scipy import stats
+#from spectrum import *
+#from scipy import stats
 
 random.seed(constants.RANDOM_SEED)
 
