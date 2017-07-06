@@ -4,549 +4,115 @@
 
 import sys, random, logging
 import numpy as np
-import constants
-from temp_matrix import tmatrix
-
 import copy
-import pdb
 
+import constants
+from callstack import callstack
+from temp_matrix import tmatrix
 from utilities import *
 
 class loop (object):
-    def __init__(self, tmat, cstack, rank):
-        self._tmat={}
-        self._cs={}
+    def __init__(self, callstacks):
+        # Maybe this loop is just an statement under a condition of 
+        # other loop
+        #
+        self.is_condition = False
+        self.condition_probability = 0
 
-        self._rank=rank
-        self._tmat[rank]=tmat
-        self._cstack = cstack
-        self._merge = 1 # myself
-        self._first_line = 0
-        self._is_condition = False
-        self._condition_propability = 0
-
-        self._iterations = len(self._tmat[self._rank][0])
-        self._original_iterations = self._iterations
-
-        assert self._iterations > 1
-
-        # The key of every cs set is the line of the first call of the callstack
-        dummy,self._loopdeph=cs_uncommon_part(self._cstack)
-
-        key=self._cstack[0].split(
-                constants._intra_field_separator)[1::2][self._loopdeph]
-        self._first_line = int(key)
+        # This loop is made by how many merges
+        #
+        self.nmerges = 1
         
-        for stack in self._cstack:
-            key_line = int(stack.split(constants._intra_field_separator)
-                    [1::2][self._loopdeph])
-            if key_line in self._cs:
-                self._cs[key_line]["cs"].append(stack)
-            else:
-                self._cs.update({key_line:{"cs":[stack],"ranks":[self._rank]}})
-
-        logging.debug("New loop with {0} iterations.".format(self._iterations))
-
-    def getAllRanks(self):
-        return self._tmat.keys()
-
-    def get_tmat(self):
-        return self._tmat[self._rank]
-
-    def get_ranks(self):
-        ranks=[]
-        for k,v in self._cs.items():
-            ranks.extend(v["ranks"])
-
-        return list(set(ranks)) # Removing repetitions
-
-    def merge(self, oloop):
-        print self._cs
-        print "(+)"
-        print oloop._cs
-        print "(=)"
-
-        new_loopdeph = self.check_loopdeph(oloop)
-
-        if (new_loopdeph != self._loopdeph):
-            self.update_loopdeph(new_loopdeph)
-        if (new_loopdeph != oloop._loopdeph):
-            oloop.update_loopdeph(new_loopdeph)
-
-        # Assert if it loop has not been merged before
-        assert oloop._merge == 1, "TODO: Merge merged loops (tree-merge)"
-
-        newcs = oloop._cstack
-        newrank = oloop._rank
-
-        self._tmat[newrank] = oloop._tmat[newrank]
-
-        for key, cset in self._cs.items():
-            if len(newcs) == 0: break
-            if newrank in cset["ranks"]: continue
-
-            commoncs = self.__get_common_cs(cset["cs"], newcs)
-            uncommoncs_a = self.__substract_cs(cset["cs"],commoncs)
-
-            if len(commoncs) == len(cset["cs"]):
-                cset["ranks"].append(newrank)
-            elif len(commoncs) > 0 and len(commoncs) < len(cset["cs"]):           
-                # Update uncommon cset
-                cset["cs"] = uncommoncs_a
-                newkey=int(cset["cs"][0] \
-                    .split(constants._intra_field_separator)[1::2][self._loopdeph])
-
-                if key != newkey:
-                    self._cs[newkey]=dict(self._cs[key]) # copy
-                    del(self._cs[key]) # removing the old entry
-
-                # Create common new cset
-                newkey=commoncs[0]\
-                        .split(constants._intra_field_separator)[1::2][self._loopdeph]
-                newcset=list(cset["ranks"]) # copy
-                newcset.append(newrank)
-                self._cs.update({
-                    int(newkey):{ 
-                        "cs": commoncs, 
-                        "ranks": newcset}})
-
-            # Every time a part of this newcs is merged, then it have to be
-            # substracted in order to no merge it again
-            newcs = self.__substract_cs(newcs, commoncs)
-
-        # If we check all the actual cs and there is no any coincidence for 
-        # some calls, then, we have to create a new cs group
-        if len(newcs) > 0: 
-                newkey=newcs[0] \
-                    .split(constants._intra_field_separator)[1::2][self._loopdeph]
-
-                if int(newkey) in self._cs:
-                    logging.warn("Aliasing while merging. Deep condition...")
-
-                    # Solution 1: Float keys. Every repeated key, add 0,1 to the
-                    # new one
-                    newkey = str(float(newkey)+0.01)
-
-                    
-                    # Solution 2: List of callstakcs
-                    #if type(self._cs[newkey]) != list:
-                    #    self._cs[int(newkey)] = [self._cs[newkey]]
-                    #self._cs[newkey].append({
-                    #int(newkey):{"cs": newcs,
-                    #        "ranks": [newrank]}})
-
-                self._cs.update({
-                    float(newkey):{"cs": newcs,
-                            "ranks": [newrank]}})
-
-        self._merge += 1
-
-        cskeys=list(self._cs.keys())
-        sorted(cskeys)
-
-        # Every time a merge is done, recompute the first line
-        self._first_line = int(cskeys[0])
-
-        print self._cs
-        print "========================="
-
-    def check_loopdeph(self, oloop):
-        global_loopdeph = min(self._loopdeph, oloop._loopdeph)
-
-        # With first callstack should be enough
-        own_callstack=self._cs[self._cs.keys()[0]]["cs"][0]
-        oth_callstack=oloop._cs[oloop._cs.keys()[0]]["cs"][0]
-        
-        for i in range(global_loopdeph,-1,-1):
-            
-                if get_line(own_callstack, i) != get_line(oth_callstack, i):
-                    return i
-
-        return global_loopdeph
-
-    def recompute_first_line(self, looplevel):
-        cskeys=list(self._cs.keys())
-        cskeys.sort(key=float)
-        firstk=cskeys[0]
-
-        if type(self._cs[firstk]["cs"]) == loop:
-            self._first_line = self._cs[firstk]["cs"]\
-                .recompute_first_line(looplevel)
-        elif type(self._cs[firstk]["cs"][0]) == loop:
-            self._first_line = self._cs[firstk]["cs"][0]\
-                .recompute_first_line(looplevel)
-        else:
-            self._first_line=int(self._cs[firstk]["cs"][0]\
-                .split(constants._intra_field_separator)[1::2][looplevel])
-
-        return self._first_line
-
-    def update_loopdeph(self, loopdeph):
-        self._loopdeph = loopdeph
-        self.recompute_first_line(self._loopdeph)
-
-        for k, val in self._cs.items():
-            callstacks = val["cs"]
-            ranks = val["ranks"]
-            for cs in callstacks:
-                if type(cs) == loop:
-                    if cs._loopdeph < loopdeph:
-                        cs.update_loopdeph(loopdeph)
-                    newkey = cs.get_first_line_at_level(loopdeph)
-                else:
-                    newkey = int(cs.split(constants._intra_field_separator)
-                            [1::2][loopdeph])
-
-                if newkey != k:
-                    if newkey in self._cs:
-                        self.merge_loop_blocks(self._cs[newkey],{"cs":[cs],"ranks":ranks})
-                    else:
-                        newval=copy.deepcopy(val)
-                        self._cs.update({newkey:newval})
-                    del self._cs[k]
-
-    def merge_subloop(self, subloop):
-        subranks = subloop.get_ranks()
-
-        merge_calls = copy.deepcopy(self._cstack)
-        merge_calls.extend(subloop._cstack)
-        dummy,loopdeph = cs_uncommon_part(merge_calls)
-
-        # WARNING: Eventually could fail
-        if subloop._loopdeph < loopdeph:
-            subloop.update_loopdeph(loopdeph)
-        if loopdeph != self._loopdeph:
-            self.update_loopdeph(loopdeph)
-
-        subloop.recompute_first_line(self._loopdeph)
-
-        if subloop._iterations < self._iterations:
-            subloop._is_condition = True # Maybe a loop into a condition
-            subloop._condition_propability = float(subloop._iterations)/self._iterations
-        else:
-            subloop._iterations/=self._iterations
-
-        subloop_first_line = subloop.getFirstLine()
-        keys_sorted = sorted(self._cs.keys(), reverse=True)
-        done=False
-
-        # From bottom to top
-        done = False
-        for superloop_line in keys_sorted:
-            if done: break
-
-            if subloop_first_line > superloop_line:
-                self._cs.update({subloop_first_line:{
-                    "cs":[subloop],
-                    "ranks":subloop.getAllRanks()
-                }})
-                done = True
-                
-            elif subloop_first_line == superloop_line:
-                superloop_cs=self._cs[superloop_line]
-                superranks = superloop_cs["ranks"]
-                allranks = (subranks==superranks)
-
-                # TODO: When allranks is false, it still could form part of the
-                # superloop but with an extra conditional that is the subset
-                subset = set.intersection(*[set(subranks),set(superranks)])
-                subset = list(subset)
-
-
-                # Init line block
-                if type(superloop_cs["cs"][0])==loop:
-                    superloop_cs["cs"][0].recompute_first_line(self._loopdeph)
-                    init_line_block = int(superloop_cs["cs"][0].getFirstLine())
-                else:
-                    callstack=superloop_cs["cs"][0].split(constants._intra_field_separator)
-                    init_line_block = int(callstack[1::2][self._loopdeph])
-
-
-                if allranks:
-                    #self.merge_loop_blocks(superloop_cs,{"cs":[subloop],"ranks":subranks})
-                    #done = True
-                    for i, callstack in zip(range(len(superloop_cs["cs"])),
-                                            superloop_cs["cs"])[::-1]:
-                        if done: break
-
-                        if type(callstack) == loop:
-                            # this is an atomic block, so if the new subloop have 
-                            # its live above or below the first callstack on this block
-                            # it will mean that is allow or bellow the whole block
-                            cs_fields = callstack.get_first_cs()
-                            cs_line = callstack.getFirstLine()
-                        else:
-                            cs_fields = callstack.split(constants._intra_field_separator)
-                            cs_line = int(cs_fields[1::2][self._loopdeph])
-
-                        if subloop_first_line == cs_line:
-                            for next_loopdeph in range(self._loopdeph+1,len(cs_fields[1::2])):
-                                if done: break
-
-                                cs_next_level_line = cs_fields[1::2][next_loopdeph]
-                                cs_next_level_call = cs_fields[0::2][next_loopdeph]
-
-                                subloop_next_line = subloop.get_first_line_at_level(
-                                        next_loopdeph)
-                                subloop_next_call = subloop.get_first_call_at_level(
-                                        next_loopdeph)
-
-                                cs_next_level_line = int(cs_next_level_line)
-                                subloop_next_line = int(subloop_next_line)
-
-                                                           
-                                # TODO is not working properly when two calls are made
-                                # from same file and line. In this case look to times
-                                if cs_next_level_call != subloop_next_call:
-                                   logging.warn("WARNING: Two functions called"\
-                                        " from same file"\
-                                        " and line!!")
-                                   # superloop_cs["cs"].insert(i+1, subloop)
-                                   # done = True    
-                                   # break
-                                   assert False, "Not treated"
-     
-                                assert cs_next_level_call == subloop_next_call
-
-                                if cs_next_level_line > subloop_next_line:
-                                    superloop_cs["cs"].insert(i, subloop)
-                                    done = True
-                                elif cs_next_level_line < subloop_next_line:
-                                    superloop_cs["cs"].insert(i+1, subloop)
-                                    done = True
-                                
-                        elif subloop_first_line > cs_line:
-                            superloop_cs["cs"].insert(i+1, subloop)
-                            done = True
-                    
-                    if not done:
-                        superloop_cs["cs"].insert(0, subloop)
-                        done = True
-
-                else:
-                    after_rank_line = -1
-                    after_rank_block = []
-
-                    for callstack in superloop_cs["cs"]:
-                        cs_fields = callstack.split(constants._intra_field_separator)
-                        cs_line = int(cs_fields[1::2][self._loopdeph])
-                        
-                        if subloop_first_line == cs_line:
-                            logging.warn("Deeper levels of the callstacks"\
-                                    " must be checked. The calls"\
-                                    " could be disordered.")
-                        if subloop_first_line < cs_line:
-                            after_rank_block.append(callstack)
-                            if after_rank_line == -1: after_rank_line = cs_line
-
-                    # Insert the subloop in the middle of a block
-                    self._cs.update({
-                        subloop_first_line: 
-                            {"cs":[subloop], "ranks": subloop.get_ranks()}})
-
-                    # The block has been splitted. This is the second part.
-                    if after_rank_line != -1:
-                        self._cs.update({
-                            after_rank_line:
-                                {"cs":after_rank_block, "ranks": superloop_cs["ranks"]}}) 
-                    done=True
-                    break
-            
-        if not done:
-            self._cs.update({subloop_first_line:{
-                "cs":[subloop],
-                "ranks":subloop.getAllRanks()
-            }})
-            done = True
-
-        assert done
-
-    def __get_common_cs(self, cs1, cs2):
-        res=[]
-        for cs in cs1:
-            if cs in cs2:
-                res.append(cs)
-
-        return res
-
-    def __substract_cs(self, cs1, cs2):
-        res=[]
-        for cs in cs1:
-            if not cs in cs2:
-                res.append(cs)
-
-        return res
-
-    def str(self,block_tabs, base, lastsc):
-        relative_tabs=0
-
-        # Printing the path from the previous level loop to this one
-        pseudocode=""
-        loop_base_from=""
-
-        if base <= self._loopdeph:
-            if not self._cstack[0].split(constants._intra_field_separator)\
-                    [0::2][base] in lastsc:
-                loop_base_from=constants.TAB*relative_tabs\
-                        + self._cstack[0].split(constants._intra_field_separator)\
-                            [0::2][base]+"()\n"
-            relative_tabs+=1
-
-        for lb in range(base+1, self._loopdeph+1):
-            if not self._cstack[0].split(constants._intra_field_separator)\
-                    [0::2][lb] in lastsc:
-                loop_base_from+=constants.TAB*relative_tabs\
-                        + self._cstack[0].split(constants._intra_field_separator)\
-                            [0::2][lb]+"()\n"
-            relative_tabs+=1
-
-        pseudocode=loop_base_from
-
-        # Printing loop description
-        loop_base=self._cstack[0].split\
-                (constants._intra_field_separator)[0::2][self._loopdeph]
-
-        if self._is_condition == False:
-            pseudocode+=constants.TAB*(relative_tabs)\
-                 + constants.FORLOOP.format(self._iterations)
-        else:
-            pseudocode+=constants.TAB*(relative_tabs)\
-                + constants.IF_DATA.format(self._condition_propability)
-
-        relative_tabs+=1
-
-        # Printing loop body
-        cskeys=list(self._cs.keys())
-        cskeys.sort(key=float)
-
-        some_if=False
-        last_ranks_condition = []
-        for key in cskeys:
-            ranks=self._cs[key]["ranks"]
-            cs=self._cs[key]["cs"]
-
-            assert type(self._cs[key]["cs"])!=loop,"CS can not be a loop"
-
-            suncommon=[]
-            for cs in self._cs[key]["cs"]:
-                if type(cs) == loop:
-                    suncommon.append(cs)
-                else:
-                    suncommon.append(cs.split(constants.\
-                            _intra_field_separator)[0::2][self._loopdeph+1:])
-
-            # Ranks conditional
-            if_tabs=0
-            if len(ranks) < self._merge:
-                if some_if == True:
-                    if ranks != last_ranks_condition:
-                        pseudocode += constants.TAB*relative_tabs\
-                            + constants.ELSE_RANK.format(ranks)
-                else:
-                    # TODO: Not should be elif for all cases.. only for those
-                    # cases that the conditions are completely complementary
-                    some_if=True
-                    pseudocode += constants.TAB*relative_tabs\
-                        + constants.IF_RANK.format(ranks)
-                last_ranks_condition = ranks
-
-                if_tabs=1
-            
-            # Loop body calls
-            lastsc=[]
-            rel_relative_tabs=0
-            callchain=""
-            for sc in suncommon:
-                if type(sc) == loop:
-                    loop_pseudocode, dummy=sc.str(rel_relative_tabs, 
-                            self._loopdeph+1,lastsc)
-                    callchain += loop_pseudocode
-                    lastsc=dummy[:-1]
-                else:
-                    if len(sc) == 0: 
-                        logging.warn("WARNING: Strange behaviour. cs with len 0")
-                        continue
-
-                    line=[]
-                    for i in sc:
-                        if not i in lastsc: 
-                            line.append(i)
-
-                    n_common_calls=len(sc)-len(line)
-                    rel_relative_calls=n_common_calls
+        # Number of iterations of the loop. The original iterations
+        # are needed because number of iterations will change in case
+        # this loop was indeed a subloop
+        #
+        self.iterations = callstacks[0].repetitions
+        self.original_iterations = self.iterations
+
+        # Sanity check 1 !!!
+        #
+        for callstack in callstacks:
+            assert callstack.repetitions == self.iterations, \
+                    "Loop: Sanity check #1 fail"
+
+        # We have a chain of calls, this variable indicates where
+        # in this chain the loop represented by this object is. The way
+        # to calculate it is to get just the common part of all the
+        # chains
+        #
+        common_callstack = callstacks[0]
+        for callstack in callstacks:
+            common_callstack &= callstack
+        self.loop_deph = len(common_callstack.calls)
+        self.common_calls = common_callstack.calls
+
+        # Until now, the order of the callstacks were not important
+        # but now it is, so lets sort it. The order should be the
+        # program order so the line is the parameter to take into account
+        self.program_order_callstacks = sorted(callstacks)
+
+        logging.debug("New loop with {0} iterations.".format(self.iterations))
+
+    def get_all_ranks(self):
+        ranks = []
+        for cs in self.program_order_callstacks:
+            if isinstance(cs, callstack):
+                ranks.append(cs.rank)
+            elif isinstance(cs, loop):
+                ranks.extend(cs.get_all_ranks())
+
+        return list(set(ranks))
     
-                    # First call of the callchain
-                    callchain+=constants.TAB*rel_relative_calls+line[0] +"()\n"
-                    for j in range(1,len(line)):
-                        callchain+= constants.TAB*(rel_relative_calls+j)\
-                                + line[j]+"()\n"
-                    
-                    # If there is more than one call to the same function
-                    # we want to see it more than one time
-                    lastsc=sc[:-1]
-            
-            callchain=constants.TAB*(relative_tabs+if_tabs)\
-                    + callchain.replace("\n","\n"+constants.TAB*(relative_tabs+if_tabs))
+    def merge(self, other):
+        assert type(other) == loop
+        assert other.nmerges == 1
 
-            # Removing the last newline tabulations
-            callchain=callchain[:-(len(constants.TAB*(relative_tabs+if_tabs)))]
-            pseudocode+=callchain
-                    
-        # Adding the block tabulation
-        pseudocode=constants.TAB*block_tabs \
-                + pseudocode.replace("\n", "\n"+constants.TAB*block_tabs)
-        #pseudocode=pseudocode[:-(len(constants.TAB*block_tabs))]
+        merged_callstacks = other.program_order_callstacks + self.program_order_callstacks
+        self.program_order_callstacks = sorted(merged_callstacks)
 
-        # When return from a subloop we want to know at which level this subloop
-        # has been executed
-        complete_lastsc=self.getLastSc(base)
-        return pseudocode, complete_lastsc
+        self.nmerges += 1
 
-    def getFirstLine(self):
-        return self._first_line
-
-    def getLastSc(self, base):
-        cskeys=list(self._cs.keys())
-        cskeys.sort(key=float)
-
-        if type(self._cs[cskeys[-1]]["cs"])==loop: # NOTE: Not sure about it
-            return self._cs[cskeys[-1]]["cs"].getLastSc(base)
-        elif type(self._cs[cskeys[-1]]["cs"][-1])==loop:
-            return self._cs[cskeys[-1]]["cs"][-1].getLastSc(base)
-        else:
-            return self._cs[cskeys[-1]]["cs"][-1]\
-                .split(constants._intra_field_separator)[0::2][base:]
+        common_callstack = self.program_order_callstacks[0]
+        for callstack in self.program_order_callstacks:
+            common_callstack &= callstack
+        self.loop_deph = len(common_callstack.calls)
+        self.common_calls = common_callstack.calls
 
 
-    def getIteration(self, rank, it):
-        assert it < len(self._tmat[rank][0]), "This iteration does not exist."
-        return [self._tmat[rank][0][it], self._tmat[rank][0][it+1]]
+    def merge_with_subloop(self, other):
+        # The difference with the previous merge is that now 'other' is a subloop
+        # of ourselfs. So new comparative functions have to be added to this class
 
-    def get_first_line_at_level(self, level):
-        stack_lines = self._cstack[0].split(constants._intra_field_separator)[1::2]
-        return int(stack_lines[level])
+        merged_subloop = self.program_order_callstacks + other
+        self.program_order_callstacks = sorted(merged_subloop)
 
-    def get_last_line_at_level(self, level):
-        stack_lines = self._cstack[-1].split(constants._intra_field_separator)[1::2]
-        return int(stack_lines[level])
+        i=0
+        common_callstack = self.program_order_callstacks[i]
+        while isinstance(common_callstack, loop):
+            i += 1
+            common_callstack = self.program_order_callstacks[i]
 
-    def get_first_call_at_level(self, level):
-        stack_calls = self._cstack[0].split(constants._intra_field_separator)[0::2]
-        return stack_calls[level]
+        for callstack in self.program_order_callstacks:
+            if isinstance(callstack, loop):
+                for sl_callstack in callstack.program_order_callstacks:
+                    if isinstance(sl_callstack, loop):
+                        continue
+                    else:
+                        common_callstack &= sl_callstack
+            else:
+                common_callstack &= callstack
+        self.loop_deph = len(common_callstack.calls)
+        self.common_calls = common_callstack.calls
+        print self.loop_deph
 
-    def get_last_call_at_level(self, level):
-        stack_calls = self._cstack[-1].split(constants._intra_field_separator)[0::2]
-        return stack_calls[level]
 
-    def is_subloop(self, loop):
-        # Look if for every iteration there is any arrival
-        # Getting the first rank should be sufficient
+    def is_subloop(self, other):
+        its_bounds = self.program_order_callstacks[0].instants
+        sub_times  = other.program_order_callstacks[0].instants
 
-        its_bounds = self._tmat[self.getAllRanks()[0]][0]
-        sub_times  = loop._tmat[loop.getAllRanks()[0]][0]
-
-        is_subloop = False
         last_j = 0
+        is_subloop = False
 
         for i in range(len(its_bounds))[0::2]:
             if i+1 >= len(its_bounds): break
@@ -561,104 +127,54 @@ class loop (object):
         
         return is_subloop;
 
-    def get_first_cs(self):
-        keys = sorted(self._cs.keys())
-        return self._cs[keys[0]]["cs"]
+    def __eq__(self, other):
+        if type(other) == loop:
+            return self.iterations == other.iterations
+        elif type(other) == callstack:
+            return self.program_order_callstacks[0] == other
 
-    def merge_loop_blocks(self, current_block, new_block):
-        ranks_current_block = current_block["ranks"]
-        ranks_new_block = new_block["ranks"]
-        cs_current_block = current_block["cs"]
-        cs_new_block_or = new_block["cs"][0]
-
-        if type(cs_new_block_or) == loop:
-            cs_new_block = cs_new_block_or.get_first_cs()[0]
-        else:
-            cs_new_block = cs_new_block_or
-
-        new_block_cs_calls = cs_new_block.split(constants._intra_field_separator)[0::2]
-        new_block_cs_lines = cs_new_block.split(constants._intra_field_separator)[1::2]
-
-        assert ranks_current_block == ranks_new_block, "Not managed situation"
-
-        done = False
-        for current_cs, pos in zip(cs_current_block, range(len(cs_current_block)))[::-1]:
-            if done: break
-            if type(current_cs) == loop:
-                current_cs = current_cs.get_first_cs()[0]
-    
-            current_cs_calls = current_cs.split(constants._intra_field_separator)[0::2]
-            current_cs_lines = current_cs.split(constants._intra_field_separator)[1::2]
-
-            number_levels = min(len(new_block_cs_lines), len(current_cs_lines))
-
-            for i in range(number_levels):
-                current_cs_call = current_cs_calls[i]
-                current_cs_line = int(current_cs_lines[i])
-                new_block_cs_call = new_block_cs_calls[i]
-                new_block_cs_line = int(new_block_cs_lines[i])
-
-                assert new_block_cs_call == current_cs_call
-
-                if new_block_cs_line > current_cs_line:
-                    current_block["cs"].insert(pos+1, cs_new_block_or)
-                    done = True
-                    break
-                elif new_block_cs_line < current_cs_line:
-                    break
-
-        if not done:
-            current_block["cs"].insert(0,cs_new_block_or)
-            done = True
-
-        assert done
+    def __lt__(self, other):
+        if type(other) == loop:
+            return self.iterations < other.iterations
+        elif type(other) == callstack:
+            return self.program_order_callstacks[0] < other
 
 
-############################
-#### AUXILIAR FUNCTIONS ####
-############################
-
-def cs_uncommon_part(scalls):
-    # odd positions have the lines meanwhile even possitions have calls
-
-    # We can expect that all the stack before the loop are equal, then
-    # the loop is exactly in the first call when the lines differs.
-    # The rest of calls are from the loop.
-
-    if len(scalls)==1: 
-        level=0
-        find = False
-        for call in scalls[0].split(constants._intra_field_separator)[0::2]:
-            if call == "main":
-                find = True; break
-            level+=1
-
-        if not find:level = 0
-        return scalls[0].split(constants._intra_field_separator), level
-
-    pos=0
-    globpos=len(scalls[0].split(constants._intra_field_separator))
-
-    # TODO: Not just look at line, also to function!!
-    for i in range(1,len(scalls)):
-        csprev_lines=scalls[i-1].split(constants._intra_field_separator)[1::2]
-        cscurr_lines=scalls[i].split(constants._intra_field_separator)[1::2]
-
-        iterations=max(len(csprev_lines),len(cscurr_lines))
-        for j in range(iterations):
-            if csprev_lines[j] != cscurr_lines[j]:
-                pos=j
-                break
-
-        assert(pos != iterations)
-
-        if pos < globpos:
-            globpos=pos
+    def __gt__(self, other):
+        if type(other) == loop:
+            return self.iterations > other.iterations
+        elif type(other) == callstack:
+            return self.program_order_callstacks[0] > other
 
 
-    result=[]
-    for cs in scalls:
-        calls=cs.split(constants._intra_field_separator)[0::2]
-        result.append(calls[globpos+1:]) # globpos+1
-        
-    return result, globpos # globpos
+    def __le__(self, other):
+        if type(other) == loop:
+            return self.iterations <= other.iterations
+        elif type(other) == callstack:
+            return self.program_order_callstacks[0] <= other
+
+
+    def __ge__(self, other):
+        if type(other) == loop:
+            return self.iterations >= other.iterations
+        elif type(other) == callstack:
+            return self.program_order_callstacks[0] >= other
+
+    def __str__(self):
+        val  = "> Loop iterations = {0}\n".format(self.iterations)
+        val += "> Is condition = {0} ({1})\n"\
+                .format(self.is_condition, self.condition_probability)
+        val += "> Number of merges = {0}\n".format(self.nmerges)
+        val += "> Ranks involved = {0}\n".format(self.get_all_ranks())
+        val += "> Loop deph = {0}\n".format(self.loop_deph)
+
+        val = pretty_print(val, "Loop info")
+
+        for callstack in self.program_order_callstacks:
+            if type(callstack) == loop:
+                val += "-> Subloop\n"
+                val += str(callstack)+"\n"
+                val += "-> End subloop\n"
+            else:
+                val += str(callstack)+"\n"
+        return val

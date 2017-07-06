@@ -25,12 +25,12 @@ _init_delta=0.5
 # Delta is bounded by (_bottom_bound, 1)
 
 
-def getCost(lmbda, T, P, delta):
+def get_cost(lmbda, T, P, delta):
     return lmbda-((T*delta)/P)
 
 def filter_under_delta(cdist, total_time, delta):
     result = {k:v for k,v in cdist.items() \
-                if getCost(\
+                if get_cost(\
                     v["times"],\
                     total_time,\
                     v["time_mean"], delta) > 0\
@@ -40,7 +40,7 @@ def filter_under_delta(cdist, total_time, delta):
 
 def filter_by_delta(cdist, total_time, delta):
     result = {k:v for k,v in cdist.items() \
-                if getCost(\
+                if get_cost(\
                     v["times"],\
                     total_time,\
                     v["time_mean"], delta) == 0\
@@ -49,10 +49,10 @@ def filter_by_delta(cdist, total_time, delta):
 
 def filter_by_delta_range(cdist, total_time, delta_bottom, delta_top):
     result = {k:v for k,v in cdist.items() \
-                if getCost(v["times"],\
+                if get_cost(v["times"],\
                         total_time,\
                         v["time_mean"], delta_bottom) > 0 and \
-                   getCost(v["times"],\
+                   get_cost(v["times"],\
                         total_time,\
                         v["time_mean"], delta_top) <= 0
              }
@@ -67,7 +67,7 @@ def getDelta(cdist, total_time, bottom_bound):
     for delta in numpy.arange(max(bottom_bound,0.01), _upper_bound, 0.01):
         mean_cost=0 
         for cs,data in cdist.items():
-            pcost=abs(getCost(data["times"], total_time, data["time_mean"], delta))
+            pcost=abs(get_cost(data["times"], total_time, data["time_mean"], delta))
             mean_cost+=pcost
 
         mean_cost/=len(cdist)
@@ -110,16 +110,12 @@ def get_near_points(data, total_time,  delta, epsilon):
 def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):
     assert False, "Hoy no... mañana!, Execute with --cplex"
 
-def calcule_deltas_cplex(
-        depured_data, total_time, bottom_bound, delta_accuracy, cplex_input):
+def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accuracy, cplex_input):
     #
     # Preparing data for CPLEX
     #
 
-    npoints = 0
-    for cs in depured_data:
-        for k,v in cs.items():
-            npoints+=1
+    npoints = len(fcallstacks_pool)
 
     if cplex_input == None:
         logging.info("Preparing data for CPLEX")
@@ -132,9 +128,8 @@ def calcule_deltas_cplex(
         pbar = ProgressBar("Generating CPLEX input", npoints*len(deltas))
 
         points=[]
-        for cs in depured_data:
-            for k,v in cs.items():
-                points.append([v[constants._x_axis],v[constants._y_axis]])
+        for cs in fcallstacks_pool:
+            points.append([cs.repetitions,cs.instants_distances_median])
 
         big_m = 0
         distance_dp = []
@@ -192,12 +187,12 @@ def calcule_deltas_cplex(
     point_cnt = 0
     pbar = ProgressBar("Updating points", npoints)
     pbar.show()
-    for cs in depured_data:
-        for k,v in cs.items():
-            v["delta"] = cplex_int.get_delta_point_map(point_cnt)
-            point_cnt += 1
-            pbar.progress_by(1)
-            pbar.show()
+
+    for cs in fcallstacks_pool:
+        cs.delta = cplex_int.get_delta_point_map(point_cnt)
+        point_cnt += 1
+        pbar.progress_by(1)
+        pbar.show()
             
     return cplex_int.get_used_deltas()
 

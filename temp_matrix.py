@@ -2,42 +2,10 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-'''
-Copyright ÃÂ© 2016 Juan Francisco MartÃÂ­nez <juan.martinez[AT]bsc[dot]es>
-
-*****************************************************************************
-*                        ANALYSIS PERFORMANCE TOOLS                         *
-*                              [tool name]                                  *
-*                         [description of the tool]                         *
-*****************************************************************************
-*     ___     This library is free software; you can redistribute it and/or *
-*    /  __         modify it under the terms of the GNU LGPL as published   *
-*   /  /  _____    by the Free Software Foundation; either version 2.1      *
-*  /  /  /     \   of the License, or (at your option) any later version.   *
-* (  (  ( B S C )                                                           *
-*  \  \  \_____/   This library is distributed in hope that it will be      *
-*   \  \__         useful but WITHOUT ANY WARRANTY; without even the        *
-*    \___          implied warranty of MERCHANTABILITY or FITNESS FOR A     *
-*                  PARTICULAR PURPOSE. See the GNU LGPL for more details.   *
-*                                                                           *
-* You should have received a copy of the GNU Lesser General Public License  *
-* along with this library; if not, write to the Free Software Foundation,   *
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA          *
-* The GNU LEsser General Public License is contained in the file COPYING.   *
-*                                 ---------                                 *
-*   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
-*****************************************************************************
-'''
-
-
 import sys
 import numpy as np
 
 import constants
-
-#########################
-# Temporal matrix class #
-#########################
 
 class tmatrix(object):
     def __init__(self, matrix, callstacks, transformations):
@@ -48,33 +16,22 @@ class tmatrix(object):
     @classmethod
     def fromMatrix(cls, matrix):
         sorted_matrix, transformations = cls.__boundaries_sort(matrix)
-        return cls(matrix=sorted_matrix,
-                   callstacks=None,
-                   transformations=transformations)
+        return cls(sorted_matrix, None, transformations)
 
     @classmethod
-    def fromCallstackList(cls, callstacks_list):
-        matrix, cs_map = cls.__get_matrix(callstacks_list)
-        
-        # Get the callstacks ordered by first occurrence
-        keys_ordered=[]
-        for row in matrix.tolist():
-            keys_ordered.append(cs_map[row[0]])
-
-        # Adding holes if needed
+    def from_callstacks_obj(cls, callstacks):
+        scallstacks = sorted(callstacks, key=lambda x: x.instants[0])
+        matrix = [x.instants for x in scallstacks]
         sorted_matrix, transformations = cls.__boundaries_sort(matrix)
 
-        return cls(matrix=sorted_matrix, 
-                   callstacks=keys_ordered, 
-                   transformations=transformations)
+        return cls(sorted_matrix, scallstacks, transformations)
 
     def getMatrix(self):
         return self._matrix
 
-    def getPartitions(self):
+    def get_subloops(self):
         subm_map = self.__submatrix(self._matrix)
 
-        times_partitions=[]
         calls_partitions=[]
 
         for sh_rows, sh_cols in subm_map.items():
@@ -84,17 +41,11 @@ class tmatrix(object):
                 for cols in sh_cols:
                     data = self._matrix[row][cols[0]:cols[1]+1]
                     part[row-sh_rows[0]].extend(data)
-            times_partitions.append(part)
             calls_partitions.append(self._sorted_callstacks[sh_rows[0]:sh_rows[1]+1])
 
-        result=[]
-        for i in range(len(calls_partitions)):
-            result.append(
-                    tmatrix(times_partitions[i],calls_partitions[i], 0))
+        return calls_partitions
 
-        return result
-
-    def isTransformed(self):
+    def aliased(self):
         return self._transformations == 1
 
     def getCallstacks(self):
@@ -144,7 +95,10 @@ class tmatrix(object):
 
     @classmethod
     def __boundaries_sort(cls, tmat):
-        mat=tmat.tolist()
+        if type(tmat) != list:
+            mat=tmat.tolist()
+        else:
+            mat=tmat
 
         mheight=len(mat)
 

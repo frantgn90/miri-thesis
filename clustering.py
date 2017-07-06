@@ -27,64 +27,6 @@ Maps to a cubic scale
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
 
-class CubicScale(mscale.ScaleBase):
-    name="cubic"
-
-    def __init__(self, axis, **kwargs):
-        mscale.ScaleBase.__init__(self)
-        self.total_time = float(kwargs.pop("total_time", 52196391100))
-
-        print self.total_time
-
-    def get_transform(self):
-        return self.CubicTransform(self.total_time)
-
-    def set_default_locators_and_formatters(self, axis):
-        pass
-        #mscale.ScaleBase.set_default_locators_and_formatters(axis)
-
-    class CubicTransform(mtransforms.Transform):
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-
-        def __init__(self, total_time):
-            mtransforms.Transform.__init__(self)
-            self.total_time = total_time
-
-        def rescale_cubic(self, x, total_time):
-            return (x-total_time**(float(1)/4))**3\
-                    + total_time/total_time**(float(1)/4)
-
-        def transform_non_affine(self, a):
-            return np.array(map(
-                lambda x: self.rescale_cubic(x, self.total_time), a))
-
-        def inverted(self):
-            return CubicScale.InvertedCubicTransform(self.total_time)
-
-    class InvertedCubicTransform(mtransforms.Transform):
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-
-        def __init__(self, total_time):
-            mtransforms.Transform.__init__(self)
-            self.total_time = total_time
-
-        def invert_rescale_cubic(self, y, total_time):
-            return ((y-total_time**(float(3)/4))**(float(1)/3)\
-                    - total_time**(float(1)/4))
-       
-        def transform_non_affine(self, a):
-            return np.array(map(
-                lambda y: self.invert_rescale_cubic(y, self.total_time), a))
-
-        def inverted(self):
-            return CubicScale.CubicTransform(self.total_time)
-
-mscale.register_scale(CubicScale)
-
 def plot_data(data):
     fig=plt.figure()
     #ax2d=fig.add_subplot(111)
@@ -154,11 +96,10 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
                 xd = xdata[i]
                 yd = ydata[i]
 
-                for rank_callstack in cdist:
-                    for callstack, values in rank_callstack.items():
-                        if values[constants._x_axis] == xd  and values[constants._y_axis] == yd:
-                            points_info += "[{0}] {1}\n".format(values["rank"],callstack)
-            pretty_print(points_info, "Points info")
+                for cs in cdist:
+                    if cs.repetitions == xd and cs.instants_distances_mean == yd:
+                        points_info += str(cs)+"\n"
+            print pretty_print(points_info, "Points info")
 
             #print('onpick1 line:', zip(np.take(xdata, ind), np.take(ydata, ind)))
 
@@ -235,9 +176,8 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
 #            constants._eps, 
 #            constants._min_samples))
     
-    #
-    # Show plot
-    #
+    
+    ''' Show plot '''
     plt.xlabel(constants._x_axis_label)
     plt.ylabel(constants._y_axis_label)
     plt.legend(handles=plt_labels)
@@ -254,63 +194,43 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
     plt.grid(True)
     plt.show()
 
-def clustering(cdist, ranks, show_plot, total_time, delta, bound):
+def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
     import math
-    #
-    # 1. Preparing data
-    #
+    
+    ''' 1. Preparing data '''
     data=[]
-    for cs in cdist:
-        for k,v in cs.items():
-            data.append([ v[constants._x_axis], v[constants._y_axis],
-                          #v["time_median"]
-                          #math.log(v[constants._z_axis])])
-                          v[constants._z_axis]])
+    for cs in fcallstacks_pool:
+        data.append([cs.repetitions, cs.instants_distances_mean])
 
-
-    #plot_data(data)
     normdata=normalize_data(data)
 
-    #
-    # 2. Perform clustering
-    #
+    
+    ''' 2. Perform clustering '''
     db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(normdata)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels=db.labels_
 
-    clustered_cs={}
-    for l in labels: 
-        clustered_cs.update({l:[]})
+    ''' 3. Creating cluster objects '''
+    nclusters = len(set(labels)) - (1 if -1 in labels else 0)
+    clusters_pool=[]
+    for i in range(0, nclusters):
+        clusters_pool.append(cluster(i))
+                
+    assert len(labels) == len(fcallstacks_pool)
+    for i in range(0,len(labels)):
+        callstack_cluster_id=labels[i]
+        fcallstacks_pool[i].cluster_id=callstack_cluster_id
+        clusters_pool[callstack_cluster_id].add_callstack(fcallstacks_pool[i])
 
-    label_index=0
-    for cs in cdist:
-        for k,v in cs.items():
-            clustered_cs[labels[label_index]].append({k:v})
-            label_index+=1
-
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-
-    #
-    # 3. Show plots 
-    #
+    ''' 4. Show plots '''
     if show_plot:
         show_plot_thread=multiprocessing.Process(
                 target=show_clustering,
-                args=(data, cdist, labels, core_samples_mask, n_clusters_, 
+                args=(data, fcallstacks_pool, labels, core_samples_mask, nclusters, 
                     total_time, delta, bound))
 
         show_plot_thread.start()
 
-    #
-    # 4. Build up cluster objects with clustered data
-    #
-    cluster_set=[]
-    for k in clustered_cs.keys():
-        cluster_s = cluster.initCluster(
-                cluster_id=str(k), 
-                cluster=clustered_cs[k], 
-                ranks=ranks)
-        cluster_set.extend(cluster_s)
 
-    return n_clusters_, cluster_set
+    return clusters_pool

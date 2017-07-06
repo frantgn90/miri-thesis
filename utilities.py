@@ -35,20 +35,25 @@ def merge_arrays(a, b):
 
     return c
 
-def pretty_print(pseudocode, trace_name):
-    WIDTH=76
-    side=(WIDTH-4-len(trace_name))/2
-    if len(trace_name)%2 == 0: offs=2
-    else: offs=1
+def pretty_print(content, title):
+    result = ""
+    WIDTH = 80
+    side=(WIDTH-4-len(title))/2
+    if len(title)%2 == 0: 
+        offs=2
+    else: 
+        offs=1
 
-    print("+"+"-"*(side-offs) + "[ " + trace_name + " ]" + "-"*(side) + "+")
-    print("|"+" "*(WIDTH-2)+"|")
-    pseudocode=pseudocode.split("\n")
-    for line in pseudocode:
+    result += "+"+"-"*(side-offs) + "[ " + title + " ]" + "-"*(side) + "+\n"
+    result += "|"+" "*(WIDTH-2)+"|\n"
+    content = content.split("\n")
+
+    for line in content:
         pline = "|  " + line + " "*(WIDTH-4-len(line))+"|"
-        print(pline)
+        result += pline+"\n"
 
-    print("+"+"-"*(WIDTH-2)+"+")
+    result += "+"+"-"*(WIDTH-2)+"+\n"
+    return result
 
 def print_iterations(iterations):
     outtext=""

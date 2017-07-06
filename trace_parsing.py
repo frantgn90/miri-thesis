@@ -9,6 +9,7 @@ import constants
 from callstack_alignement import *
 from utilities import ProgressBar
 
+from callstack import callstack
 
 ####### GLOBAL
 
@@ -344,24 +345,6 @@ def get_callstacks(trace, level, image_filter):
                 line = "  {0} (filtered)".format(im)
             logging.info(line)
 
-        ###############################
-        ### Creating temporal files ###
-        ###############################
-
-        import tempfile
-
-        tmp_files_dir = tempfile.mkdtemp(prefix="struct-gen.")
-
-        task_outfiles_names=[]
-        task_outfiles_d=[]
-        for i in range(total_threads):
-            new_file_name="{0}/functions.{1}.aligned".format(tmp_files_dir, i)
-
-            task_outfiles_names.append(new_file_name)
-            task_outfiles_d.append(open(new_file_name,"w"))
-
-        # NOTE: Assuming one app
-
         
         #####################
         ### Parsing trace ###
@@ -475,26 +458,20 @@ def get_callstacks(trace, level, image_filter):
         logging.info("#{0} Aligning done: {1} discarded, {2} aligned"\
                 .format(rank_index,cs_discarded, cs_aligned))
  
+    logging.info("Merging...")
+    callstacks_pool=[]
     for rank in range(len(callstack_series)):
         for cs_i in range(len(callstack_series[rank])):
-            time=timestamp_series[rank][cs_i]          
-            cstack=constants._intra_field_separator.join(callstack_series[rank][cs_i])
-            lines=constants._intra_field_separator.join(lines_series[rank][cs_i])
-            task_outfiles_d[rank].write("{0}{1}{2}{3}{4}{5}{6}\n"
-                    .format(rank, constants._inter_field_separator,
-                            time, constants._inter_field_separator,
-                            lines,constants._inter_field_separator,
-                            cstack, constants._inter_field_separator))
+            new_callstack = callstack.from_trace(rank,
+                    timestamp_series[rank][cs_i],
+                    lines_series[rank][cs_i], 
+                    callstack_series[rank][cs_i])
 
-    logging.info("Generating function map file")
+            try:
+                repeated_idx = callstacks_pool.index(new_callstack)
+                callstacks_pool[repeated_idx].merge(new_callstack)
+            except Exception:
+                callstacks_pool.append(new_callstack)
 
-    ofile = open(constants.FUNC_MAP_FILE, "w")
-    json.dump(CALL_NAMES, ofile)
-    ofile.close()
-
-    logging.info("Generating temporal data at {0}".format(tmp_files_dir))
-
-    for i in range(0, total_threads):
-        task_outfiles_d[i].close()
-
-    return task_outfiles_names
+    logging.info("Merge done: {0} callstacks detected.".format(len(callstacks_pool)))
+    return callstacks_pool
