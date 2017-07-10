@@ -12,6 +12,8 @@ class call(object):
         self.call=call
         self.line=int(line)
 
+        self.mpi_call = "MPI_" in call
+
     def get_signature(self):
         return "{0}{1}".format(
                 self.call, 
@@ -37,6 +39,7 @@ class callstack(object):
         self.instants_distances_median=None
         self.delta=None
         self.cluster_id=None
+        self.compacted_ranks=[rank]
 
         self.reduced=False
         self.calls=calls
@@ -51,6 +54,8 @@ class callstack(object):
 
         return cls(rank, instant, calls_obj)
 
+    def get_all_ranks(self):
+        return list(set(self.compacted_ranks))
 
     def get_line_at_level(self, level):
         return self.calls[level].line
@@ -86,6 +91,14 @@ class callstack(object):
 
     def get_instants_dist_mean(self):
         return numpy.mean(self.instants_distances)
+
+    def same_flow(self, other):
+        return self.get_signature().split("#")[1] == other.get_signature().split("#")[1]
+
+    def get_call_of_func(self, func_name):
+        for call_obj in self.calls:
+            if call_obj.call == func_name:
+                return call_obj
  
     def __get_distances(self, times):
         dist=[]
@@ -135,11 +148,25 @@ class callstack(object):
                 result.append(self.calls[call_i])
 
         result = callstack(self.rank, 0, result)
-        ## TODO: Copy the original state to the new object
+        # TODO: Copy the original state to the new object
         return result
+
+    def __sub__(self, other):
+        result = []
+        for s_call in self.calls:
+            if not s_call in other.calls:
+                result.append(s_call)
+
+        result = callstack(self.rank, 0, result)
+        # TODO: Copy the original state to the new object
+        return result
+
+    def __getitem__(self, key):
+        return self.calls[key]
          
     def __str__(self):
-        val = "[{0}][{1}] {2} calls -".format(self.rank, self.repetitions ,len(self.calls))
+        val = "[{0}][{1}] {2} calls -".format(self.compacted_ranks, 
+                self.repetitions ,len(self.calls))
 
 #        if len(self.calls) > 3:
 #            val += "... -"

@@ -58,7 +58,7 @@ class loop (object):
         ranks = []
         for cs in self.program_order_callstacks:
             if isinstance(cs, callstack):
-                ranks.append(cs.rank)
+                ranks.extend(cs.get_all_ranks())
             elif isinstance(cs, loop):
                 ranks.extend(cs.get_all_ranks())
 
@@ -78,7 +78,6 @@ class loop (object):
             common_callstack &= callstack
         self.loop_deph = len(common_callstack.calls)
         self.common_calls = common_callstack.calls
-
 
     def merge_with_subloop(self, other):
         # The difference with the previous merge is that now 'other' is a subloop
@@ -104,7 +103,6 @@ class loop (object):
                 common_callstack &= callstack
         self.loop_deph = len(common_callstack.calls)
         self.common_calls = common_callstack.calls
-        print self.loop_deph
 
 
     def is_subloop(self, other):
@@ -126,6 +124,29 @@ class loop (object):
                     break
         
         return is_subloop;
+
+    def compact_callstacks(self):
+        i = 0
+        while i < len(self.program_order_callstacks):
+            callstack_ref = self.program_order_callstacks[i]
+            if isinstance(callstack_ref, loop):
+                callstack_ref.compact_callstacks()
+                i += 1
+                continue
+
+            j = i+1
+            while j < len(self.program_order_callstacks):
+                callstack_eval = self.program_order_callstacks[j]
+                if isinstance(callstack_eval, loop):
+                    callstack_eval.compact_callstacks()
+                    break
+
+                if callstack_ref.same_flow(callstack_eval):
+                    callstack_ref.compacted_ranks.append(callstack_eval.rank)
+                    del self.program_order_callstacks[j]
+                else:
+                    break
+            i += 1
 
     def __eq__(self, other):
         if type(other) == loop:

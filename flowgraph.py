@@ -3,6 +3,7 @@
 # vim:fenc=utf-8
 
 from loop import loop
+from callstack import callstack
 from utilities import pretty_print
 
 class edge(object):
@@ -61,6 +62,18 @@ class node(object):
     def is_tail(self):
         return len(self.edge_out) == 0
 
+    def in_ranks(self):
+        res = []
+        for edge_in in self.edge_in: 
+            res.extend(edge_in.ranks)
+        return list(set(res))
+
+    def out_ranks(self):
+        res = []
+        for edge_out in self.edge_out: 
+            res.extend(edge_out.ranks)
+        return list(set(res))
+
     def __str__(self):
         val = ""
         val += "Call = {0}\n".format(self.call)
@@ -86,6 +99,7 @@ class flowgraph(object):
         graph = [self._init_node]
         subloop_graphs = []
 
+        last_callstack = callstack(0,0,[])
         for new_callstack in loop_obj.program_order_callstacks:
             if isinstance(new_callstack, loop):
                 subloop = new_callstack
@@ -96,25 +110,79 @@ class flowgraph(object):
 
                 for n in subloop_graph:
                     print n
+
+                print len(subloop_graph)
                 exit(0)
 
             else:
-                prev_node=graph[0]
-                for new_call in new_callstack.calls:
-                    new_node = node(new_call)
+                if last_callstack.same_flow(new_callstack):
+                    # Just update edges values
+                    #
+                    prev_node = self.__search_node_with_call(graph, 
+                            new_callstack.calls[0], None)
+                    prev_node = prev_node.edge_in[0].node_from
+                    for call_obj in new_callstack.calls:
+                        assert not new_node == None
+                        done = False
+                        for edge_obj in prev_node.edge_out:
+                            if edge_obj.node_to.call == call_obj:
+                                edge_obj.ranks.append(new_callstack.rank)
+                                done = True
+                                break
+                        assert done
+                        prev_node = self.__search_node_with_call(graph, call_obj,
+                                None)
 
-                    already_exist = False
-                    for node_obj in graph:
-                        if node_obj.call == new_node.call:
-                            already_exist = True
-                            new_node = node_obj
+                else:
+                    common_callstack = last_callstack & new_callstack
+                    new_uncommon_callstack = new_callstack - common_callstack
+                    last_uncommon_callstack = last_callstack - common_callstack
 
-                    prev_node.connect_out(new_node, new_callstack.rank, 1)
-                    
-                    if not already_exist:
-                        graph.append(new_node)
-                    prev_node = new_node
+                    if len(last_uncommon_callstack.calls) == 0:
+                        prev_node = graph[0]
+                    elif len(new_uncommon_callstack.calls) == 0:
+                        prev_node = graph[0]
+                    else:
+                        last_common_func_call = last_callstack\
+                                .get_call_of_func(new_callstack[0].call)
+                        prev_node = self.__search_node_with_call(graph, 
+                                last_common_func_call, new_callstack.rank)
+                        
+                        if prev_node == None:
+                            # The flow has been broken because a conditional jump
+                            # with rank id
+                            #
+                            prev_node = self.__last_node_with_rank(graph, 
+                                    new_callstack.rank)
+                        assert not prev_node == None
+
+                    for new_call in new_uncommon_callstack.calls:
+                        new_node = self.__search_node_with_call(graph, new_call,
+                                new_uncommon_callstack.rank)
+                        if not new_node:
+                            new_node = node(new_call)
+                            graph.append(new_node)
+
+                        prev_node.connect_out(new_node, new_callstack.rank, 1)
+                        prev_node = new_node
+
+                last_callstack = new_callstack
         return graph
+
+    def __search_node_with_call(self, graph, call, rank):
+        # If rank is None it means that dont care about in ranks
+        #
+        for node_obj in graph:
+            if node_obj.call == call:
+                if rank in node_obj.in_ranks() or rank == None:
+                    return node_obj
+        return None
+    def __last_node_with_rank(self, graph, rank):
+        
+        for node_obj in reversed(graph):
+            if rank in node_obj.in_ranks() and not node_obj.call.mpi_call:
+                return node_obj
+        return None
 
     def __merge_graphs(self, graphs):
         pass

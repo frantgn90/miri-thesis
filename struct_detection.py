@@ -14,6 +14,8 @@ from delta_calculation import *
 from clustering import *
 from pseudocode_generator import *
 from utilities import *
+from flowgraph import flowgraph
+from pseudocode import pseudocode
 
 import constants
 
@@ -153,61 +155,38 @@ def main(argc, argv):
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: {0}".format(loglevel))
-
     logging.basicConfig(level=numeric_level)
 
-    #
-    # 1. Parsing trace
-    #
-    logging.info("Parsing trace")
+    ''''''''''''''''''''''''''
+    ''' Workflow starting  '''
+    ''''''''''''''''''''''''''
 
-    if not tmp_files_dir is None:
-        import glob
-        cs_files = glob.glob("{0}/*.aligned".format(tmp_files_dir))
-
-        assert len(cs_files) > 0
-        logging.info("Using already generated data")
-    else:
-        try:
-            cs_files=get_callstacks(
-                    trace=trace, 
-                    level=level, 
-                    image_filter=image_filter)
-        except OSError:
-            logging.error("Oops! It seems that tracefile does not exists!")
-            return 1
-        
+    ''' 1. Parsing trace '''
+    logging.info("Parsing trace...")
+    callstacks_pool=get_callstacks(trace=trace, level=level, image_filter=image_filter)
     app_time = get_app_time(trace)
-    nranks=len(cs_files)
-
-    logging.debug("{0} ranks detected.".format(nranks))
     logging.debug("{0} ns total trace time.".format(app_time))
     
-    #
-    # 2. Getting callstack metrics
-    #
-    logging.info("Merging repeated callstacks and deriving information")
     
-    depured_data = []
-    for csf in cs_files:
-        depured_csf = getCsDistributions(csf)
-        if len(depured_csf) > 0:
-            depured_csf = filter_under_delta(
-                    depured_csf, 
-                    app_time, 
-                    arguments.bottom_bound[0])
-
-            depured_data.append(depured_csf)
-
-    depured_data = sorted(depured_data, key=lambda x: x[x.keys()[0]]["rank"])
-    #depured_data = [depured_data[1]]
+    ''' 2. Getting callstack metrics '''
+    logging.info("Reducing information")
+    for callstack in callstacks_pool:
+        callstack.calc_reduce_info()
 
 
+    ''' 3. Filtering below delta '''
+    logging.info("Filtering callstacks below delta...")
+    fcallstacks_pool=filter(
+            lambda x: x.is_above_delta(app_time, arguments.bottom_bound[0]),
+            callstacks_pool)
+    logging.info("Reduced from {0} to {1}".format(
+        len(callstacks_pool), len(fcallstacks_pool)))
+
+
+    ''' 4. Callstacks to delta mapping '''
     logging.info("Detecting super-loops")
-
     if not arguments.use_cplex:
         logging.info("Calculating delta by mean of heuristics.")
-
         deltas = calcule_deltas_heuristic(
                 depured_data, 
                 app_time,
@@ -218,80 +197,63 @@ def main(argc, argv):
         logging.info("Deltas: {0}".format(deltas))
     else:
         logging.info("Calculating delta by mean of CPLEX.")
-        deltas = calcule_deltas_cplex(
-                depured_data,
-                app_time,
+        deltas = calcule_deltas_cplex(fcallstacks_pool,app_time,
                 arguments.bottom_bound[0],
                 arguments.delta_accuracy[0],
                 arguments.cplex_input[0])
 
-    logging.info("Used deltas: {0}".format(deltas))
+    logging.info("{0} super-loops detected".format(len(deltas)))
 
-    #
-    # 3. Clustering
-    #
+
+    ''' 5. Clustering '''
     logging.info("Performing clustering")
-    nclusters, cluster_objects=clustering(
-            #filtered_data, 
-            depured_data,
+    clusters_pool=clustering(fcallstacks_pool, arguments.show_clustering, 
+            app_time, deltas, arguments.bottom_bound[0])
+    for cluster in clusters_pool:
+        cluster.run_loops_generation()
 
-            nranks, 
-            arguments.show_clustering, 
-            app_time, 
-            deltas,
-            arguments.bottom_bound[0])
-    logging.info("{0} clusters detected".format(nclusters))
+    logging.info("{0} clusters detected".format(len(clusters_pool)))
 
-    #
-    # 4. Merging clusters
-    #
-    logging.info("Merging clusters")
+    ''' 6. Merging clusters '''
+    logging.info("Merging clusters...")
+    top_level_clusters = merge_clusters(clusters_pool)
+    logging.info("Done")
 
-    top_level_clusters = merge_clusters(
-                            cluster_set=cluster_objects,
-                            ranks=nranks)
+#    for cluster in top_level_clusters:
+#        print cluster
+#    exit(0)
 
-    # 4.1. Getting random iterations for every cluster
-    if arguments.nrandits > 0:
-        logging.info("Getting random iterations from clusters")
-        iterations = get_random_iters(
-                clusters=cluster_objects,
-                n_random_iterations=arguments.n_random_iterations)
-    else:
-        iterations = []
+    ''' 7. Genearting flowgraph '''
+#    logging.info("Generating flowgraph...")
+#    fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters 
+#    logging.info("Done...")
+#
+#    fg.show()
 
-    #
-    # 5. Generating pseudocode
-    #
-    logging.info("Generating pseudocode for {0} top level clusters"
-            .format(len(top_level_clusters)))
 
-    pseudocode=""
-    for cluster in top_level_clusters:
-        pseudocode += cluster.str()
+    ''' 7. Reducing callstacks '''
+    logging.info("Compacting callstacks...")
+    for cluster_obj in top_level_clusters:
+        for loop_obj in cluster_obj.loops:
+            loop_obj.compact_callstacks()
+    logging.info("Done...")
 
-    pretty_print(pseudocode, trace)
 
-    #
-    # 6. Print some statistics
-    #
-    if ri > 0:
-        print_iterations(iterations)
+    ''' 8. Generating pseudo-code '''
+    logging.info("Generating pseudocode...")
+    pc = pseudocode(top_level_clusters)
+    logging.info("Done...")
 
-    final_stats =  ">> {0} clusters detected\n".format(nclusters)
-    final_stats+=  ">> Grouped in {0} super-loops\n".format(len(deltas))
+    pc.show()
 
+    ''' 8. Print some statistics '''
+    final_stats =  "{0} clusters detected\n".format(len(clusters_pool))
+    final_stats+=  "Grouped in {0} super-loops\n".format(len(deltas))
     for i, delta in zip(range(len(deltas)),deltas):
         final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
-    final_stats+=(">> Time in pseudocode: {0}%\n".format(sum(deltas)*100))
+    final_stats+=("Time in pseudocode: {0}%\n".format(sum(deltas)*100))
 
-    pretty_print(final_stats, "Final stats")
-
-    #
-    # 7. Remove all temporal files
-    #
-    #for csf in cs_files: 
-    #    os.remove(csf)
+    print pretty_print(final_stats, "Final stats")
 
     logging.info("All done")
     return 0
