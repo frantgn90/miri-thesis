@@ -19,6 +19,10 @@ class loop (object):
         self.is_condition = False
         self.condition_probability = 0
 
+        # Is the position where the condition of the first callstack is
+        #
+        self.condition_level = None
+
         # This loop is made by how many merges
         #
         self.nmerges = 1
@@ -82,6 +86,9 @@ class loop (object):
     def merge_with_subloop(self, other):
         # The difference with the previous merge is that now 'other' is a subloop
         # of ourselfs. So new comparative functions have to be added to this class
+
+        for loop_obj in other:
+            loop_obj.iterations /= self.iterations
 
         merged_subloop = self.program_order_callstacks + other
         self.program_order_callstacks = sorted(merged_subloop)
@@ -147,6 +154,36 @@ class loop (object):
                 else:
                     break
             i += 1
+
+    def detect_condition_bodies(self):
+        prev_ranks = self.get_all_ranks()
+
+        # First callstack that is different from the actual first one
+        #
+        prev_callstack = self.program_order_callstacks[0]
+        for callstack_obj in self.program_order_callstacks:
+            if isinstance(callstack_obj, callstack):
+                if prev_callstack.get_all_ranks() != callstack_obj.get_all_ranks():
+                    print "--------"
+                    print callstack_obj
+                    print "--------"
+                    prev_callstack = callstack_obj
+                    break
+
+        for callstack_obj in self.program_order_callstacks:
+            if isinstance(callstack_obj, loop):
+                callstack_obj.detect_condition_bodies()
+            else:
+                if callstack_obj.get_all_ranks() != prev_ranks:
+                    if isinstance(prev_callstack , loop):
+                        condition_level = prev_callstack.loop_deph
+                    else:
+                        condition_level = len(callstack_obj & prev_callstack)
+                        callstack_obj.condition_level = condition_level
+                else:
+                    callstack_obj.condition_level = prev_callstack.condition_level
+                prev_ranks = callstack_obj.get_all_ranks()
+                prev_callstack = callstack_obj
 
     def __eq__(self, other):
         if type(other) == loop:

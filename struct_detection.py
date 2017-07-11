@@ -16,6 +16,7 @@ from pseudocode_generator import *
 from utilities import *
 from flowgraph import flowgraph
 from pseudocode import pseudocode
+from cluster import merge_clusters
 
 import constants
 
@@ -226,7 +227,7 @@ def main(argc, argv):
     ''' 7. Genearting flowgraph '''
 #    logging.info("Generating flowgraph...")
 #    fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters 
-#    logging.info("Done...")
+#    logging.info("Done")
 #
 #    fg.show()
 
@@ -236,7 +237,9 @@ def main(argc, argv):
     for cluster_obj in top_level_clusters:
         for loop_obj in cluster_obj.loops:
             loop_obj.compact_callstacks()
-    logging.info("Done...")
+            loop_obj.detect_condition_bodies()
+            print loop_obj
+    logging.info("Done")
 
 
     ''' 8. Generating pseudo-code '''
@@ -244,7 +247,7 @@ def main(argc, argv):
     pc = pseudocode(top_level_clusters)
     logging.info("Done...")
 
-    pc.show()
+    pc.show_console()
 
     ''' 8. Print some statistics '''
     final_stats =  "{0} clusters detected\n".format(len(clusters_pool))

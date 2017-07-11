@@ -4,6 +4,7 @@
 
 from loop import loop
 from callstack import callstack
+from utilities import pretty_print
 
 class pseudo_line(object):
     def __init__(self, deph):
@@ -37,8 +38,12 @@ class pseudo_call(pseudo_line):
         self.deph = deph
 
     def __str__(self):
+#        if self.call.mpi_call:
+#            res = self.get_tabs() + "{0}()>{1}".format(self.call.call,
+#                    self.call.my_callstack.metrics["mpi_duration_mean"])
+#        else:
         res = self.get_tabs() + "{0}()".format(self.call.call)
-        return  res
+        return res
 
 class pseudo_condition(pseudo_line):
     def __init__(self, ranks, el, eli, deph):
@@ -65,7 +70,6 @@ class condition(object):
         self.is_subset = set1.issubset(set2) and not self.is_equal
         self.is_superset = set1.issuperset(set2) and not self.is_equal
         self.is_complement = len(set1.intersection(set2)) == 0
- 
 
 class pseudocode(object):
     def __init__(self, clusters_set):
@@ -74,11 +78,6 @@ class pseudocode(object):
             for loop_obj in cluster.loops:
                 self.parse_loop(loop_obj, 0, 0)
 
-        print
-        for line in self.lines:
-            print str(line)
-        print
-
     def parse_loop(self, loop_obj, stack_deph, tabs):
         # Callstack to loop
         #
@@ -86,9 +85,8 @@ class pseudocode(object):
             if isinstance(cs, callstack):
                 first_callstack = cs
         assert first_callstack
-        for call_obj in first_callstack.calls[stack_deph:loop_obj.loop_deph+1]:
-            self.lines.append(pseudo_call(call_obj, tabs))
-            tabs += 1
+        tabs += self.parse_callstack_from_to(first_callstack, 
+                stack_deph, loop_obj.loop_deph+1, tabs)
 
         # Loop body
         #
@@ -137,12 +135,11 @@ class pseudocode(object):
                 self.parse_loop(callstack_obj, loop_obj.loop_deph+1, tabs+nested_conditions+1)
             else:
                 call_tabs = tabs + nested_conditions + 1
-                self.parse_callstack(callstack_obj, loop_obj.loop_deph+1, loop_obj, call_tabs)
-
+                self.parse_callstack(callstack_obj, loop_obj.loop_deph+1, call_tabs)
 
         self.lines.append(pseudo_for_end(loop_obj.iterations, tabs))
 
-    def parse_callstack(self, callstack_obj, block_deph, loop_obj, tabs):
+    def parse_callstack(self, callstack_obj, block_deph, tabs):
         calls = callstack_obj.calls[block_deph:]
         call_deph = block_deph
         for call in calls:
@@ -150,11 +147,20 @@ class pseudocode(object):
             tabs += 1
             call_deph += 1
 
+    def parse_callstack_from_to(self, callstack_obj, from_p, to_p, tabs):
+        my_tabs = 0
+        for call_obj in callstack_obj.calls[from_p:to_p]:
+            self.lines.append(pseudo_call(call_obj, tabs+my_tabs))
+            my_tabs += 1
 
-    def __generate_html(self):
+        return my_tabs
+
+
+    def show_console(self):
+        pseudocode=""
+        for line in self.lines:
+            pseudocode += str(line) + "\n"
+        print pretty_print(pseudocode, "Pseudocode")
+
+    def show_html(self):
         pass
-
-    def show(self):
-        pass
-
-

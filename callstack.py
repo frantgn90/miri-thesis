@@ -8,10 +8,10 @@ import constants
 from delta_calculation import get_cost
 
 class call(object):
-    def __init__(self, line, call):
+    def __init__(self, line, call, callstack):
         self.call=call
         self.line=int(line)
-
+        self.my_callstack = callstack
         self.mpi_call = "MPI_" in call
 
     def get_signature(self):
@@ -40,9 +40,16 @@ class callstack(object):
         self.delta=None
         self.cluster_id=None
         self.compacted_ranks=[rank]
-
+        self.condition_level = None
         self.reduced=False
         self.calls=calls
+        self.metrics={
+                "mpi_duration_mean":0,
+                "mpi_mess_size":0,
+        }
+
+        for call in calls:
+            call.my_callstack = self
 
     @classmethod
     def from_trace(cls, rank, instant, lines, calls):
@@ -50,7 +57,7 @@ class callstack(object):
 
         calls_obj = []
         for i in range(0, len(lines)):
-            calls_obj.append(call(int(lines[i]), calls[i]))
+            calls_obj.append(call(int(lines[i]), calls[i], None))
 
         return cls(rank, instant, calls_obj)
 
@@ -163,10 +170,13 @@ class callstack(object):
 
     def __getitem__(self, key):
         return self.calls[key]
+
+    def __len__(self):
+        return len(self.calls)
          
     def __str__(self):
-        val = "[{0}][{1}] {2} calls -".format(self.compacted_ranks, 
-                self.repetitions ,len(self.calls))
+        val = "R:{0} IT:{1} CL:{2} -".format(self.compacted_ranks, self.repetitions,
+                self.condition_level)
 
 #        if len(self.calls) > 3:
 #            val += "... -"
