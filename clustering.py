@@ -15,7 +15,6 @@ from matplotlib.image import AxesImage
 from sklearn.cluster import DBSCAN
 
 from cluster import cluster
-from utilities import print_matrix
 from utilities import pretty_print
 import constants
 

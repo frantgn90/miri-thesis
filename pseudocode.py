@@ -2,48 +2,52 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
-from loop import loop
+from loop import loop, conditional_rank_block
 from callstack import callstack
 from utilities import pretty_print
+from gui import *
 
 class pseudo_line(object):
     def __init__(self, deph):
         self.deph = deph
+        self.first_col = "--"
+        self.second_col = "--"
+        self.third_col = "--"
 
     def get_tabs(self):
         return ":  "*self.deph
+
+    def __str__(self):
+        res = "{0:10.10}{1:>3} {2:40} {3}".format(self.first_col,
+                self.second_col, (self.get_tabs() + self.third_col), "some metric...")
+        return res
 
 class pseudo_for(pseudo_line):
     def __init__(self, iterations, deph):
         pseudo_line.__init__(self, deph)
         self.iterations = iterations
-
-    def __str__(self):
-        res = self.get_tabs() + "FOR 1 TO {0}".format(self.iterations)
-        return res
+        self.first_col = ""
+        self.second_col = " "
+        self.third_col = "FOR 1 TO {0}".format(self.iterations)
 
 class pseudo_for_end(pseudo_line):
     def __init__(self, iterations, deph):
         pseudo_line.__init__(self, deph)
         self.iterations = iterations
-
-    def __str__(self):
-        res = self.get_tabs() + "END LOOP"
-        return res
+        self.first_col = ""
+        self.second_col = " "
+        self.third_col = "END LOOP"
 
 class pseudo_call(pseudo_line):
     def __init__(self, call, deph):
         pseudo_line.__init__(self, deph)
         self.call = call
-        self.deph = deph
-
-    def __str__(self):
-#        if self.call.mpi_call:
-#            res = self.get_tabs() + "{0}()>{1}".format(self.call.call,
-#                    self.call.my_callstack.metrics["mpi_duration_mean"])
-#        else:
-        res = self.get_tabs() + "{0}()".format(self.call.call)
-        return res
+        self.first_col = self.call.call_file
+        if self.call.mpi_call:
+            self.second_col = "*"
+        else:
+            self.second_col = str(self.call.line)
+        self.third_col = "{0}()".format(self.call.call)
 
 class pseudo_condition(pseudo_line):
     def __init__(self, ranks, el, eli, deph):
@@ -52,14 +56,15 @@ class pseudo_condition(pseudo_line):
         self.el = el
         self.eli = eli
 
-    def __str__(self):
+        self.first_col = ""
+        self.second_col = " "
         if self.el:
-            res = self.get_tabs() + "ELSE".format(self.ranks)
+            self.third_col = "ELSE"
         elif self.eli:
-            res = self.get_tabs() + "ELSE IF RANK in {0}".format(self.ranks)
+            self.third_col = "ELSE IF RANK in {0}".format(self.ranks)
         else:
-            res = self.get_tabs() + "IF RANK IN {0}".format(self.ranks)
-        return res
+            self.third_col = "IF RANK IN {0}".format(self.ranks)
+
 
 class condition(object):
     def __init__(self, set1, set2):
@@ -74,93 +79,78 @@ class condition(object):
 class pseudocode(object):
     def __init__(self, clusters_set):
         self.lines = []
+        self.all_ranks = [0,1,2,3]
+
         for cluster in clusters_set:
             for loop_obj in cluster.loops:
-                self.parse_loop(loop_obj, 0, 0)
+                self.parse_loop(loop_obj, 0)
 
-    def parse_loop(self, loop_obj, stack_deph, tabs):
+    def parse_loop(self, loop_obj, tabs):
         # Callstack to loop
         #
-        for cs in loop_obj.program_order_callstacks:
-            if isinstance(cs, callstack):
-                first_callstack = cs
-        assert first_callstack
-        tabs += self.parse_callstack_from_to(first_callstack, 
-                stack_deph, loop_obj.loop_deph+1, tabs)
+        tabs += self.parse_callstack(loop_obj.common_callstack, tabs)
 
-        # Loop body
+        # Loop description
         #
-        #all_ranks = [0,1,2,3,4,5,6,7]
-        all_ranks = [0,1,2,3]
-        prev_ranks = all_ranks
-        nested_conditions = 0
         self.lines.append(pseudo_for(loop_obj.iterations, tabs))
-        for callstack_obj in loop_obj.program_order_callstacks:
-            condition_obj = condition(callstack_obj.get_all_ranks(), prev_ranks)
-
-            if callstack_obj.get_all_ranks() == all_ranks:
-                nested_conditions = 0
-            elif condition_obj.is_subset:
-                self.lines.append(
-                        pseudo_condition(
-                            callstack_obj.get_all_ranks(), False, False,
-                            tabs+nested_conditions+1))
-                nested_conditions += 1
-            elif condition_obj.is_complement:
-                nested_conditions -= 1
-                if set(prev_ranks).union(set(callstack_obj.get_all_ranks()))\
-                        == set(all_ranks):
-                            el = True
-                            eli = False
-                else:
-                    el = False
-                    eli = True
-                self.lines.append(
-                        pseudo_condition(
-                            callstack_obj.get_all_ranks(), el, eli,
-                            tabs+nested_conditions+1))
-                nested_conditions += 1
-            elif condition_obj.is_equal:
-                pass
-            elif condition_obj.is_superset:
-                nested_conditions -= 1
-                self.lines.append(
-                        pseudo_condition(
-                            callstack_obj.get_all_ranks(), False, False,
-                            tabs+nested_conditions+1))
-                nested_conditions += 1
-            prev_ranks = callstack_obj.get_all_ranks()
-
-            if isinstance(callstack_obj, loop):
-                self.parse_loop(callstack_obj, loop_obj.loop_deph+1, tabs+nested_conditions+1)
-            else:
-                call_tabs = tabs + nested_conditions + 1
-                self.parse_callstack(callstack_obj, loop_obj.loop_deph+1, call_tabs)
-
+        self.parse_conditional_rank_block(loop_obj.conditional_rank_block,
+                loop_obj.get_all_ranks(), tabs+1)
         self.lines.append(pseudo_for_end(loop_obj.iterations, tabs))
 
-    def parse_callstack(self, callstack_obj, block_deph, tabs):
-        calls = callstack_obj.calls[block_deph:]
-        call_deph = block_deph
+    def parse_callstack(self, callstack_obj, tabs):
+        calls = callstack_obj.calls
+        my_tabs=0
         for call in calls:
-            self.lines.append(pseudo_call(call, tabs))
-            tabs += 1
-            call_deph += 1
-
-    def parse_callstack_from_to(self, callstack_obj, from_p, to_p, tabs):
-        my_tabs = 0
-        for call_obj in callstack_obj.calls[from_p:to_p]:
-            self.lines.append(pseudo_call(call_obj, tabs+my_tabs))
+            self.lines.append(pseudo_call(call, tabs+my_tabs))
             my_tabs += 1
-
         return my_tabs
+
+    def parse_conditional_rank_block(self, conditional_rank_block_obj, prev_ranks,tabs):
+        tabs += self.parse_callstack(
+                conditional_rank_block_obj.common_callstack, tabs)
+        condition_tabs=0
+        my_ranks = set(conditional_rank_block_obj.ranks)
+        
+        condition_obj = condition(my_ranks, prev_ranks)
+
+        item = conditional_rank_block_obj
+        if item.ranks == prev_ranks:
+            condition_tabs = 0
+        elif condition_obj.is_subset:
+            self.lines.append(pseudo_condition(
+                item.ranks, False, False, tabs+condition_tabs))
+            condition_tabs += 1
+        elif condition_obj.is_complement:
+            if set(prev_ranks).union(set(item.ranks)) == set(self.all_ranks):
+                el = True; eli = False
+            else:
+                el = False; eli = True
+            self.lines.append(pseudo_condition(item.ranks, el, eli,tabs+condition_tabs))
+            condition_tabs += 1
+        elif condition_obj.is_equal:
+            pass
+        elif condition_obj.is_superset:
+            self.lines.append(pseudo_condition(item.ranks, False, False,
+                tabs+condition_tabs))
+            condition_tabs += 1
+
+        
+        for item in conditional_rank_block_obj.callstacks:
+            if isinstance(item, loop):
+                self.parse_loop(item, tabs+condition_tabs)
+                prev_ranks = item.get_all_ranks()
+            elif isinstance(item, conditional_rank_block):
+                self.parse_conditional_rank_block(item, prev_ranks, tabs+condition_tabs)
+                prev_ranks = item.ranks
+            else:
+                self.parse_callstack(item, tabs+condition_tabs)
+                prev_ranks = item.get_all_ranks()
 
 
     def show_console(self):
-        pseudocode=""
-        for line in self.lines:
-            pseudocode += str(line) + "\n"
-        print pretty_print(pseudocode, "Pseudocode")
+        self.gui = console_gui(self.lines)
+        self.gui.show()
 
     def show_html(self):
         pass
+

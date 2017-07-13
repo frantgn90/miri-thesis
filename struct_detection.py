@@ -12,7 +12,6 @@ from trace_parsing import *
 from callstack_distribution import *
 from delta_calculation import *
 from clustering import *
-from pseudocode_generator import *
 from utilities import *
 from flowgraph import flowgraph
 from pseudocode import pseudocode
@@ -170,24 +169,25 @@ def main(argc, argv):
     
     
     ''' 2. Getting callstack metrics '''
-    logging.info("Reducing information")
+    logging.info("Reducing information...")
     for callstack in callstacks_pool:
         callstack.calc_reduce_info()
 
 
     ''' 3. Filtering below delta '''
-    logging.info("Filtering callstacks below delta...")
+    logging.info("Filtering callstacks...")
     fcallstacks_pool=filter(
             lambda x: x.is_above_delta(app_time, arguments.bottom_bound[0]),
             callstacks_pool)
-    logging.info("Reduced from {0} to {1}".format(
+    logging.debug("Reduced from {0} to {1}".format(
         len(callstacks_pool), len(fcallstacks_pool)))
+    logging.info("Done")
 
 
     ''' 4. Callstacks to delta mapping '''
-    logging.info("Detecting super-loops")
+    logging.info("Callstacks delta classification...")
     if not arguments.use_cplex:
-        logging.info("Calculating delta by mean of heuristics.")
+        logging.debug("Calculating delta by mean of heuristics.")
         deltas = calcule_deltas_heuristic(
                 depured_data, 
                 app_time,
@@ -197,66 +197,66 @@ def main(argc, argv):
         deltas.sort()
         logging.info("Deltas: {0}".format(deltas))
     else:
-        logging.info("Calculating delta by mean of CPLEX.")
+        logging.debug("Calculating delta by mean of CPLEX.")
         deltas = calcule_deltas_cplex(fcallstacks_pool,app_time,
                 arguments.bottom_bound[0],
                 arguments.delta_accuracy[0],
                 arguments.cplex_input[0])
 
-    logging.info("{0} super-loops detected".format(len(deltas)))
+    logging.debug("{0} super-loops detected".format(len(deltas)))
+    logging.info("Done")
 
 
     ''' 5. Clustering '''
-    logging.info("Performing clustering")
+    logging.info("Performing clustering...")
     clusters_pool=clustering(fcallstacks_pool, arguments.show_clustering, 
             app_time, deltas, arguments.bottom_bound[0])
     for cluster in clusters_pool:
         cluster.run_loops_generation()
 
-    logging.info("{0} clusters detected".format(len(clusters_pool)))
+    logging.debug("{0} clusters detected".format(len(clusters_pool)))
+    logging.info("Done")
 
     ''' 6. Merging clusters '''
     logging.info("Merging clusters...")
     top_level_clusters = merge_clusters(clusters_pool)
     logging.info("Done")
 
-#    for cluster in top_level_clusters:
-#        print cluster
-#    exit(0)
-
-    ''' 7. Genearting flowgraph '''
-#    logging.info("Generating flowgraph...")
-#    fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters 
-#    logging.info("Done")
-#
-#    fg.show()
-
 
     ''' 7. Reducing callstacks '''
-    logging.info("Compacting callstacks...")
+    logging.info("Postprocessing callstacks...")
     for cluster_obj in top_level_clusters:
         for loop_obj in cluster_obj.loops:
             loop_obj.compact_callstacks()
-            loop_obj.detect_condition_bodies()
-            print loop_obj
+            loop_obj.extracting_callstack_common_part()
+            loop_obj.group_into_conditional_rank_blocks()
     logging.info("Done")
 
+
+    ''' 8. Genearting flowgraph '''
+#    logging.info("Generating flowgraph...")
+#    fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters 
+#    logging.info("Done")
+#    fg.show()
 
     ''' 8. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
     pc = pseudocode(top_level_clusters)
     logging.info("Done...")
 
+
+    ''' 9. Show GUI '''
     pc.show_console()
 
-    ''' 8. Print some statistics '''
-    final_stats =  "{0} clusters detected\n".format(len(clusters_pool))
-    final_stats+=  "Grouped in {0} super-loops\n".format(len(deltas))
-    for i, delta in zip(range(len(deltas)),deltas):
-        final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
-    final_stats+=("Time in pseudocode: {0}%\n".format(sum(deltas)*100))
 
-    print pretty_print(final_stats, "Final stats")
+#    ''' 10. Print some statistics '''
+#    final_stats =  "{0} clusters detected\n".format(len(clusters_pool))
+#    final_stats+=  "Grouped in {0} super-loops\n".format(len(deltas))
+#    for i, delta in zip(range(len(deltas)),deltas):
+#        final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
+#    final_stats+=("Time in pseudocode: {0}%\n".format(sum(deltas)*100))
+#
+#    print pretty_print(final_stats, "Final stats")
 
     logging.info("All done")
     return 0

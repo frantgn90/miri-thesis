@@ -134,7 +134,7 @@ class cluster (object):
 
 
 def merge_clusters(clusters_pool):
-    logging.info("Classifying clusters by delta.")
+    logging.debug("Classifying clusters by delta.")
 
     cluster_by_delta = {}
     def ___cluster_classification(x):
@@ -153,17 +153,17 @@ def merge_clusters(clusters_pool):
     # Then, the merge must be done from the little one to the biggest one.
     top_level_clusters=[]
     for delta,clusters in cluster_by_delta.items():
-        logging.info("Merging {0} clusters with delta={1}".format(len(clusters),delta))
+        logging.debug("Merging {0} clusters with delta={1}".format(len(clusters),delta))
         for i in range(len(clusters)-1):
             done=False
             for j in range(i+1,len(clusters)):
-                logging.info("Cluster {0} merged to {1}?"\
+                logging.debug("Cluster {0} merged to {1}?"\
                         .format(clusters[i].cluster_id, clusters[j].cluster_id))
                 if clusters[j].get_interarrival_median() >\
                         clusters[i].get_interarrival_median()\
                         and clusters[j].is_subloop(clusters[i]):
 
-                    logging.info("Cluster {0} ({1}) merged to {2} ({3})".
+                    logging.debug("Cluster {0} ({1}) merged to {2} ({3})".
                         format(clusters[i].cluster_id, clusters[i].get_interarrival_median(),
                                clusters[j].cluster_id, clusters[j].get_interarrival_median()))
 

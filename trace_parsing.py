@@ -231,7 +231,7 @@ def parse_events(events,image_filter):
             filtered_levels.reverse()
 
             # Store the values
-            return filtered_calls, filtered_lines
+            return filtered_calls, filtered_lines, filtered_files
             '''   
             callstack_to_write = str(time-last_time) + FIELD_SEPARATOR + \
                 sampled + FIELD_SEPARATOR + \
@@ -249,7 +249,7 @@ def parse_events(events,image_filter):
                 last_time = time
             '''
     else:
-        return None, None
+        return None, None, None
             
         
 
@@ -353,11 +353,13 @@ def get_callstacks(trace, level, image_filter):
         callstack_series=[]
         timestamp_series=[]
         lines_series=[]
+        files_series=[]
 
         for i in range(total_threads):
             callstack_series.append(list())
             timestamp_series.append(list())
             lines_series.append(list())
+            files_series.append(list())
 
         events_buffer = {}
         for line in tr:
@@ -397,12 +399,13 @@ def get_callstacks(trace, level, image_filter):
                             "last_time":time}
                     continue
                 
-                fcalls, flines = parse_events(events, image_filter)
+                fcalls, flines, ffiles = parse_events(events, image_filter)
 
                 if not fcalls is None:
                     callstack_series[task-1].append(fcalls)
                     timestamp_series[task-1].append(time)
                     lines_series[task-1].append(flines)
+                    files_series[task-1].append(ffiles)
 
 
             pbar.show()
@@ -410,11 +413,12 @@ def get_callstacks(trace, level, image_filter):
 
     # TODO: Terminar de vaciar el events_buffer
     for k,v in events_buffer.items():
-        fcalls, flines = parse_events(v["events"], image_filter)
+        fcalls, flines, ffiles = parse_events(v["events"], image_filter)
         if not fcalls is None:
             callstack_series[task-1].append(fcalls)
             timestamp_series[task-1].append(v["time"])
             lines_series[task-1].append(flines)
+            files_series[task-1].append(ffiles)
 
     # If this aplication is using mpl, then consider it as the very
     # low level MPI call.
@@ -423,6 +427,7 @@ def get_callstacks(trace, level, image_filter):
         for i_stack in range(len(callstack_series[rank_index])):
             new_stack_call=[]
             new_stack_line=[]
+            new_stack_file=[]
 
             main = False
             for i_call in range(len(callstack_series[rank_index][i_stack])):
@@ -433,12 +438,14 @@ def get_callstacks(trace, level, image_filter):
 
                 new_stack_call.append(callstack_series[rank_index][i_stack][i_call])
                 new_stack_line.append(lines_series[rank_index][i_stack][i_call])
+                new_stack_file.append(files_series[rank_index][i_stack][i_call])
 
                 #if "mpl_" in callstack_series[rank_index][i_stack][i_call]:
                 #    break
 
             callstack_series[rank_index][i_stack] = new_stack_call
             lines_series[rank_index][i_stack] = new_stack_line
+            files_series[rank_index][i_stack] = new_stack_file
  
 
     logging.info("Starting alignement of callstacks")
@@ -455,17 +462,18 @@ def get_callstacks(trace, level, image_filter):
                         lines_series[rank_index],
                         ignored_index)
 
-        logging.info("#{0} Aligning done: {1} discarded, {2} aligned"\
+        logging.debug("#{0} Aligning done: {1} discarded, {2} aligned"\
                 .format(rank_index,cs_discarded, cs_aligned))
+    logging.info("Done")
  
-    logging.info("Merging...")
     callstacks_pool=[]
     for rank in range(len(callstack_series)):
         for cs_i in range(len(callstack_series[rank])):
             new_callstack = callstack.from_trace(rank,
                     timestamp_series[rank][cs_i],
                     lines_series[rank][cs_i], 
-                    callstack_series[rank][cs_i])
+                    callstack_series[rank][cs_i],
+                    files_series[rank][cs_i])
 
             try:
                 repeated_idx = callstacks_pool.index(new_callstack)
@@ -473,5 +481,4 @@ def get_callstacks(trace, level, image_filter):
             except Exception:
                 callstacks_pool.append(new_callstack)
 
-    logging.info("Merge done: {0} callstacks detected.".format(len(callstacks_pool)))
     return callstacks_pool

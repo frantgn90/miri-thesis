@@ -8,10 +8,11 @@ import constants
 from delta_calculation import get_cost
 
 class call(object):
-    def __init__(self, line, call, callstack):
+    def __init__(self, line, call, call_file, callstack):
         self.call=call
         self.line=int(line)
         self.my_callstack = callstack
+        self.call_file = call_file
         self.mpi_call = "MPI_" in call
 
     def get_signature(self):
@@ -52,12 +53,12 @@ class callstack(object):
             call.my_callstack = self
 
     @classmethod
-    def from_trace(cls, rank, instant, lines, calls):
+    def from_trace(cls, rank, instant, lines, calls, files):
         assert len(lines)==len(calls), "#lines and #calls must be equal."
 
         calls_obj = []
         for i in range(0, len(lines)):
-            calls_obj.append(call(int(lines[i]), calls[i], None))
+            calls_obj.append(call(int(lines[i]), calls[i], files[i], None))
 
         return cls(rank, instant, calls_obj)
 
@@ -154,8 +155,21 @@ class callstack(object):
             if self.calls[call_i] == other.calls[call_i]:
                 result.append(self.calls[call_i])
 
-        result = callstack(self.rank, 0, result)
-        # TODO: Copy the original state to the new object
+        result = callstack(0, 0, result)
+        if len(result) > 0:
+            result.rank = self.rank
+            result.repetitions = self.repetitions
+            result.instants = self.instants
+            result.instants_distances = self.instants_distances
+            result.instants_distances_mean = self.instants_distances_mean
+            result.instants_distances_median = self.instants_distances_median
+            result.delta = self.delta
+            result.cluster_id = self.cluster_id
+            result.compacted_ranks = self.compacted_ranks
+            result.condition_level = self.condition_level
+            result.reduced = self.reduced
+            result.metrics = self.metrics
+
         return result
 
     def __sub__(self, other):
@@ -164,8 +178,21 @@ class callstack(object):
             if not s_call in other.calls:
                 result.append(s_call)
 
-        result = callstack(self.rank, 0, result)
-        # TODO: Copy the original state to the new object
+        result = callstack(0, 0, result)
+        if len(result) > 0:
+            result.rank = self.rank
+            result.repetitions = self.repetitions
+            result.instants = self.instants
+            result.instants_distances = self.instants_distances
+            result.instants_distances_mean = self.instants_distances_mean
+            result.instants_distances_median = self.instants_distances_median
+            result.delta = self.delta
+            result.cluster_id = self.cluster_id
+            result.compacted_ranks = self.compacted_ranks
+            result.condition_level = self.condition_level
+            result.reduced = self.reduced
+            result.metrics = self.metrics
+
         return result
 
     def __getitem__(self, key):

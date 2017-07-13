@@ -118,7 +118,7 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
     npoints = len(fcallstacks_pool)
 
     if cplex_input == None:
-        logging.info("Preparing data for CPLEX")
+        logging.debug("Preparing data for CPLEX")
         nDeltas = 1/delta_accuracy
         deltas=[]
         for i in numpy.arange(delta_accuracy, 1, delta_accuracy):
@@ -164,26 +164,26 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
         cplex_int = CplexInterface()
         infile = cplex_int.set_args(arguments)
 
-        logging.info("CPLEX infile generated: {0}".format(infile))
+        logging.debug("CPLEX infile generated: {0}".format(infile))
     else:
-        logging.info("Using CPLEX input: {0}".format(cplex_input))
+        logging.debug("Using CPLEX input: {0}".format(cplex_input))
         cplex_int = CplexInterface()
         cplex_int.set_infile(cplex_input)
 
     #
     # Launching CPLEX
     #
-    logging.info("Launching CPLEX for delta clasification...")
+    logging.debug("Launching CPLEX for delta clasification...")
 
-    logging.info("Using CPLEX outfile: {0}".format(cplex_int.get_outfile()))
-    logging.info("Using CPLEX errfile: {0}".format(cplex_int.get_errfile()))
+    logging.debug("Using CPLEX outfile: {0}".format(cplex_int.get_outfile()))
+    logging.debug("Using CPLEX errfile: {0}".format(cplex_int.get_errfile()))
 
     cplex_int.run()  
 
     #
     # Update points delta
     #
-    logging.info("Updating points delta clasification...")
+    logging.debug("Updating points delta clasification...")
     point_cnt = 0
     pbar = ProgressBar("Updating points", npoints)
     pbar.show()

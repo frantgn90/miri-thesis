@@ -76,8 +76,8 @@ class ProgressBar(object):
     def __init__(self, msg, total):
         self.total = total
         self.progression = 0
-        self.bar_size=20
-        self.msg_size=30
+        self.bar_size=10
+        self.msg_size=15
         self.update_every_percent=5
         self.count = 0
         self.msg = msg
@@ -124,44 +124,3 @@ class ProgressBar(object):
                 str(percent)), end=endc)
             
             self.count = 0
-
-def print_matrix(matrix, infile):
-    if type(matrix)==list:
-        mat=matrix
-    else:
-        mat=matrix.tolist()
-
-    def format_nums(val):
-        return str(val).zfill(12)
-
-    if infile:
-        filen=int(np.random.rand()*1000)
-        filename="matrix_{0}.txt".format(filen)
-        print("---> SAVING TO {0}".format(filename))
-
-        ff=open(filename, "w")
-        for row in mat:
-            ff.write("\t".join(map(format_nums,row)))
-            ff.write("\n")
-        ff.close()
-    else:
-        print(mat)
-        return
-        for row in mat:
-            print("\t".join(map(format_nums,row)))
-
-def get_call(callstack, level):
-    import constants
-    call=callstack \
-        .split(constants._intra_field_separator)[0::2][level]
-
-    return call
-
-
-def get_line(callstack,level):
-    import constants
-    line=int(callstack \
-        .split(constants._intra_field_separator)[1::2][level])
-
-    return line
-
