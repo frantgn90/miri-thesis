@@ -6,7 +6,6 @@
 !_TAG_PROGRAM_VERSION	5.8	//
 Axes3D	clustering.py	/^from mpl_toolkits.mplot3d import Axes3D$/;"	i
 AxesImage	clustering.py	/^from matplotlib.image import AxesImage$/;"	i
-AxesImage	examples/matplotlib_click_event.py	/^from matplotlib.image import AxesImage$/;"	i
 CALLER_EVENT	trace_parsing.py	/^CALLER_EVENT=""$/;"	v
 CALLER_EVENT	trace_parsing.py	/^CALLER_EVENT=None$/;"	v
 CALLER_EVENT_BASE	constants.py	/^CALLER_EVENT_BASE ="3000000"$/;"	v
@@ -19,8 +18,6 @@ COUNTER_CALLS	trace_parsing.py	/^COUNTER_CALLS = None$/;"	v
 COUNTER_TYPE_CALLS	trace_parsing.py	/^COUNTER_TYPE_CALLS = None$/;"	v
 CplexInterface	cplex_interface.py	/^class CplexInterface(object):$/;"	c
 CplexInterface	delta_calculation.py	/^from cplex_interface import CplexInterface$/;"	i
-CubicScale	clustering.py	/^class CubicScale(mscale.ScaleBase):$/;"	c
-CubicTransform	clustering.py	/^    class CubicTransform(mtransforms.Transform):$/;"	c	class:CubicScale
 DBSCAN	clustering.py	/^from sklearn.cluster import DBSCAN$/;"	i
 ELSE_RANK	constants.py	/^ELSE_RANK         ="elif RANK in {0}:\\n"$/;"	v
 FORLOOP	constants.py	/^FORLOOP           ="for loop 1 to {0}:\\n"$/;"	v
@@ -29,9 +26,7 @@ IF_DATA	constants.py	/^IF_DATA           ="if CHANCE is ({0:.3f}):\\n"$/;"	v
 IF_RANK	constants.py	/^IF_RANK           ="if RANK in {0}:\\n"$/;"	v
 IMAGES	trace_parsing.py	/^IMAGES={}$/;"	v
 IloOdmsIde	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^}$/;"	c
-InvertedCubicTransform	clustering.py	/^    class InvertedCubicTransform(mtransforms.Transform):$/;"	c	class:CubicScale
 Line2D	clustering.py	/^from matplotlib.lines import Line2D$/;"	i
-Line2D	examples/matplotlib_click_event.py	/^from matplotlib.lines import Line2D$/;"	i
 MAX_ITERATIONS	constants.py	/^MAX_ITERATIONS = 1$/;"	v
 MPICAL_EVENT	trace_parsing.py	/^MPICAL_EVENT=None$/;"	v
 MPICAL_EVENT_BASE	constants.py	/^MPICAL_EVENT_BASE ="7000000"$/;"	v
@@ -66,12 +61,10 @@ ProgressBar	trace_parsing.py	/^from utilities import ProgressBar$/;"	i
 ProgressBar	utilities.py	/^class ProgressBar(object):$/;"	c
 RANDOM_SEED	constants.py	/^RANDOM_SEED       =5748473$/;"	v
 Rectangle	clustering.py	/^from matplotlib.patches import Rectangle$/;"	i
-Rectangle	examples/matplotlib_click_event.py	/^from matplotlib.patches import Rectangle$/;"	i
 Symbol	delta_calculation.py	/^from sympy import Symbol$/;"	i
 TAB	constants.py	/^TAB               =":  "$/;"	v
 THREAD_DEPH	trace_parsing.py	/^THREAD_DEPH={}$/;"	v
 Text	clustering.py	/^from matplotlib.text import Text$/;"	i
-Text	examples/matplotlib_click_event.py	/^from matplotlib.text import Text$/;"	i
 Usage	struct_detection.py	/^def Usage(cmd):$/;"	f
 _IloOdmsIde_AbsoluteArrayItem	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AbsoluteArrayItem(array,leafIndex) {$/;"	f
 _IloOdmsIde_AddArray	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdmsIde_AddArray(out,obj,accessPrefix) {$/;"	f
@@ -186,35 +179,71 @@ _IloOdms_TupleSet_request2	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundl
 _IloOdms_TupleSet_request3	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_TupleSet_request3( methodName, eltName, param1, param2 ) {$/;"	f
 _IloOdms_Tuple_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_Tuple_request( methodName, eltName ) {$/;"	f
 _IloOdms_request	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^function _IloOdms_request( methodName ) {$/;"	f
+___cluster_classification	cluster.py	/^    def ___cluster_classification(x):$/;"	f	function:merge_clusters	file:
+__and__	callstack.py	/^    def __and__(self, other):$/;"	m	class:callstack	file:
 __boundaries_sort	temp_matrix.py	/^    def __boundaries_sort(cls, tmat):$/;"	m	class:tmatrix	file:
 __cuadra	temp_matrix.py	/^    def __cuadra(cls, mat):$/;"	m	class:tmatrix	file:
-__get_common_cs	loop.py	/^    def __get_common_cs(self, cs1, cs2):$/;"	m	class:loop	file:
+__eq__	callstack.py	/^    def __eq__(self, other):$/;"	m	class:call	file:
+__eq__	callstack.py	/^    def __eq__(self, other):$/;"	m	class:callstack	file:
+__eq__	loop.py	/^    def __eq__(self, other):$/;"	m	class:loop	file:
+__ge__	callstack.py	/^    def __ge__(self, other):$/;"	m	class:callstack	file:
+__ge__	loop.py	/^    def __ge__(self, other):$/;"	m	class:loop	file:
+__generate_graph	flowgraph.py	/^    def __generate_graph(self, loop_obj):$/;"	m	class:flowgraph	file:
+__get_distances	callstack.py	/^    def __get_distances(self, times):$/;"	m	class:callstack	file:
 __get_matrix	temp_matrix.py	/^    def __get_matrix(self, callstacks_list):$/;"	m	class:tmatrix	file:
-__init__	cluster.py	/^    def __init__(self, cluster_id, ranks, cluster, merged_loop):$/;"	m	class:cluster
-__init__	clustering.py	/^        def __init__(self, total_time):$/;"	m	class:CubicScale.CubicTransform
-__init__	clustering.py	/^        def __init__(self, total_time):$/;"	m	class:CubicScale.InvertedCubicTransform
-__init__	clustering.py	/^    def __init__(self, axis, **kwargs):$/;"	m	class:CubicScale
+__getitem__	callstack.py	/^    def __getitem__(self, key):$/;"	m	class:callstack	file:
+__gt__	callstack.py	/^    def __gt__(self, other):$/;"	m	class:callstack	file:
+__gt__	loop.py	/^    def __gt__(self, other):$/;"	m	class:loop	file:
+__init__	callstack.py	/^    def __init__(self, line, call, call_file, callstack):$/;"	m	class:call
+__init__	callstack.py	/^    def __init__(self, rank, instant, calls):$/;"	m	class:callstack
+__init__	cluster.py	/^    def __init__(self, cluster_id):$/;"	m	class:cluster
 __init__	cplex_interface.py	/^    def __init__(self):$/;"	m	class:CplexInterface
-__init__	examples/matplotlib_draw_tooltip.py	/^    def __init__(self):$/;"	m	class:wxToolTipExample
-__init__	loop.py	/^    def __init__(self, tmat, cstack, rank):$/;"	m	class:loop
+__init__	flowgraph.py	/^    def __init__(self, call):$/;"	m	class:node
+__init__	flowgraph.py	/^    def __init__(self, cluster):$/;"	m	class:flowgraph
+__init__	flowgraph.py	/^    def __init__(self, node_from, node_to):$/;"	m	class:edge
+__init__	gui.py	/^    def __init__(self, pseudocode):$/;"	m	class:console_gui
+__init__	gui.py	/^    def __init__(self, pseudocode):$/;"	m	class:gui
+__init__	gui.py	/^    def __init__(self, pseudocode):$/;"	m	class:html_gui
+__init__	loop.py	/^    def __init__(self, callstacks):$/;"	m	class:loop
+__init__	loop.py	/^    def __init__(self, ranks):$/;"	m	class:conditional_rank_block
+__init__	pseudocode.py	/^    def __init__(self, call, deph):$/;"	m	class:pseudo_call
+__init__	pseudocode.py	/^    def __init__(self, clusters_set, nranks):$/;"	m	class:pseudocode
+__init__	pseudocode.py	/^    def __init__(self, deph):$/;"	m	class:pseudo_line
+__init__	pseudocode.py	/^    def __init__(self, iterations, deph):$/;"	m	class:pseudo_for
+__init__	pseudocode.py	/^    def __init__(self, iterations, deph):$/;"	m	class:pseudo_for_end
+__init__	pseudocode.py	/^    def __init__(self, ranks, el, eli, deph):$/;"	m	class:pseudo_condition
+__init__	pseudocode.py	/^    def __init__(self, set1, set2):$/;"	m	class:condition
 __init__	temp_matrix.py	/^    def __init__(self, matrix, callstacks, transformations):$/;"	m	class:tmatrix
 __init__	utilities.py	/^    def __init__(self, msg, total):$/;"	m	class:ProgressBar
 __init__	utilities.py	/^    def __init__(self,data):                     $/;"	m	class:Printer
-__ranks_level_merge	cluster.py	/^    def __ranks_level_merge(cls, ranks_loops):$/;"	m	class:cluster	file:
+__last_node_with_rank	flowgraph.py	/^    def __last_node_with_rank(self, graph, rank):$/;"	m	class:flowgraph	file:
+__le__	callstack.py	/^    def __le__(self, other):$/;"	m	class:callstack	file:
+__le__	loop.py	/^    def __le__(self, other):$/;"	m	class:loop	file:
+__len__	callstack.py	/^    def __len__(self):$/;"	m	class:callstack	file:
+__lt__	callstack.py	/^    def __lt__(self, other):$/;"	m	class:callstack	file:
+__lt__	cluster.py	/^    def __lt__(self, other):$/;"	m	class:cluster	file:
+__lt__	loop.py	/^    def __lt__(self, other):$/;"	m	class:loop	file:
+__merge_graphs	flowgraph.py	/^    def __merge_graphs(self, graphs):$/;"	m	class:flowgraph	file:
+__ranks_level_merge	cluster.py	/^    def __ranks_level_merge(self, ranks_loops):$/;"	m	class:cluster	file:
+__search_node_with_call	flowgraph.py	/^    def __search_node_with_call(self, graph, call, rank):$/;"	m	class:flowgraph	file:
+__str__	callstack.py	/^    def __str__(self):$/;"	m	class:call	file:
+__str__	callstack.py	/^    def __str__(self):$/;"	m	class:callstack	file:
+__str__	cluster.py	/^    def __str__(self):$/;"	m	class:cluster	file:
+__str__	flowgraph.py	/^    def __str__(self):$/;"	m	class:edge	file:
+__str__	flowgraph.py	/^    def __str__(self):$/;"	m	class:node	file:
+__str__	loop.py	/^    def __str__(self):$/;"	m	class:conditional_rank_block	file:
+__str__	loop.py	/^    def __str__(self):$/;"	m	class:loop	file:
+__str__	pseudocode.py	/^    def __str__(self):$/;"	m	class:pseudo_line	file:
+__sub__	callstack.py	/^    def __sub__(self, other):$/;"	m	class:callstack	file:
 __submatrix	temp_matrix.py	/^    def __submatrix(self, mat):$/;"	m	class:tmatrix	file:
-__substract_cs	loop.py	/^    def __substract_cs(self, cs1, cs2):$/;"	m	class:loop	file:
-__time_mean_m	cluster.py	/^    def __time_mean_m(self):$/;"	m	class:cluster	file:
-__time_median_m	cluster.py	/^    def __time_median_m(self):$/;"	m	class:cluster	file:
-__times_m	cluster.py	/^    def __times_m(self):$/;"	m	class:cluster	file:
 _cs_per_thread	callstack_alignement.py	/^_cs_per_thread=100$/;"	v
 _empty_cell	constants.py	/^_empty_cell=0$/;"	v
-_eps	constants.py	/^_eps              =0.1$/;"	v
+_eps	constants.py	/^_eps              =0.5$/;"	v
 _get_minimum_distance_2	delta_calculation.py	/^def _get_minimum_distance_2(delta, total_time, point, accumulated, iteration):$/;"	f
 _init_delta	delta_calculation.py	/^_init_delta=0.5$/;"	v
 _inter_field_separator	constants.py	/^_inter_field_separator="#"$/;"	v
 _intra_field_separator	constants.py	/^_intra_field_separator="|"$/;"	v
 _min_samples	constants.py	/^_min_samples      =1$/;"	v
-_onMotion	examples/matplotlib_draw_tooltip.py	/^    def _onMotion(self, event):$/;"	m	class:wxToolTipExample
 _upper_bound	delta_calculation.py	/^_upper_bound=1$/;"	v
 _verbose	constants.py	/^    _verbose=False$/;"	v
 _verbose	constants.py	/^    _verbose=True$/;"	v
@@ -224,21 +253,36 @@ _y_axis	constants.py	/^_y_axis           ="time_mean"$/;"	v
 _y_axis_label	constants.py	/^_y_axis_label     ="Mean period bw occurrences"$/;"	v
 _z_axis	constants.py	/^_z_axis           ="delta"$/;"	v
 _z_axis_label	constants.py	/^_z_axis_label     ="delta"$/;"	v
+add_callstack	cluster.py	/^    def add_callstack(self, callstack):$/;"	m	class:cluster
+add_callstack	loop.py	/^    def add_callstack(self, callstack_or_loop):$/;"	m	class:conditional_rank_block
+aliased	temp_matrix.py	/^    def aliased(self):$/;"	m	class:tmatrix
 allElt	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^	var allElt = _IloOdms_request( "getAllElement" );$/;"	v
 argc	test.py	/^    argc = len(sys.argv)$/;"	v
 argcomplete	struct_detection.py	/^import argparse, argcomplete$/;"	i
 argparse	struct_detection.py	/^import argparse, argcomplete$/;"	i
 argv	test.py	/^    argv = sys.argv$/;"	v
 bar	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
-bars	examples/matplotlib_click_event.py	/^    bars = ax2.bar(range(10), rand(10), picker=True)$/;"	v
 by	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
-calcule_deltas_cplex	delta_calculation.py	/^def calcule_deltas_cplex($/;"	f
+calc_reduce_info	callstack.py	/^    def calc_reduce_info(self):$/;"	m	class:callstack
+calcule_deltas_cplex	delta_calculation.py	/^def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accuracy, cplex_input):$/;"	f
 calcule_deltas_heuristic	delta_calculation.py	/^def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):$/;"	f
+call	callstack.py	/^class call(object):$/;"	c
+callstack	callstack.py	/^class callstack(object):$/;"	c
+callstack	flowgraph.py	/^from callstack import callstack$/;"	i
+callstack	loop.py	/^from callstack import callstack$/;"	i
+callstack	pseudocode.py	/^from callstack import callstack$/;"	i
+callstack	test.py	/^from callstack import callstack$/;"	i
+callstack	trace_parsing.py	/^from callstack import callstack$/;"	i
 cluster	cluster.py	/^class cluster (object):$/;"	c
 cluster	clustering.py	/^from cluster import cluster$/;"	i
-cluster	pseudocode_generator.py	/^from cluster import cluster$/;"	i
-clustering	clustering.py	/^def clustering(cdist, ranks, show_plot, total_time, delta, bound):$/;"	f
-col	examples/matplotlib_click_event.py	/^    col = ax.scatter(x, y, 100*s, c, picker=True)$/;"	v
+clustering	clustering.py	/^def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):$/;"	f
+compact_callstacks	loop.py	/^    def compact_callstacks(self):$/;"	m	class:loop
+condition	pseudocode.py	/^class condition(object):$/;"	c
+conditional_rank_block	loop.py	/^class conditional_rank_block(object):$/;"	c
+conditional_rank_block	pseudocode.py	/^from loop import loop, conditional_rank_block$/;"	i
+connect_out	flowgraph.py	/^    def connect_out(self, other, rank, increment):$/;"	m	class:node
+console_gui	gui.py	/^class console_gui(gui):$/;"	c
+constants	callstack.py	/^import constants$/;"	i
 constants	callstack_alignement.py	/^import constants$/;"	i
 constants	callstack_distribution.py	/^import constants$/;"	i
 constants	cluster.py	/^import constants$/;"	i
@@ -246,183 +290,165 @@ constants	clustering.py	/^import constants$/;"	i
 constants	cplex_interface.py	/^import constants$/;"	i
 constants	delta_calculation.py	/^import constants$/;"	i
 constants	loop.py	/^import constants$/;"	i
-constants	pseudocode_generator.py	/^import constants, logging$/;"	i
 constants	struct_detection.py	/^import constants$/;"	i
 constants	temp_matrix.py	/^import constants$/;"	i
 constants	trace_parsing.py	/^import constants$/;"	i
-copy	loop.py	/^        import copy$/;"	i
 copy	loop.py	/^import copy$/;"	i
-cs_uncommon_part	loop.py	/^def cs_uncommon_part(scalls):$/;"	f
-example	examples/matplotlib_draw_tooltip.py	/^example = wxToolTipExample()$/;"	v
+edge	flowgraph.py	/^class edge(object):$/;"	c
+extracting_callstack_common_part	loop.py	/^    def extracting_callstack_common_part(self):$/;"	m	class:conditional_rank_block
+extracting_callstack_common_part	loop.py	/^    def extracting_callstack_common_part(self):$/;"	m	class:loop
 filter_by_delta	delta_calculation.py	/^def filter_by_delta(cdist, total_time, delta):$/;"	f
 filter_by_delta_range	delta_calculation.py	/^def filter_by_delta_range(cdist, total_time, delta_bottom, delta_top):$/;"	f
 filter_by_distance	delta_calculation.py	/^def filter_by_distance(callstacks, total_time, delta, epsilon):$/;"	f
 filter_under_delta	delta_calculation.py	/^def filter_under_delta(cdist, total_time, delta):$/;"	f
-format_nums	utilities.py	/^    def format_nums(val):$/;"	f	function:print_matrix
-fromCallstackList	temp_matrix.py	/^    def fromCallstackList(cls, callstacks_list):$/;"	m	class:tmatrix
+flowgraph	flowgraph.py	/^class flowgraph(object):$/;"	c
+flowgraph	struct_detection.py	/^from flowgraph import flowgraph$/;"	i
 fromMatrix	temp_matrix.py	/^    def fromMatrix(cls, matrix):$/;"	m	class:tmatrix
-gcfm	examples/matplotlib_draw_tooltip.py	/^from pylab import get_current_fig_manager as gcfm$/;"	i
-getAllRanks	loop.py	/^    def getAllRanks(self):$/;"	m	class:loop
+from_callstacks_obj	temp_matrix.py	/^    def from_callstacks_obj(cls, callstacks):$/;"	m	class:tmatrix
+from_trace	callstack.py	/^    def from_trace(cls, rank, instant, lines, calls, files):$/;"	m	class:callstack
 getCallstacks	temp_matrix.py	/^    def getCallstacks(self):$/;"	m	class:tmatrix
-getCost	delta_calculation.py	/^def getCost(lmbda, T, P, delta):$/;"	f
 getCsContains	callstack_alignement.py	/^def getCsContains(vs, pivot):$/;"	f
 getCsDistributions	callstack_distribution.py	/^def getCsDistributions(filecs):$/;"	f
 getDelta	delta_calculation.py	/^def getDelta(cdist, total_time, bottom_bound):$/;"	f
-getFirstLine	cluster.py	/^    def getFirstLine(self):$/;"	m	class:cluster
-getFirstLine	loop.py	/^    def getFirstLine(self):$/;"	m	class:loop
-getIteration	loop.py	/^    def getIteration(self, rank, it):$/;"	m	class:loop
-getLastSc	loop.py	/^    def getLastSc(self, base):$/;"	m	class:loop
-getLoop	cluster.py	/^    def getLoop(self):$/;"	m	class:cluster
 getMatrix	temp_matrix.py	/^    def getMatrix(self):$/;"	m	class:tmatrix
-getOccurrences	cluster.py	/^    def getOccurrences(self):$/;"	m	class:cluster
-getParent	cluster.py	/^    def getParent(self):$/;"	m	class:cluster
-getPartitions	temp_matrix.py	/^    def getPartitions(self):$/;"	m	class:tmatrix
-getPeriod	cluster.py	/^    def getPeriod(self):$/;"	m	class:cluster
-getRandomIterations	cluster.py	/^    def getRandomIterations(self, n):$/;"	m	class:cluster
-getTimesMedian	cluster.py	/^    def getTimesMedian(self):$/;"	m	class:cluster
+get_all_ranks	callstack.py	/^    def get_all_ranks(self):$/;"	m	class:callstack
+get_all_ranks	loop.py	/^    def get_all_ranks(self):$/;"	m	class:loop
 get_app_description	trace_parsing.py	/^def get_app_description(header):$/;"	f
 get_app_time	trace_parsing.py	/^def get_app_time(trace):$/;"	f
 get_call_names	trace_parsing.py	/^def get_call_names(trace):$/;"	f
+get_call_of_func	callstack.py	/^    def get_call_of_func(self, func_name):$/;"	m	class:callstack
 get_callstack	callstack_alignement.py	/^def get_callstack(csfile):$/;"	f
 get_callstacks	trace_parsing.py	/^def get_callstacks(trace, level, image_filter):$/;"	f
+get_cost	callstack.py	/^from delta_calculation import get_cost$/;"	i
+get_cost	delta_calculation.py	/^def get_cost(lmbda, T, P, delta):$/;"	f
 get_delta_point_map	cplex_interface.py	/^    def get_delta_point_map(self, point):$/;"	m	class:CplexInterface
 get_distances	callstack_distribution.py	/^def get_distances(times):$/;"	f
 get_errfile	cplex_interface.py	/^    def get_errfile(self):$/;"	m	class:CplexInterface
-get_first_call_at_level	loop.py	/^    def get_first_call_at_level(self, level):$/;"	m	class:loop
-get_first_cs	loop.py	/^    def get_first_cs(self):$/;"	m	class:loop
-get_first_line_at_level	loop.py	/^    def get_first_line_at_level(self, level):$/;"	m	class:loop
-get_last_call_at_level	loop.py	/^    def get_last_call_at_level(self, level):$/;"	m	class:loop
-get_last_line_at_level	loop.py	/^    def get_last_line_at_level(self, level):$/;"	m	class:loop
+get_instants_dist_mean	callstack.py	/^    def get_instants_dist_mean(self):$/;"	m	class:callstack
+get_instants_dist_median	callstack.py	/^    def get_instants_dist_median(self):$/;"	m	class:callstack
+get_interarrival_mean	cluster.py	/^    def get_interarrival_mean(self):$/;"	m	class:cluster
+get_interarrival_median	cluster.py	/^    def get_interarrival_median(self):$/;"	m	class:cluster
+get_line_at_level	callstack.py	/^    def get_line_at_level(self, level):$/;"	m	class:callstack
 get_line_info	trace_parsing.py	/^def get_line_info(trace):$/;"	f
 get_minimum_distance	delta_calculation.py	/^def get_minimum_distance(delta,total_time, point):$/;"	f
 get_minimum_distance_2	delta_calculation.py	/^def get_minimum_distance_2(delta, total_time, point):$/;"	f
 get_mpi_calls	trace_parsing.py	/^def get_mpi_calls(trace):$/;"	f
 get_near_points	delta_calculation.py	/^def get_near_points(data, total_time,  delta, epsilon):$/;"	f
 get_outfile	cplex_interface.py	/^    def get_outfile(self):$/;"	m	class:CplexInterface
+get_parent	cluster.py	/^    def get_parent(self):$/;"	m	class:cluster
 get_pcf_info	trace_parsing.py	/^def get_pcf_info(event_type, trace):$/;"	f
-get_random_iters	pseudocode_generator.py	/^def get_random_iters(clusters, n_random_iterations):$/;"	f
-get_ranks	loop.py	/^    def get_ranks(self):$/;"	m	class:loop
-get_tmat	loop.py	/^    def get_tmat(self):$/;"	m	class:loop
-get_transform	clustering.py	/^    def get_transform(self):$/;"	m	class:CubicScale
+get_signature	callstack.py	/^    def get_signature(self):$/;"	m	class:call
+get_signature	callstack.py	/^    def get_signature(self):$/;"	m	class:callstack
+get_subloops	temp_matrix.py	/^    def get_subloops(self):$/;"	m	class:tmatrix
+get_tabs	pseudocode.py	/^    def get_tabs(self):$/;"	m	class:pseudo_line
 get_used_deltas	cplex_interface.py	/^    def get_used_deltas(self):$/;"	m	class:CplexInterface
-getnMerges	cluster.py	/^    def getnMerges(self):$/;"	m	class:cluster
-glob	struct_detection.py	/^        import glob$/;"	i
+group_into_conditional_rank_blocks	loop.py	/^    def group_into_conditional_rank_blocks(self):$/;"	m	class:loop
+gui	gui.py	/^class gui(object):$/;"	c
 height_call	callstack_alignement.py	/^def height_call(callstack, call):$/;"	f
-im1	examples/matplotlib_click_event.py	/^    im1 = ax.imshow(rand(10, 5), extent=(1, 2, 1, 2), picker=True)$/;"	v
-im2	examples/matplotlib_click_event.py	/^    im2 = ax.imshow(rand(5, 10), extent=(3, 4, 1, 2), picker=True)$/;"	v
-im3	examples/matplotlib_click_event.py	/^    im3 = ax.imshow(rand(20, 25), extent=(1, 2, 3, 4), picker=True)$/;"	v
-im4	examples/matplotlib_click_event.py	/^    im4 = ax.imshow(rand(30, 12), extent=(3, 4, 3, 4), picker=True)$/;"	v
-initCluster	cluster.py	/^    def initCluster(cls, cluster_id, cluster, ranks):$/;"	m	class:cluster
-input_dims	clustering.py	/^        input_dims = 1$/;"	v	class:CubicScale.CubicTransform
-input_dims	clustering.py	/^        input_dims = 1$/;"	v	class:CubicScale.InvertedCubicTransform
-invert_rescale_cubic	clustering.py	/^        def invert_rescale_cubic(self, y, total_time):$/;"	m	class:CubicScale.InvertedCubicTransform
-inverted	clustering.py	/^        def inverted(self):$/;"	m	class:CubicScale.CubicTransform
-inverted	clustering.py	/^        def inverted(self):$/;"	m	class:CubicScale.InvertedCubicTransform
-isTransformed	temp_matrix.py	/^    def isTransformed(self):$/;"	m	class:tmatrix
-is_separable	clustering.py	/^        is_separable = True$/;"	v	class:CubicScale.CubicTransform
-is_separable	clustering.py	/^        is_separable = True$/;"	v	class:CubicScale.InvertedCubicTransform
+html_gui	gui.py	/^class html_gui(gui):$/;"	c
+in_ranks	flowgraph.py	/^    def in_ranks(self):$/;"	m	class:node
+is_above_delta	callstack.py	/^    def is_above_delta(self, delta, total_time):$/;"	m	class:callstack
+is_head	flowgraph.py	/^    def is_head(self):$/;"	m	class:node
 is_sublist	callstack_alignement.py	/^from utilities import is_sublist$/;"	i
 is_sublist	utilities.py	/^def is_sublist(sl, ll):$/;"	f
-is_subloop	cluster.py	/^    def is_subloop(self,cluster):$/;"	m	class:cluster
-is_subloop	loop.py	/^    def is_subloop(self, loop):$/;"	m	class:loop
+is_subloop	cluster.py	/^    def is_subloop(self, other):$/;"	m	class:cluster
+is_subloop	loop.py	/^    def is_subloop(self, other):$/;"	m	class:loop
+is_tail	flowgraph.py	/^    def is_tail(self):$/;"	m	class:node
 json	trace_parsing.py	/^import sys, json, re, os$/;"	i
-line_picker	examples/matplotlib_click_event.py	/^    def line_picker(line, mouseevent):$/;"	f
+logging	callstack.py	/^import logging$/;"	i
 logging	callstack_alignement.py	/^import sys, logging$/;"	i
 logging	cluster.py	/^import sys, random, logging$/;"	i
 logging	delta_calculation.py	/^import logging$/;"	i
 logging	loop.py	/^import sys, random, logging$/;"	i
-logging	pseudocode_generator.py	/^import constants, logging$/;"	i
-logging	pseudocode_generator.py	/^import sys, logging$/;"	i
 logging	struct_detection.py	/^import logging$/;"	i
 logging	trace_parsing.py	/^import logging$/;"	i
 logging	utilities.py	/^import logging$/;"	i
 loop	cluster.py	/^from loop import loop$/;"	i
+loop	flowgraph.py	/^from loop import loop$/;"	i
 loop	loop.py	/^class loop (object):$/;"	c
-main	gpu.py	/^def main(argc, argv):$/;"	f
+loop	pseudocode.py	/^from loop import loop, conditional_rank_block$/;"	i
+loop	test.py	/^from loop import loop$/;"	i
 main	struct_detection.py	/^def main(argc, argv):$/;"	f
 main	test.py	/^def main(argc, argv):$/;"	f
 math	clustering.py	/^    import math$/;"	i
 math	delta_calculation.py	/^import numpy,math$/;"	i
 matplotlib	clustering.py	/^import matplotlib.pyplot as plt$/;"	i
-matplotlib	examples/matplotlib_click_event.py	/^import matplotlib.pyplot as plt$/;"	i
-merge	cluster.py	/^    def merge(self, ocluster):$/;"	m	class:cluster
-merge	loop.py	/^    def merge(self, oloop):$/;"	m	class:loop
+merge	callstack.py	/^    def merge(self, other):$/;"	m	class:callstack
+merge	cluster.py	/^    def merge(self, other):$/;"	m	class:cluster
+merge	loop.py	/^    def merge(self, other):$/;"	m	class:loop
 merge_arrays	callstack_distribution.py	/^from utilities import merge_arrays$/;"	i
 merge_arrays	utilities.py	/^def merge_arrays(a, b):$/;"	f
-merge_clusters	pseudocode_generator.py	/^def merge_clusters(cluster_set, ranks):$/;"	f
-merge_loop_blocks	loop.py	/^    def merge_loop_blocks(current_block, new_block):$/;"	m	class:loop
-merge_subloop	loop.py	/^    def merge_subloop(self, subloop):$/;"	m	class:loop
-mpl	examples/matplotlib_draw_tooltip.py	/^import matplotlib as mpl$/;"	i
+merge_clusters	cluster.py	/^def merge_clusters(clusters_pool):$/;"	f
+merge_clusters	struct_detection.py	/^from cluster import merge_clusters$/;"	i
+merge_with_subloop	loop.py	/^    def merge_with_subloop(self, other):$/;"	m	class:loop
 mscale	clustering.py	/^from matplotlib import scale as mscale$/;"	i
 mtransforms	clustering.py	/^from matplotlib import transforms as mtransforms$/;"	i
 multi_normalize_data	clustering.py	/^def multi_normalize_data(data_set):$/;"	f
 multiprocessing	clustering.py	/^import sys, multiprocessing$/;"	i
-name	clustering.py	/^    name="cubic"$/;"	v	class:CubicScale
 next_letter	trace_parsing.py	/^def next_letter(letter):$/;"	f
+node	flowgraph.py	/^class node(object):$/;"	c
 normalize_data	clustering.py	/^def normalize_data(data):$/;"	f
-np	cluster.py	/^import numpy as np$/;"	i
 np	clustering.py	/^import numpy as np$/;"	i
-np	examples/matplotlib_click_event.py	/^import numpy as np$/;"	i
-np	examples/matplotlib_draw_tooltip.py	/^import numpy as np$/;"	i
 np	loop.py	/^import numpy as np$/;"	i
-np	pseudocode_generator.py	/^import numpy as np$/;"	i
 np	temp_matrix.py	/^import numpy as np$/;"	i
 np	utilities.py	/^import numpy as np$/;"	i
 nsolve	delta_calculation.py	/^from sympy.solvers import solve,nsolve$/;"	i
+numpy	callstack.py	/^import numpy$/;"	i
 numpy	callstack_distribution.py	/^import sys,numpy, random$/;"	i
+numpy	cluster.py	/^import numpy$/;"	i
 numpy	delta_calculation.py	/^import numpy,math$/;"	i
 numpy	struct_detection.py	/^import numpy$/;"	i
 onpick1	clustering.py	/^    def onpick1(event):$/;"	f	function:show_clustering
-onpick1	examples/matplotlib_click_event.py	/^    def onpick1(event):$/;"	f
-onpick2	examples/matplotlib_click_event.py	/^    def onpick2(event):$/;"	f
-onpick3	examples/matplotlib_click_event.py	/^    def onpick3(event):$/;"	f
-onpick4	examples/matplotlib_click_event.py	/^    def onpick4(event):$/;"	f
 os	constants.py	/^import os$/;"	i
 os	cplex_interface.py	/^import os, subprocess$/;"	i
 os	struct_detection.py	/^import sys, os$/;"	i
 os	trace_parsing.py	/^import sys, json, re, os$/;"	i
-output_dims	clustering.py	/^        output_dims = 1$/;"	v	class:CubicScale.CubicTransform
-output_dims	clustering.py	/^        output_dims = 1$/;"	v	class:CubicScale.InvertedCubicTransform
+out_ranks	flowgraph.py	/^    def out_ranks(self):$/;"	m	class:node
+parse_callstack	pseudocode.py	/^    def parse_callstack(self, callstack_obj, tabs):$/;"	m	class:pseudocode
+parse_conditional_rank_block	pseudocode.py	/^    def parse_conditional_rank_block(self, conditional_rank_block_obj, prev_ranks,tabs):$/;"	m	class:pseudocode
 parse_events	trace_parsing.py	/^def parse_events(events,image_filter):$/;"	f
 parse_field_from_file	cplex_interface.py	/^    def parse_field_from_file(self, field_name, infile_path):$/;"	m	class:CplexInterface
-pdb	cluster.py	/^import pdb$/;"	i
-pdb	loop.py	/^import pdb$/;"	i
+parse_loop	pseudocode.py	/^    def parse_loop(self, loop_obj, tabs):$/;"	m	class:pseudocode
 perform_alignement_st1	callstack_alignement.py	/^def perform_alignement_st1(vs, vl):$/;"	f
 perform_alignement_st2	callstack_alignement.py	/^def perform_alignement_st2(vs, vl, ignored_indexes):$/;"	f
-pl	examples/matplotlib_draw_tooltip.py	/^import pylab as pl$/;"	i
 plot_data	clustering.py	/^def plot_data(data):$/;"	f
 plt	clustering.py	/^import matplotlib.pyplot as plt$/;"	i
-plt	examples/matplotlib_click_event.py	/^import matplotlib.pyplot as plt$/;"	i
 pprint	test.py	/^import pprint$/;"	i
 pretty_print	clustering.py	/^from utilities import pretty_print$/;"	i
-pretty_print	utilities.py	/^def pretty_print(pseudocode, trace_name):$/;"	f
-print_function	examples/matplotlib_click_event.py	/^from __future__ import print_function$/;"	i
+pretty_print	flowgraph.py	/^from utilities import pretty_print$/;"	i
+pretty_print	gui.py	/^from utilities import pretty_print$/;"	i
+pretty_print	pseudocode.py	/^from utilities import pretty_print$/;"	i
+pretty_print	utilities.py	/^def pretty_print(content, title):$/;"	f
 print_function	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
 print_iterations	utilities.py	/^def print_iterations(iterations):$/;"	f
-print_matrix	clustering.py	/^from utilities import print_matrix$/;"	i
-print_matrix	utilities.py	/^def print_matrix(matrix, infile):$/;"	f
 progress	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
 progress_by	utilities.py	/^    def progress_by(self, by):$/;"	m	class:ProgressBar
-rand	examples/matplotlib_click_event.py	/^from numpy.random import rand$/;"	i
+pseudo_call	pseudocode.py	/^class pseudo_call(pseudo_line):$/;"	c
+pseudo_condition	pseudocode.py	/^class pseudo_condition(pseudo_line):$/;"	c
+pseudo_for	pseudocode.py	/^class pseudo_for(pseudo_line):$/;"	c
+pseudo_for_end	pseudocode.py	/^class pseudo_for_end(pseudo_line):$/;"	c
+pseudo_line	pseudocode.py	/^class pseudo_line(object):$/;"	c
+pseudocode	pseudocode.py	/^class pseudocode(object):$/;"	c
+pseudocode	struct_detection.py	/^from pseudocode import pseudocode$/;"	i
 random	callstack_distribution.py	/^import sys,numpy, random$/;"	i
 random	cluster.py	/^import sys, random, logging$/;"	i
-random	examples/matplotlib_draw_tooltip.py	/^import random$/;"	i
 random	loop.py	/^import sys, random, logging$/;"	i
 re	trace_parsing.py	/^import sys, json, re, os$/;"	i
-recompute_first_line	loop.py	/^    def recompute_first_line(self, looplevel):$/;"	m	class:loop
-rescale_cubic	clustering.py	/^        def rescale_cubic(self, x, total_time):$/;"	m	class:CubicScale.CubicTransform
 run	cplex_interface.py	/^    def run(self):$/;"	m	class:CplexInterface
+run_loops_generation	cluster.py	/^    def run_loops_generation(self):$/;"	m	class:cluster
+same_flow	callstack.py	/^    def same_flow(self, other):$/;"	m	class:callstack
 searchMostFrequentRoutine	callstack_alignement.py	/^def searchMostFrequentRoutine(vs):$/;"	f
 selectPivot	callstack_alignement.py	/^def selectPivot(vs):$/;"	f
 set_args	cplex_interface.py	/^    def set_args(self, args):$/;"	m	class:CplexInterface
-set_default_locators_and_formatters	clustering.py	/^    def set_default_locators_and_formatters(self, axis):$/;"	m	class:CubicScale
 set_infile	cplex_interface.py	/^    def set_infile(self, infile):$/;"	m	class:CplexInterface
+show	flowgraph.py	/^    def show(self):$/;"	m	class:flowgraph
+show	gui.py	/^    def show(self):$/;"	m	class:console_gui
+show	gui.py	/^    def show(self):$/;"	m	class:html_gui
 show	utilities.py	/^    def show(self):$/;"	m	class:ProgressBar
 show_clustering	clustering.py	/^def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_, $/;"	f
+show_console	pseudocode.py	/^    def show_console(self):$/;"	m	class:pseudocode
+show_html	pseudocode.py	/^    def show_html(self):$/;"	m	class:pseudocode
 solve	delta_calculation.py	/^from sympy.solvers import solve,nsolve$/;"	i
-stats	callstack_distribution.py	/^from scipy import stats$/;"	i
-str	cluster.py	/^    def str(self):$/;"	m	class:cluster
-str	loop.py	/^    def str(self,block_tabs, base):$/;"	m	class:loop
 subprocess	cplex_interface.py	/^import os, subprocess$/;"	i
 sum	opl/.metadata/workspace_oplrun/org.eclipse.osgi/bundles/28/1/.cp/ilog/odms/ide/opllang/run/initRunComm.js	/^	var sum = 0;$/;"	v
 sys	callstack_alignement.py	/^import sys, logging$/;"	i
@@ -430,22 +456,13 @@ sys	callstack_distribution.py	/^import sys,numpy, random$/;"	i
 sys	cluster.py	/^import sys, random, logging$/;"	i
 sys	clustering.py	/^import sys, multiprocessing$/;"	i
 sys	delta_calculation.py	/^import sys$/;"	i
-sys	gpu.py	/^import sys$/;"	i
 sys	loop.py	/^import sys, random, logging$/;"	i
-sys	pseudocode_generator.py	/^import sys, logging$/;"	i
 sys	struct_detection.py	/^import sys, os$/;"	i
 sys	temp_matrix.py	/^import sys$/;"	i
 sys	test.py	/^import sys$/;"	i
 sys	trace_parsing.py	/^import sys, json, re, os$/;"	i
 tempfile	cplex_interface.py	/^import tempfile$/;"	i
-tempfile	trace_parsing.py	/^        import tempfile$/;"	i
 the	utilities.py	/^from __future__ import print_function # Needed by the progress bar$/;"	i
 tmatrix	cluster.py	/^from temp_matrix import tmatrix$/;"	i
 tmatrix	loop.py	/^from temp_matrix import tmatrix$/;"	i
 tmatrix	temp_matrix.py	/^class tmatrix(object):$/;"	c
-tmatrix	test.py	/^from temp_matrix import tmatrix$/;"	i
-transform_non_affine	clustering.py	/^        def transform_non_affine(self, a):$/;"	m	class:CubicScale.CubicTransform
-transform_non_affine	clustering.py	/^        def transform_non_affine(self, a):$/;"	m	class:CubicScale.InvertedCubicTransform
-update_loopdeph	loop.py	/^    def update_loopdeph(self, loopdeph):$/;"	m	class:loop
-wx	examples/matplotlib_draw_tooltip.py	/^import wx$/;"	i
-wxToolTipExample	examples/matplotlib_draw_tooltip.py	/^class wxToolTipExample(object):$/;"	c

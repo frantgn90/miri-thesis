@@ -53,6 +53,11 @@ class conditional_rank_block(object):
                             callstack_or_loop.get_all_ranks())
                         new_cond_block.add_callstack(callstack_or_loop)
                         self.callstacks.append(new_cond_block)
+                else:
+                    new_cond_block = conditional_rank_block(
+                        callstack_or_loop.get_all_ranks())
+                    new_cond_block.add_callstack(callstack_or_loop)
+                    self.callstacks.append(new_cond_block)
             else:
                 new_cond_block = conditional_rank_block(
                         callstack_or_loop.get_all_ranks())
@@ -135,9 +140,9 @@ class loop (object):
 
         # Sanity check 1 !!!
         #
-        for callstack in callstacks:
-            assert callstack.repetitions == self.iterations, \
-                    "Loop: Sanity check #1 fail"
+#        for callstack in callstacks:
+#            assert callstack.repetitions == self.iterations, \
+#                    "Loop: Sanity check #1 fail"
 
         # We have a chain of calls, this variable indicates where
         # in this chain the loop represented by this object is. The way

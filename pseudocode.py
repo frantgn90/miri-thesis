@@ -18,8 +18,8 @@ class pseudo_line(object):
         return ":  "*self.deph
 
     def __str__(self):
-        res = "{0:10.10}{1:>3} {2:40} {3}".format(self.first_col,
-                self.second_col, (self.get_tabs() + self.third_col), "some metric...")
+        res = "{0:10.10} {1:>5} {2:45} {3}".format(self.first_col,
+                self.second_col, (self.get_tabs() + self.third_col), "metric...")
         return res
 
 class pseudo_for(pseudo_line):
@@ -77,9 +77,9 @@ class condition(object):
         self.is_complement = len(set1.intersection(set2)) == 0
 
 class pseudocode(object):
-    def __init__(self, clusters_set):
+    def __init__(self, clusters_set, nranks):
         self.lines = []
-        self.all_ranks = [0,1,2,3]
+        self.all_ranks = range(nranks)
 
         for cluster in clusters_set:
             for loop_obj in cluster.loops:

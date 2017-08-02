@@ -163,7 +163,9 @@ def main(argc, argv):
 
     ''' 1. Parsing trace '''
     logging.info("Parsing trace...")
-    callstacks_pool=get_callstacks(trace=trace, level=level, image_filter=image_filter)
+    # Assuming every task just have one thread
+    callstacks_pool, nranks=\
+            get_callstacks(trace=trace, level=level, image_filter=image_filter)
     app_time = get_app_time(trace)
     logging.debug("{0} ns total trace time.".format(app_time))
     
@@ -188,14 +190,7 @@ def main(argc, argv):
     logging.info("Callstacks delta classification...")
     if not arguments.use_cplex:
         logging.debug("Calculating delta by mean of heuristics.")
-        deltas = calcule_deltas_heuristic(
-                depured_data, 
-                app_time,
-                arguments.bottom_bound[0],
-                arguments.epsilon[0])
-
-        deltas.sort()
-        logging.info("Deltas: {0}".format(deltas))
+        assert False, "use --cplex"
     else:
         logging.debug("Calculating delta by mean of CPLEX.")
         deltas = calcule_deltas_cplex(fcallstacks_pool,app_time,
@@ -241,7 +236,7 @@ def main(argc, argv):
 
     ''' 8. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
-    pc = pseudocode(top_level_clusters)
+    pc = pseudocode(top_level_clusters, nranks)
     logging.info("Done...")
 
 

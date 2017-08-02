@@ -448,23 +448,23 @@ def get_callstacks(trace, level, image_filter):
             files_series[rank_index][i_stack] = new_stack_file
  
 
-    logging.info("Starting alignement of callstacks")
-
-    for rank_index in range(len(callstack_series)):
-        logging.debug("#{0} Aligning step 1".format(rank_index))
-        ignored_index = perform_alignement_st1(
-                        callstack_series[rank_index],
-                        lines_series[rank_index]) 
-
-        logging.debug("#{0} Aligning step 2".format(rank_index))
-        cs_discarded, cs_aligned =perform_alignement_st2(
-                        callstack_series[rank_index],
-                        lines_series[rank_index],
-                        ignored_index)
-
-        logging.debug("#{0} Aligning done: {1} discarded, {2} aligned"\
-                .format(rank_index,cs_discarded, cs_aligned))
-    logging.info("Done")
+#    logging.info("Starting alignement of callstacks")
+#
+#    for rank_index in range(len(callstack_series)):
+#        logging.debug("#{0} Aligning step 1".format(rank_index))
+#        ignored_index = perform_alignement_st1(
+#                        callstack_series[rank_index],
+#                        lines_series[rank_index]) 
+#
+#        logging.debug("#{0} Aligning step 2".format(rank_index))
+#        cs_discarded, cs_aligned =perform_alignement_st2(
+#                        callstack_series[rank_index],
+#                        lines_series[rank_index],
+#                        ignored_index)
+#
+#        logging.debug("#{0} Aligning done: {1} discarded, {2} aligned"\
+#                .format(rank_index,cs_discarded, cs_aligned))
+#    logging.info("Done")
  
     callstacks_pool=[]
     for rank in range(len(callstack_series)):
@@ -481,4 +481,4 @@ def get_callstacks(trace, level, image_filter):
             except Exception:
                 callstacks_pool.append(new_callstack)
 
-    return callstacks_pool
+    return callstacks_pool, total_threads

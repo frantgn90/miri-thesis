@@ -162,6 +162,7 @@ def merge_clusters(clusters_pool):
                 if clusters[j].get_interarrival_median() >\
                         clusters[i].get_interarrival_median()\
                         and clusters[j].is_subloop(clusters[i]):
+                        #clusters[i].get_interarrival_median():
 
                     logging.debug("Cluster {0} ({1}) merged to {2} ({3})".
                         format(clusters[i].cluster_id, clusters[i].get_interarrival_median(),
@@ -172,7 +173,12 @@ def merge_clusters(clusters_pool):
                     break
 
                 logging.info("... No, there is no a subloop")
-
+                logging.debug("Cluster {0} IIT: {1}".format(clusters[i].cluster_id, 
+                    clusters[i].get_interarrival_median()))
+                logging.debug("Cluster {0} IIT: {1}".format(clusters[j].cluster_id, 
+                    clusters[j].get_interarrival_median()))
+                logging.debug("Is subloop: {0}".format(clusters[j].is_subloop(clusters[i])))
+               
             assert done, "Error at cluster level merge"
         top_level_clusters.append(cluster_by_delta[delta][-1])
 

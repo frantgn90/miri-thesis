@@ -121,7 +121,7 @@ class callstack(object):
         assert self.reduced == True and other.reduced == True
         for call_i in range(min(len(self.calls), len(other.calls))):
             if not self.calls[call_i] == other.calls[call_i]:
-#                assert self.calls[call_i].call == other.calls[call_i].call,\
+#               assert self.calls[call_i].call == other.calls[call_i].call,\
 #                        "{0} < {1}".format(self, other)
                 if not self.calls[call_i].call == other.calls[call_i].call:
                     logging.warn("Same code line jumps to more than one target"\
@@ -154,6 +154,8 @@ class callstack(object):
         for call_i in range(min(len(self.calls), len(other.calls))):
             if self.calls[call_i] == other.calls[call_i]:
                 result.append(self.calls[call_i])
+            else:
+                break
 
         result = callstack(0, 0, result)
         if len(result) > 0:
