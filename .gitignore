@@ -1,3 +1,7 @@
+# Latex compilation files
+*.aux
+*.log
+
 # Trace files
 *.prv
 *.pcf
