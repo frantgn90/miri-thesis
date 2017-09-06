@@ -5,7 +5,7 @@
 from loop import loop, conditional_rank_block
 from callstack import callstack
 from utilities import pretty_print
-from gui import *
+#from gui import *
 
 class pseudo_line(object):
     def __init__(self, deph):
