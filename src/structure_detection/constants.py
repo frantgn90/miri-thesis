@@ -45,7 +45,7 @@ _x_axis           ="times"
 _y_axis           ="time_mean"
 _z_axis           ="delta"
 
-_eps              =0.5
+_eps              =0.1
 _min_samples      =1
 
 ###############
@@ -75,9 +75,12 @@ RANDOM_SEED       =5748473
 ### CPLEX ###
 #############
 
-OPL_RUN_SCRIPT    ="/home/jmartinez/MIRI/master-thesis/src/opl/run.sh"
-OPL_PROBLEM_IN    ="/home/jmartinez/MIRI/master-thesis/src/opl/deltas_fitting/"\
-        "input_problem.dat"
+OPL_PROJECT = "/home/jmartinez/MIRI/master-thesis/repo/miri-thesis/"\
+        "src/structure_detection/opl/deltas_fitting"
+OPL_RUN_SCRIPT    ="/home/jmartinez/MIRI/master-thesis/repo/miri-thesis/"\
+        "src/structure_detection/opl/run.sh"
+OPL_PROBLEM_IN    ="/home/jmartinez/MIRI/master-thesis/repo/miri-thesis/"\
+        "src/structure_detection/opl/deltas_fitting/input_problem.dat"
 OPL_PROBLEM_OUT   ="cplex.out"
 OPL_PROBLEM_ERR   ="cplex.err"
 

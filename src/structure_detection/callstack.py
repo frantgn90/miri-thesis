@@ -4,6 +4,7 @@
 
 import logging
 import numpy
+import random
 import constants
 from delta_calculation import get_cost
 
@@ -24,7 +25,10 @@ class call(object):
         if other == None:
             return False
         else:
-            return self.call==other.call and self.line == other.line
+            return  self.call==other.call and \
+                    self.line == other.line and \
+                    not self.mpi_call
+
 
     def __str__(self):
         val = "{0} ({1})".format(self.call, self.line)
@@ -45,8 +49,8 @@ class callstack(object):
         self.reduced=False
         self.calls=calls
         self.metrics={
+                "mpi_duration":[random.randint(1,100)],
                 "mpi_duration_mean":0,
-                "mpi_mess_size":0,
         }
 
         for call in calls:
@@ -78,6 +82,8 @@ class callstack(object):
         assert self.get_signature() == other.get_signature()
         self.repetitions+=1
         self.instants.extend(other.instants)
+
+        self.metrics["mpi_duration"].extend(other.metrics["mpi_duration"])
  
     def calc_reduce_info(self):
         self.reduced=True
@@ -88,10 +94,15 @@ class callstack(object):
         self.instants_distances_median=numpy.median(self.instants_distances)
         self.instants_distances_mean=numpy.mean(self.instants_distances)
 
+        self.metrics["mpi_duration_mean"]=numpy.mean(
+            self.metrics["mpi_duration"])
 
     def is_above_delta(self, delta, total_time):
         if self.repetitions == 1: return False
-        cost=get_cost(self.repetitions, total_time, self.instants_distances_mean, delta)
+        cost=get_cost(self.repetitions, 
+                total_time, 
+                self.instants_distances_mean, 
+                delta)
         return cost > 0
 
     def get_instants_dist_median(self):

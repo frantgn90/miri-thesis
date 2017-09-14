@@ -30,7 +30,6 @@ MPICAL_EVENT=None
 MPILIN_EVENT=None
 MPI_EVENT=None
 
-
 def next_letter(letter):
     letter = list(letter)
 
@@ -145,7 +144,7 @@ def get_mpi_calls(trace):
         letter=next_letter(letter)
 
 
-def parse_events(events,image_filter):
+def parse_events(events,image_filter, task, mpi_durations):
     tmp_call_stack= [""]*constants.CALLSTACK_SIZE
     tmp_image_stack=[""]*constants.CALLSTACK_SIZE
     tmp_line_stack= [""]*constants.CALLSTACK_SIZE 
@@ -319,6 +318,7 @@ def get_callstacks(trace, level, image_filter):
 
         COUNTER_TYPE_CALLS = [dict() for x in range(total_threads)]
         COUNTER_CALLS = [0]*total_threads
+        MPI_DURATIONS = [0]*total_threads
 
         ########################
         ### Getting pcf info ###
@@ -399,7 +399,11 @@ def get_callstacks(trace, level, image_filter):
                             "last_time":time}
                     continue
                 
-                fcalls, flines, ffiles = parse_events(events, image_filter)
+                fcalls, flines, ffiles = parse_events(
+                        events, 
+                        image_filter,
+                        task,
+                        MPI_DURATIONS)
 
                 if not fcalls is None:
                     callstack_series[task-1].append(fcalls)
@@ -413,7 +417,11 @@ def get_callstacks(trace, level, image_filter):
 
     # TODO: Terminar de vaciar el events_buffer
     for k,v in events_buffer.items():
-        fcalls, flines, ffiles = parse_events(v["events"], image_filter)
+        fcalls, flines, ffiles = parse_events(
+                v["events"], 
+                image_filter,
+                task,
+                MPI_DURATIONS)
         if not fcalls is None:
             callstack_series[task-1].append(fcalls)
             timestamp_series[task-1].append(v["time"])

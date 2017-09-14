@@ -5,7 +5,7 @@
 from loop import loop, conditional_rank_block
 from callstack import callstack
 from utilities import pretty_print
-#from gui import *
+from gui import *
 
 class pseudo_line(object):
     def __init__(self, deph):
@@ -13,13 +13,17 @@ class pseudo_line(object):
         self.first_col = "--"
         self.second_col = "--"
         self.third_col = "--"
+        self.metric = "metric..."
 
     def get_tabs(self):
         return ":  "*self.deph
 
     def __str__(self):
-        res = "{0:10.10} {1:>5} {2:45} {3}".format(self.first_col,
-                self.second_col, (self.get_tabs() + self.third_col), "metric...")
+        res = "{0:10.10} {1:>5} {2:45} {3}".format(
+                self.first_col,
+                self.second_col, 
+                (self.get_tabs() + self.third_col), 
+                self.metric)
         return res
 
 class pseudo_for(pseudo_line):
@@ -29,6 +33,7 @@ class pseudo_for(pseudo_line):
         self.first_col = ""
         self.second_col = " "
         self.third_col = "FOR 1 TO {0}".format(self.iterations)
+        self.metric = ""
 
 class pseudo_for_end(pseudo_line):
     def __init__(self, iterations, deph):
@@ -37,6 +42,7 @@ class pseudo_for_end(pseudo_line):
         self.first_col = ""
         self.second_col = " "
         self.third_col = "END LOOP"
+        self.metric = ""
 
 class pseudo_call(pseudo_line):
     def __init__(self, call, deph):
@@ -45,8 +51,12 @@ class pseudo_call(pseudo_line):
         self.first_col = self.call.call_file
         if self.call.mpi_call:
             self.second_col = "*"
+            self.metric = str(
+                    self.call.my_callstack.metrics["mpi_duration_mean"])
+            self.metric += " (ns)"
         else:
             self.second_col = str(self.call.line)
+            self.metric = ""
         self.third_col = "{0}()".format(self.call.call)
 
 class pseudo_condition(pseudo_line):
@@ -64,6 +74,7 @@ class pseudo_condition(pseudo_line):
             self.third_col = "ELSE IF RANK in {0}".format(self.ranks)
         else:
             self.third_col = "IF RANK IN {0}".format(self.ranks)
+        self.metric = ""
 
 
 class condition(object):
@@ -93,8 +104,10 @@ class pseudocode(object):
         # Loop description
         #
         self.lines.append(pseudo_for(loop_obj.iterations, tabs))
-        self.parse_conditional_rank_block(loop_obj.conditional_rank_block,
-                loop_obj.get_all_ranks(), tabs+1)
+        self.parse_conditional_rank_block(
+                loop_obj.conditional_rank_block,
+                loop_obj.get_all_ranks(), 
+                tabs+1)
         self.lines.append(pseudo_for_end(loop_obj.iterations, tabs))
 
     def parse_callstack(self, callstack_obj, tabs):
@@ -105,9 +118,10 @@ class pseudocode(object):
             my_tabs += 1
         return my_tabs
 
-    def parse_conditional_rank_block(self, conditional_rank_block_obj, prev_ranks,tabs):
-        tabs += self.parse_callstack(
-                conditional_rank_block_obj.common_callstack, tabs)
+    def parse_conditional_rank_block(self, 
+            conditional_rank_block_obj, 
+            prev_ranks,
+            tabs):
         condition_tabs=0
         my_ranks = set(conditional_rank_block_obj.ranks)
         
@@ -122,10 +136,13 @@ class pseudocode(object):
             condition_tabs += 1
         elif condition_obj.is_complement:
             if set(prev_ranks).union(set(item.ranks)) == set(self.all_ranks):
-                el = True; eli = False
+                #el = True; eli = False
+                el = False; eli = True
             else:
                 el = False; eli = True
-            self.lines.append(pseudo_condition(item.ranks, el, eli,tabs+condition_tabs))
+
+            self.lines.append(pseudo_condition(item.ranks, 
+                el, eli,tabs+condition_tabs))
             condition_tabs += 1
         elif condition_obj.is_equal:
             pass
@@ -134,13 +151,20 @@ class pseudocode(object):
                 tabs+condition_tabs))
             condition_tabs += 1
 
+        tabs += self.parse_callstack(
+                conditional_rank_block_obj.common_callstack, 
+                tabs+1)
+
         
         for item in conditional_rank_block_obj.callstacks:
             if isinstance(item, loop):
                 self.parse_loop(item, tabs+condition_tabs)
                 prev_ranks = item.get_all_ranks()
             elif isinstance(item, conditional_rank_block):
-                self.parse_conditional_rank_block(item, prev_ranks, tabs+condition_tabs)
+                self.parse_conditional_rank_block(
+                        item, 
+                        prev_ranks, 
+                        tabs+condition_tabs)
                 prev_ranks = item.ranks
             else:
                 self.parse_callstack(item, tabs+condition_tabs)
