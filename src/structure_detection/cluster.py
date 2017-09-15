@@ -23,6 +23,9 @@ class cluster (object):
         self.delta = None
         self.nmerges = 0
 
+    def get_first_line(self):
+        return self.loops[0].program_order_callstacks[0].calls[0].line
+
     def add_callstack(self, callstack):
         assert self.loops_generation_done == False
         assert callstack.cluster_id==self.cluster_id
@@ -85,8 +88,10 @@ class cluster (object):
         self.loops_generation_done = True
    
     def merge(self, other):
-        assert len(self.loops) == 1, "Other case no implemented ({0})".format(len(self.loops))
-        assert self.get_interarrival_median() > other.get_interarrival_median()
+        assert len(self.loops) == 1, \
+            "Other case no implemented ({0})".format(len(self.loops))
+        assert self.get_interarrival_median() > \
+                other.get_interarrival_median()
 
         self.loops[0].merge_with_subloop(other.loops)
         self.nmerges+=1
@@ -95,17 +100,21 @@ class cluster (object):
         return self._id.split(".")[0]
 
     def get_interarrival_median(self):
-        medians = map(lambda x: x.get_instants_dist_median(), self.callstacks)
+        medians = map(
+                lambda x: x.get_instants_dist_median(), 
+                self.callstacks)
         return numpy.mean(medians)
     
     def get_interarrival_mean(self):
-        medians = map(lambda x: x.get_instants_dist_mean(), self.callstacks)
+        medians = map(
+                lambda x: x.get_instants_dist_mean(), 
+                self.callstacks)
         return numpy.mean(medians)
 
     def is_subloop(self, other):
         if len(self.loops) > 1:
-            logging.warn("TODO: When there is more than one loop to what loop is subloop"\
-                    " must be decided.")
+            logging.warn("TODO: When there is more than one loop to" \
+                    " what loop is subloop must be decided.")
             return False
         else:
             return self.loops[0].is_subloop(other.loops[0])

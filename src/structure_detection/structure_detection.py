@@ -141,6 +141,13 @@ def main(argc, argv):
             required=False,
             default=[0.1],
             help="Inverse of number of deltas provided to cplex.")
+    
+    parser.add_argument("--only-mpi",
+            action="store_true",
+            help="Whether you want to see just MPI calls or the "\
+                    "whole callstack",
+            dest="only_mpi")
+
 
 
     argcomplete.autocomplete(parser)
@@ -236,7 +243,7 @@ def main(argc, argv):
 
     ''' 8. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
-    pc = pseudocode(top_level_clusters, nranks)
+    pc = pseudocode(top_level_clusters, nranks, arguments.only_mpi)
     logging.info("Done...")
 
 

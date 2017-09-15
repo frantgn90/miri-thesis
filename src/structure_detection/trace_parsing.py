@@ -144,7 +144,7 @@ def get_mpi_calls(trace):
         letter=next_letter(letter)
 
 
-def parse_events(events,image_filter, task, mpi_durations):
+def parse_events(events,image_filter, time, task, mpi_durations):
     tmp_call_stack= [""]*constants.CALLSTACK_SIZE
     tmp_image_stack=[""]*constants.CALLSTACK_SIZE
     tmp_line_stack= [""]*constants.CALLSTACK_SIZE 
@@ -152,51 +152,32 @@ def parse_events(events,image_filter, task, mpi_durations):
 
     ncalls_s=0; nimags_s=0; ncalls_m=0; nimags_m=0; last_time = 0
 
-    # When the callstack is get by mean of the interception of
-    # an MPI call, then this call is injected to the top of the 
-    # callstack
     mpi_call_to_add=None
 
     for event_i in range(0, len(events), 2):
         event_key = events[event_i]
         event_value = events[event_i+1]
         
-        if event_value=="0": 
-            continue
-        
-        '''
-        # NOTE: Callstack get by sampling
-        if not CALLER_EVENT.match(event_key) is None:
-            tmp_call_stack[int(event_key[-1])]=\
-                CALL_NAMES[event_value]["letter"]
-            ncalls_s+=1
-        elif not CALLIN_EVENT.match(event_key) is None:
-            tmp_image_stack[int(event_key[-1])]=\
-                    IMAGES[event_value]["image"]
-            tmp_line_stack[int(event_key[-1])]=event_value
-            tmp_file_stack[int(event_key[-1])]=\
-                    IMAGES[event_value]["file"]
-            nimags_s+=1
-        '''
-
-        # Callstack get by MPI interception
         if not MPICAL_EVENT.match(event_key) is None:
             ncalls_m+=1
             tmp_call_stack[int(event_key[-1])-1]=\
                     CALL_NAMES[event_value]["name"] # "letter"
         elif not MPILIN_EVENT.match(event_key) is None:
             nimags_m+=1
-            tmp_image_stack[int(event_key[-1])-1]=IMAGES[event_value]["image"]
-            #tmp_line_stack[int(event_key[-1])-1]=event_value
+            tmp_image_stack[int(event_key[-1])-1]=\
+                IMAGES[event_value]["image"]
             tmp_line_stack[int(event_key[-1])-1]=IMAGES[event_value]["line"]
             tmp_file_stack[int(event_key[-1])-1]=IMAGES[event_value]["file"]
         elif not MPI_EVENT.match(event_key) is None:
-            #MPI_CALLS[event_value]
-            mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["name"] 
+            if event_value == "0":
+                mpi_durations[task-1][-1] = time-mpi_durations[task-1][-1]
+            else:
+                mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["name"] 
+                mpi_durations[task-1].append(time)
+                #ncalls_m+=1
 
-    assert(ncalls_s==nimags_s)   # For sampling
-    assert(ncalls_m==nimags_m)   # For MPI
-    assert(ncalls_s&ncalls_m==0) # Disallow both at same time (?)
+    assert ncalls_m==nimags_m, "{0} == {1}".format(ncalls_m, nimags_m)
+    #assert(ncalls_s&ncalls_m==0) 
 
     ncalls=ncalls_s+ncalls_m
     nimags=nimags_s+nimags_m
@@ -207,7 +188,8 @@ def parse_events(events,image_filter, task, mpi_durations):
 
         tmp_call_stack=filter(None,tmp_call_stack)
         for i in range(0, ncalls):
-            if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
+            if tmp_image_stack[i] in image_filter \
+                    or image_filter == ["ALL"]:
                 filtered_calls.append(tmp_call_stack[i])
                 filtered_files.append(tmp_file_stack[i])
                 filtered_lines.append(tmp_line_stack[i])
@@ -231,22 +213,6 @@ def parse_events(events,image_filter, task, mpi_durations):
 
             # Store the values
             return filtered_calls, filtered_lines, filtered_files
-            '''   
-            callstack_to_write = str(time-last_time) + FIELD_SEPARATOR + \
-                sampled + FIELD_SEPARATOR + \
-                "|".join(filtered_files) + FIELD_SEPARATOR + \
-                "|".join(filtered_lines) + FIELD_SEPARATOR + \
-                "|".join(filtered_levels)+ FIELD_SEPARATOR + \
-                "|".join(filtered_calls)
-            '''
-
-            ''' 
-            cstack_register = sampled + "#" + "|".join(filtered_calls)
-            if last_callstack[task-1] != cstack_register:
-                task_outfiles_d[task-1].write(callstack_to_write+"\n")
-                last_callstack[task-1]=cstack_register
-                last_time = time
-            '''
     else:
         return None, None, None
             
@@ -318,7 +284,7 @@ def get_callstacks(trace, level, image_filter):
 
         COUNTER_TYPE_CALLS = [dict() for x in range(total_threads)]
         COUNTER_CALLS = [0]*total_threads
-        MPI_DURATIONS = [0]*total_threads
+        mpi_durations = [[] for x in range(total_threads)]
 
         ########################
         ### Getting pcf info ###
@@ -395,15 +361,18 @@ def get_callstacks(trace, level, image_filter):
                     else:
                         assert False, "This trace is not time sorted"
                 else:
-                    events_buffer[buffer_key]={"events":events,
-                            "last_time":time}
+                    events_buffer[buffer_key]={
+                            "events":events,
+                            "last_time":time
+                    }
                     continue
                 
                 fcalls, flines, ffiles = parse_events(
                         events, 
                         image_filter,
+                        time,
                         task,
-                        MPI_DURATIONS)
+                        mpi_durations)
 
                 if not fcalls is None:
                     callstack_series[task-1].append(fcalls)
@@ -420,8 +389,9 @@ def get_callstacks(trace, level, image_filter):
         fcalls, flines, ffiles = parse_events(
                 v["events"], 
                 image_filter,
+                time,
                 task,
-                MPI_DURATIONS)
+                mpi_durations)
         if not fcalls is None:
             callstack_series[task-1].append(fcalls)
             timestamp_series[task-1].append(v["time"])
@@ -444,12 +414,12 @@ def get_callstacks(trace, level, image_filter):
                 if not main:
                     continue
 
-                new_stack_call.append(callstack_series[rank_index][i_stack][i_call])
-                new_stack_line.append(lines_series[rank_index][i_stack][i_call])
-                new_stack_file.append(files_series[rank_index][i_stack][i_call])
-
-                #if "mpl_" in callstack_series[rank_index][i_stack][i_call]:
-                #    break
+                new_stack_call.append(
+                        callstack_series[rank_index][i_stack][i_call])
+                new_stack_line.append(
+                        lines_series[rank_index][i_stack][i_call])
+                new_stack_file.append(
+                        files_series[rank_index][i_stack][i_call])
 
             callstack_series[rank_index][i_stack] = new_stack_call
             lines_series[rank_index][i_stack] = new_stack_line
@@ -482,7 +452,10 @@ def get_callstacks(trace, level, image_filter):
                     lines_series[rank][cs_i], 
                     callstack_series[rank][cs_i],
                     files_series[rank][cs_i])
-
+            new_callstack.metrics["mpi_duration"]=\
+                    mpi_durations[rank][cs_i+1]
+            new_callstack.metrics["mpi_duration_merged"].append(
+                    mpi_durations[rank][cs_i+1])
             try:
                 repeated_idx = callstacks_pool.index(new_callstack)
                 callstacks_pool[repeated_idx].merge(new_callstack)

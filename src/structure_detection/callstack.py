@@ -49,8 +49,13 @@ class callstack(object):
         self.reduced=False
         self.calls=calls
         self.metrics={
-                "mpi_duration":[random.randint(1,100)],
+                "mpi_duration":0,
+                "mpi_duration_merged":[],
                 "mpi_duration_mean":0,
+                "mpi_duration_stdev":0,
+                "mpi_cycles":0,
+                "mpi_cycles_merged":[],
+                "mpi_cycles_mean":0
         }
 
         for call in calls:
@@ -83,7 +88,8 @@ class callstack(object):
         self.repetitions+=1
         self.instants.extend(other.instants)
 
-        self.metrics["mpi_duration"].extend(other.metrics["mpi_duration"])
+        self.metrics["mpi_duration_merged"].append(
+                other.metrics["mpi_duration"])
  
     def calc_reduce_info(self):
         self.reduced=True
@@ -95,7 +101,9 @@ class callstack(object):
         self.instants_distances_mean=numpy.mean(self.instants_distances)
 
         self.metrics["mpi_duration_mean"]=numpy.mean(
-            self.metrics["mpi_duration"])
+            self.metrics["mpi_duration_merged"])
+        self.metrics["mpi_duration_stdev"]=numpy.median(
+            self.metrics["mpi_duration_merged"])
 
     def is_above_delta(self, delta, total_time):
         if self.repetitions == 1: return False
@@ -112,7 +120,8 @@ class callstack(object):
         return numpy.mean(self.instants_distances)
 
     def same_flow(self, other):
-        return self.get_signature().split("#")[1] == other.get_signature().split("#")[1]
+        return self.get_signature().split("#")[1] == \
+                other.get_signature().split("#")[1]
 
     def get_call_of_func(self, func_name):
         for call_obj in self.calls:
@@ -215,8 +224,11 @@ class callstack(object):
         return len(self.calls)
          
     def __str__(self):
-        val = "R:{0} IT:{1} CL:{2} -".format(self.compacted_ranks, self.repetitions,
-                self.condition_level)
+        val = "R:{0} IT:{1} CL:{2} M:{3} -".format(
+                self.compacted_ranks, 
+                self.repetitions,
+                self.condition_level,
+                self.metrics["mpi_duration"])
 
 #        if len(self.calls) > 3:
 #            val += "... -"

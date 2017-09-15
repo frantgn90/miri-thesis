@@ -14,16 +14,18 @@ class pseudo_line(object):
         self.second_col = "--"
         self.third_col = "--"
         self.metric = "metric..."
+        self.metric_2 = ""
 
     def get_tabs(self):
         return ":  "*self.deph
 
     def __str__(self):
-        res = "{0:10.10} {1:>5} {2:45} {3}".format(
+        res = "{0:10.10} {1:>5} {2:30} {3:10} {4}".format(
                 self.first_col,
                 self.second_col, 
                 (self.get_tabs() + self.third_col), 
-                self.metric)
+                self.metric,
+                self.metric_2)
         return res
 
 class pseudo_for(pseudo_line):
@@ -50,10 +52,12 @@ class pseudo_call(pseudo_line):
         self.call = call
         self.first_col = self.call.call_file
         if self.call.mpi_call:
-            self.second_col = "*"
+            self.second_col = "UNK"
             self.metric = str(
                     self.call.my_callstack.metrics["mpi_duration_mean"])
-            self.metric += " (ns)"
+            self.metric_2 = str(
+                    self.call.my_callstack.metrics["mpi_duration_stdev"])
+
         else:
             self.second_col = str(self.call.line)
             self.metric = ""
@@ -88,9 +92,15 @@ class condition(object):
         self.is_complement = len(set1.intersection(set2)) == 0
 
 class pseudocode(object):
-    def __init__(self, clusters_set, nranks):
+    def __init__(self, clusters_set, nranks, only_mpi):
         self.lines = []
         self.all_ranks = range(nranks)
+        self.only_mpi = only_mpi
+
+        # Sort the clusters by program order
+        #
+        clusters_set.sort(key=lambda x: x.get_first_line(), reverse=False)
+        #clusters_set.reverse()
 
         for cluster in clusters_set:
             for loop_obj in cluster.loops:
@@ -113,9 +123,14 @@ class pseudocode(object):
     def parse_callstack(self, callstack_obj, tabs):
         calls = callstack_obj.calls
         my_tabs=0
-        for call in calls:
-            self.lines.append(pseudo_call(call, tabs+my_tabs))
-            my_tabs += 1
+
+        if not self.only_mpi:
+            for call in calls:
+                self.lines.append(pseudo_call(call, tabs+my_tabs))
+                my_tabs += 1
+        else:
+            if len(calls) > 0:
+                self.lines.append(pseudo_call(calls[-1],tabs))
         return my_tabs
 
     def parse_conditional_rank_block(self, 

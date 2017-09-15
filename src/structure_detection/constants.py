@@ -29,7 +29,7 @@ OMPLIN_EVENT_BASE =""
 PARAVER_EVENT     ="2"
 
 FUNC_MAP_FILE     ="functions.map"
-MPI_LIB_FILE      ="libmpi_injected.c"
+MPI_LIB_FILE      ="libmpi"
 
 _empty_cell=0
 
@@ -45,7 +45,7 @@ _x_axis           ="times"
 _y_axis           ="time_mean"
 _z_axis           ="delta"
 
-_eps              =0.1
+_eps              =0.5
 _min_samples      =1
 
 ###############
