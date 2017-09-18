@@ -4,12 +4,12 @@
 
 import sys, json, re, os
 
-import logging
-import constants
 from callstack_alignement import *
 from utilities import ProgressBar
-
 from callstack import callstack
+
+import logging
+import constants
 
 ####### GLOBAL
 
@@ -461,5 +461,11 @@ def get_callstacks(trace, level, image_filter):
                 callstacks_pool[repeated_idx].merge(new_callstack)
             except Exception:
                 callstacks_pool.append(new_callstack)
+
+    # Sanity check
+    #
+
+    for cs in callstacks_pool:
+        assert cs[-1].mpi_call == True
 
     return callstacks_pool, total_threads
