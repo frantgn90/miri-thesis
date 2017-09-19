@@ -242,9 +242,6 @@ def main(argc, argv):
 #    fg.show()
 
 
-    print top_level_clusters[0].loops[0]
-    print top_level_clusters[0].loops[0].conditional_rank_block
-
     ''' 8. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
     pc = pseudocode(top_level_clusters, nranks, arguments.only_mpi)

@@ -228,13 +228,10 @@ class callstack(object):
                 self.compacted_ranks, 
                 self.repetitions,
                 self.condition_level,
-                self.metrics["mpi_duration"])
-
-#        if len(self.calls) > 3:
-#            val += "... -"
-#            for i in range(-3, 0):
-#                val += ">{0}({1})".format(self.calls[i].call, self.calls[i].line)
-#        else:
+                self.metrics["mpi_duration_mean"])
         for call in self.calls:
             val += ">{0}({1})".format(call.call, call.line)
         return val
+
+    def __delitem__(self, index):
+        del self.calls[index]

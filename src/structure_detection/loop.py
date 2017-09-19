@@ -255,7 +255,7 @@ class loop (object):
 
         # Getting the common callstacks
         #
-        for callstack_obj in self.program_order_callstacks[1:]:
+        for callstack_obj in self.program_order_callstacks:
             if isinstance(callstack_obj, loop):
                 callstack_obj = callstack_obj.common_callstack
             first_callstack &= callstack_obj
@@ -281,7 +281,8 @@ class loop (object):
 
         # Generate the first global conditional rank block
         # 
-        self.conditional_rank_block = conditional_rank_block(self.get_all_ranks())
+        self.conditional_rank_block = conditional_rank_block(
+                self.get_all_ranks())
 
         # Now generate the conditional subblocks by mean of adding the 
         # subsequent callstacks/subloops

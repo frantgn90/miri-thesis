@@ -24,6 +24,9 @@ class cluster (object):
         self.nmerges = 0
 
     def get_first_line(self):
+        if not self.loops[0].common_callstack is None:
+            if len(self.loops[0].common_callstack) > 0:
+                return self.loops[0].common_callstack[0].line
         return self.loops[0].program_order_callstacks[0].calls[0].line
 
     def add_callstack(self, callstack):

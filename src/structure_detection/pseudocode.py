@@ -95,6 +95,7 @@ class pseudocode(object):
         self.lines = []
         self.all_ranks = range(nranks)
         self.only_mpi = only_mpi
+        self.last_callstack = []
 
         # Sort the clusters by program order
         #
@@ -121,16 +122,27 @@ class pseudocode(object):
         self.lines.append(pseudo_for_end(loop_obj.iterations, tabs))
 
     def parse_callstack(self, callstack_obj, tabs):
-        calls = callstack_obj.calls
+        if callstack_obj is None:
+            return 0
+
+        calls=callstack_obj.calls
         my_tabs=0
 
+
+        print "************"
+        print self.last_callstack
+        print calls
+        print "************"
         if not self.only_mpi:
             for call in calls:
-                self.lines.append(pseudo_call(call, tabs+my_tabs))
+                if not call in self.last_callstack:
+                    self.lines.append(pseudo_call(call, tabs+my_tabs))
                 my_tabs += 1
         else:
             if len(calls) > 0:
                 self.lines.append(pseudo_call(calls[-1],tabs))
+
+        self.last_callstack = callstack_obj.calls[:-1]
         return my_tabs
 
     def parse_conditional_rank_block(self, 
@@ -155,7 +167,7 @@ class pseudocode(object):
         if condition_obj.is_equal:
             pass
         elif condition_obj.is_subset:
-            condition_tabs += 1
+            #condition_tabs += 1
             self.lines.append(pseudo_condition(
                 item.ranks, False, False, tabs+condition_tabs))
             condition_tabs += 1
@@ -165,7 +177,7 @@ class pseudocode(object):
             else:
                 el = False; eli = True
 
-            condition_tabs += 1
+            #condition_tabs += 1
             self.lines.append(pseudo_condition(item.ranks, 
                 el, eli,tabs+condition_tabs))
             condition_tabs += 1

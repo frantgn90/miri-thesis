@@ -68,8 +68,11 @@
   * Objective function *
   **********************/
 
+  // Is more important to have less deltas than the maximum distance
+  // so extra deltas have extra penalization of *100. This number should
+  // be set empirically
   minimize
-  	sum(d in D) maxDeltaDistance[d] + sum(d in D) UsedDelta[d];
+  	sum(d in D) maxDeltaDistance[d] + sum(d in D) UsedDelta[d]*100;
  
   subject to {
   	
