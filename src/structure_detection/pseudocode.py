@@ -20,11 +20,12 @@ class pseudo_line(object):
         return ":  "*self.deph
 
     def __str__(self):
-        res = "{0:10.10} {1:>5} {2:45} {3:10}".format(
+        res = "{0:10.10} {1:>5} {2:35} {3:15} {4}".format(
                 self.first_col,
                 self.second_col, 
                 (self.get_tabs() + self.third_col), 
-                self.metric)
+                self.metric,
+                self.metric_2)
         return res
 
 class pseudo_for(pseudo_line):
@@ -53,9 +54,13 @@ class pseudo_call(pseudo_line):
         if self.call.mpi_call:
             self.second_col = "*"
             self.metric = str(
-                    self.call.my_callstack.metrics["mpi_duration_mean"])
+                    round(
+                        self.call.my_callstack.metrics["mpi_duration_mean"],
+                        2)) + " (ns)"
             self.metric_2 = str(
-                    self.call.my_callstack.metrics["mpi_duration_stdev"])
+                    round(
+                        self.call.my_callstack.metrics["mpi_duration_percent"]
+                        ,2)) + "%"
 
         else:
             self.second_col = str(self.call.line)
@@ -128,11 +133,6 @@ class pseudocode(object):
         calls=callstack_obj.calls
         my_tabs=0
 
-
-        print "************"
-        print self.last_callstack
-        print calls
-        print "************"
         if not self.only_mpi:
             for call in calls:
                 if not call in self.last_callstack:
@@ -142,7 +142,7 @@ class pseudocode(object):
             if len(calls) > 0:
                 self.lines.append(pseudo_call(calls[-1],tabs))
 
-        self.last_callstack = callstack_obj.calls[:-1]
+        self.last_callstack = callstack_obj.calls
         return my_tabs
 
     def parse_conditional_rank_block(self, 

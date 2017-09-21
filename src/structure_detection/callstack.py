@@ -53,6 +53,8 @@ class callstack(object):
                 "mpi_duration_merged":[],
                 "mpi_duration_mean":0,
                 "mpi_duration_stdev":0,
+                "mpi_duration_sum":0,
+                "mpi_duration_percent":0,
                 "mpi_cycles":0,
                 "mpi_cycles_merged":[],
                 "mpi_cycles_mean":0
@@ -104,6 +106,10 @@ class callstack(object):
             self.metrics["mpi_duration_merged"])
         self.metrics["mpi_duration_stdev"]=numpy.median(
             self.metrics["mpi_duration_merged"])
+        self.metrics["mpi_duration_sum"]=sum(
+            self.metrics["mpi_duration_merged"])
+        self.metrics["mpi_duration_percent"]=\
+            self.metrics["mpi_duration_sum"]/constants.TOTAL_TIME*100
 
     def is_above_delta(self, delta, total_time):
         if self.repetitions == 1: return False
@@ -201,6 +207,28 @@ class callstack(object):
                 result.append(s_call)
 
         result = callstack(0, 0, result)
+        if len(result) > 0:
+            result.rank = self.rank
+            result.repetitions = self.repetitions
+            result.instants = self.instants
+            result.instants_distances = self.instants_distances
+            result.instants_distances_mean = self.instants_distances_mean
+            result.instants_distances_median = self.instants_distances_median
+            result.delta = self.delta
+            result.cluster_id = self.cluster_id
+            result.compacted_ranks = self.compacted_ranks
+            result.condition_level = self.condition_level
+            result.reduced = self.reduced
+            result.metrics = self.metrics
+
+        return result
+
+    def __add__(self, other):
+        calls = self.calls
+        calls.extend(other.calls)
+
+        result = callstack(0,0, calls)
+
         if len(result) > 0:
             result.rank = self.rank
             result.repetitions = self.repetitions

@@ -171,9 +171,11 @@ def main(argc, argv):
     ''' 1. Parsing trace '''
     logging.info("Parsing trace...")
     # Assuming every task just have one thread
+    constants.TRACE_NAME = trace[trace.rfind("/")+1:]
     callstacks_pool, nranks=\
             get_callstacks(trace=trace, level=level, image_filter=image_filter)
     app_time = get_app_time(trace)
+    constants.TOTAL_TIME = app_time
     logging.debug("{0} ns total trace time.".format(app_time))
     
     
@@ -241,6 +243,9 @@ def main(argc, argv):
 #    logging.info("Done")
 #    fg.show()
 
+
+#    for l in top_level_clusters[0].loops:
+#        print l
 
     ''' 8. Generating pseudo-code '''
     logging.info("Generating pseudocode...")

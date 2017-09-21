@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
+import constants
 from utilities import pretty_print
 
 class gui(object):
@@ -18,7 +19,7 @@ class console_gui(gui):
             self.content += str(line) + "\n"
 
     def show(self):
-        print pretty_print(self.content, "Pseudocode")
+        print pretty_print(self.content, constants.TRACE_NAME)
 
 
 class html_gui(gui):

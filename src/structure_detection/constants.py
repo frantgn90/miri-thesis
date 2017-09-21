@@ -9,6 +9,9 @@ if "PARAVER_ON" in os.environ:
 else:
     _verbose=True
 
+
+TOTAL_TIME = 1
+TRACE_NAME = ""
 CALLSTACK_SIZE=10
 
 _intra_field_separator="|"
