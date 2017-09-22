@@ -121,7 +121,7 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
         logging.debug("Preparing data for CPLEX")
         nDeltas = 1/delta_accuracy
         deltas=[]
-        for i in numpy.arange(delta_accuracy, 1, delta_accuracy):
+        for i in numpy.arange(bottom_bound, 1, delta_accuracy):
             deltas.append(i)
         deltas.append(1)
 
@@ -129,7 +129,7 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
 
         points=[]
         for cs in fcallstacks_pool:
-            points.append([cs.repetitions,cs.instants_distances_median])
+            points.append([cs.repetitions,cs.instants_distances_mean])
 
         big_m = 0
         distance_dp = []
@@ -145,12 +145,13 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
                 if min_distance > big_m:
                     big_m = min_distance
 
-                logging.debug("Distances from point ({0},{1}) to delta {2} = {3}"
-                        .format(point[0], point[1], delta, min_distance))
+                logging.debug("Point ({0:>5},{1:>15}) to delta {2} = {3:>10}"
+                        .format(point[0], point[1], delta, round(min_distance,1)))
                 pbar.progress_by(1)
                 pbar.show()
 
             distance_dp.append(distance_delta)
+            logging.debug("-----------------------------")
 
         arguments = {
                 constants.OPL_ARG_BIGM:    big_m,

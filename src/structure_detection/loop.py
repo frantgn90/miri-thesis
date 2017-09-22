@@ -199,9 +199,27 @@ class loop (object):
             i += 1
             common_callstack = self.program_order_callstacks[i]
 
+    def get_first_line(self):
+        if type(self.program_order_callstacks[0]) == loop:
+            return self.program_order_callstacks[0].get_first_line()
+        else:
+            return self.program_order_callstacks[0].calls[0].line
+
+
+    def get_first_callstack_instants(self):
+        if type(self.program_order_callstacks[0]) == loop:
+            return self.program_order_callstacks[0].get_first_callstack_instants()
+        else:
+            return self.program_order_callstacks[0].instants
+
     def is_subloop(self, other):
-        its_bounds = self.program_order_callstacks[0].instants
-        sub_times  = other.program_order_callstacks[0].instants
+        its_bounds = self.get_first_callstack_instants()
+        sub_times = other.get_first_callstack_instants()
+
+
+#        its_bounds = self.program_order_callstacks[0].instants
+#        sub_times  = other.program_order_callstacks[0].instants
+
 
         last_j = 0
         is_subloop = False

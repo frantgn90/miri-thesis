@@ -208,7 +208,9 @@ class tmatrix(object):
                     else:
                         subm_merge.update({rows:[cols]})
 
-            return subm_merge
+                return subm_merge
+            else:
+                return subm
 
             # If all partitions are completelly disyunctive and can explain all 
             # the matrix, it means that every partition is a loop

@@ -58,7 +58,7 @@ def getCsDistributions(filecs):
         do=get_distances(data["occu"])
         tt=get_distances(data["when"])
 
-        if not len(do) == 0:
+        if not len(tt) == 0:
             #dmean=numpy.mean(do)
             #dsdev=numpy.std(do)
             #tsdev=numpy.std(tt)
