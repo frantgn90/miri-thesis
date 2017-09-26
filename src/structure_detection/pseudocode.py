@@ -17,14 +17,13 @@ class pseudo_line(object):
         self.metric_2 = ""
 
     def get_tabs(self):
-        return ":  "*self.deph
+        return ": "*self.deph
 
     def __str__(self):
-        res = "{0:10.10} {1:>5} {2:35} {3:15} {4}".format(
+        res = "{0:10.10} {1:>5.5} {2:40.40} {3:15.15}".format(
                 self.first_col,
                 self.second_col, 
                 (self.get_tabs() + self.third_col), 
-                self.metric,
                 self.metric_2)
         return res
 
@@ -77,11 +76,11 @@ class pseudo_condition(pseudo_line):
         self.first_col = ""
         self.second_col = " "
         if self.el:
-            self.third_col = "ELSE"
+            self.third_col = "else"
         elif self.eli:
-            self.third_col = "ELSE IF RANK in {0}".format(self.ranks)
+            self.third_col = "elif Rank is {0}".format(self.ranks)
         else:
-            self.third_col = "IF RANK IN {0}".format(self.ranks)
+            self.third_col = "if Rank is {0}".format(self.ranks)
         self.metric = ""
 
 
@@ -115,6 +114,9 @@ class pseudocode(object):
         # Callstack to loop
         #
         if not self.only_mpi:
+            if loop_obj.common_callstack.common_with_prev != None:
+                tabs += len(loop_obj.common_callstack.common_with_prev)
+
             tabs += self.parse_callstack(loop_obj.common_callstack, tabs)
 
         # Loop description
@@ -157,6 +159,9 @@ class pseudocode(object):
         # Print the common callstack
         #
         if not self.only_mpi:
+            if conditional_rank_block_obj.common_with_prev != None:
+                tabs += len(conditional_rank_block_obj.common_with_prev)
+
             tabs += self.parse_callstack(
                         conditional_rank_block_obj.common_callstack, 
                         tabs)

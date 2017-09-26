@@ -36,9 +36,10 @@ class call(object):
 
 class callstack(object):
     def __init__(self, rank, instant, calls):
+        self.common_with_prev = None
         self.rank=rank
         self.repetitions=1
-        self.instants=[int(instant)]
+        self.instants=[int(instant)] # TODO: Classify in ranks
         self.instants_distances=[]
         self.instants_distances_mean=None
         self.instants_distances_median=None
@@ -252,11 +253,10 @@ class callstack(object):
         return len(self.calls)
          
     def __str__(self):
-        val = "R:{0} IT:{1} CL:{2} M:{3} -".format(
+        val = "R:{0} IT:{1} -".format(
                 self.compacted_ranks, 
                 self.repetitions,
-                self.condition_level,
-                self.metrics["mpi_duration_mean"])
+                self.condition_level)
         for call in self.calls:
             val += ">{0}({1})".format(call.call, call.line)
         return val

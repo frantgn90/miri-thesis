@@ -234,6 +234,10 @@ def main(argc, argv):
             loop_obj.compact_callstacks()
             loop_obj.extracting_callstack_common_part()
             loop_obj.group_into_conditional_rank_blocks()
+            loop_obj.remove_contiguous_common_callstack(None)
+
+            #print loop_obj
+    #exit(0)
     logging.info("Done")
 
 

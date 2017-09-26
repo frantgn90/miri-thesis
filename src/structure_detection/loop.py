@@ -15,6 +15,7 @@ class conditional_rank_block(object):
     def __init__(self, ranks):
         self.ranks = ranks
         self.common_callstack = None
+        self.common_with_prev = None
         self.callstacks = []
 
     def add_callstack(self, callstack_or_loop):
@@ -309,6 +310,34 @@ class loop (object):
             self.conditional_rank_block.add_callstack(callstack_obj)
         self.conditional_rank_block.extracting_callstack_common_part()
 
+    def remove_contiguous_common_callstack(self, last_common_callstack):
+        
+        if last_common_callstack == None:
+            if type(self.conditional_rank_block.callstacks[0]) == callstack:
+                last_common_callstack = self.conditional_rank_block.callstacks[0]
+            else:
+                last_common_callstack = self.conditional_rank_block.callstacks[0]\
+                        .common_callstack
+        
+        #import pdb; pdb.set_trace()
+        for i in range(len(self.conditional_rank_block.callstacks))[1:]:
+            item = self.conditional_rank_block.callstacks[i]
+
+            if type(item) == conditional_rank_block or type(item) == loop:
+                common_callstack = item.common_callstack
+                item.common_with_prev = last_common_callstack & item.common_callstack
+                last_common_callstack = item.common_callstack
+                item.common_callstack -= item.common_with_prev
+            else:
+                common_callstack = item
+                item.common_with_prev = last_common_callstack & common_callstack
+                last_common_callstack = item
+                item -= item.common_with_prev
+
+            print last_common_callstack        
+        print "--------------------"    
+        #exit(0)
+
     def __eq__(self, other):
         if type(other) == loop:
             return self.iterations == other.iterations
@@ -353,11 +382,13 @@ class loop (object):
 
         val = pretty_print(val, "Loop info")
 
-        for callstack in self.program_order_callstacks:
-            if type(callstack) == loop:
-                val += "-> Subloop\n"
-                val += str(callstack)+"\n"
-                val += "-> End subloop\n"
-            else:
-                val += str(callstack)+"\n"
+#        for callstack in self.program_order_callstacks:
+#            if type(callstack) == loop:
+#                val += "-> Subloop\n"
+#                val += str(callstack)+"\n"
+#                val += "-> End subloop\n"
+#            else:
+#                val += str(callstack)+"\n"
+
+        val += str(self.conditional_rank_block)
         return val
