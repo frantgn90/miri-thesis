@@ -198,6 +198,7 @@ class callstack(object):
             result.condition_level = self.condition_level
             result.reduced = self.reduced
             result.metrics = self.metrics
+            result.common_with_prev = self.common_with_prev
 
         return result
 
@@ -221,6 +222,7 @@ class callstack(object):
             result.condition_level = self.condition_level
             result.reduced = self.reduced
             result.metrics = self.metrics
+            result.common_with_prev = self.common_with_prev
 
         return result
 
@@ -243,6 +245,7 @@ class callstack(object):
             result.condition_level = self.condition_level
             result.reduced = self.reduced
             result.metrics = self.metrics
+            result.common_with_prev = self.common_with_prev
 
         return result
 

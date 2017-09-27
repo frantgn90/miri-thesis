@@ -319,24 +319,28 @@ class loop (object):
                 last_common_callstack = self.conditional_rank_block.callstacks[0]\
                         .common_callstack
         
-        #import pdb; pdb.set_trace()
         for i in range(len(self.conditional_rank_block.callstacks))[1:]:
             item = self.conditional_rank_block.callstacks[i]
 
             if type(item) == conditional_rank_block or type(item) == loop:
-                common_callstack = item.common_callstack
-                item.common_with_prev = last_common_callstack & item.common_callstack
-                last_common_callstack = item.common_callstack
-                item.common_callstack -= item.common_with_prev
+                common_callstack = self.conditional_rank_block.callstacks[i]\
+                        .common_callstack
+                self.conditional_rank_block.callstacks[i].common_with_prev =\
+                        last_common_callstack & \
+                        self.conditional_rank_block.callstacks[i].common_callstack
+                last_common_callstack = self.conditional_rank_block.callstacks[i]\
+                        .common_callstack
+                self.conditional_rank_block.callstacks[i].common_callstack -= \
+                        self.conditional_rank_block.callstacks[i].common_with_prev
             else:
-                common_callstack = item
-                item.common_with_prev = last_common_callstack & common_callstack
-                last_common_callstack = item
-                item -= item.common_with_prev
+                common_callstack = self.conditional_rank_block.callstacks[i]
+                self.conditional_rank_block.callstacks[i].common_with_prev =\
+                        last_common_callstack & common_callstack
 
-            print last_common_callstack        
-        print "--------------------"    
-        #exit(0)
+                last_common_callstack = self.conditional_rank_block.callstacks[i]
+                self.conditional_rank_block.callstacks[i] -=\
+                        self.conditional_rank_block.callstacks[i].common_with_prev
+
 
     def __eq__(self, other):
         if type(other) == loop:

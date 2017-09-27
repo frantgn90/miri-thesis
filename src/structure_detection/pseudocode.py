@@ -206,7 +206,10 @@ class pseudocode(object):
                         tabs+condition_tabs)
                 prev_ranks = item.ranks
             else:
-                self.parse_callstack(item, tabs+condition_tabs)
+                tabs_c = 0
+                if item.common_with_prev != None:
+                    tabs_c = len(item.common_with_prev)
+                self.parse_callstack(item, tabs+tabs_c+condition_tabs)
                 prev_ranks = item.get_all_ranks()
 
     def show_console(self):
