@@ -235,13 +235,17 @@ def main(argc, argv):
             loop_obj.extracting_callstack_common_part()
             loop_obj.group_into_conditional_rank_blocks()
             loop_obj.remove_contiguous_common_callstack(None)
-
-            #print loop_obj
-    #exit(0)
     logging.info("Done")
 
 
-    ''' 8. Genearting flowgraph '''
+    ''' 8. Derivating metrics '''
+    logging.info("Derivating metrics")
+    for callstack in callstacks_pool:
+        callstack.calc_metrics()
+    logging.info("Done")
+
+
+    ''' 9. Genearting flowgraph '''
 #    logging.info("Generating flowgraph...")
 #    fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters 
 #    logging.info("Done")
@@ -251,7 +255,7 @@ def main(argc, argv):
 #    for l in top_level_clusters[0].loops:
 #        print l
 
-    ''' 8. Generating pseudo-code '''
+    ''' 9. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
     pc = pseudocode(top_level_clusters, nranks, arguments.only_mpi)
     logging.info("Done...")

@@ -452,9 +452,9 @@ def get_callstacks(trace, level, image_filter):
                     lines_series[rank][cs_i], 
                     callstack_series[rank][cs_i],
                     files_series[rank][cs_i])
-            new_callstack.metrics["mpi_duration"]=\
+            new_callstack.metrics[rank]["mpi_duration"]=\
                     mpi_durations[rank][cs_i+1]
-            new_callstack.metrics["mpi_duration_merged"].append(
+            new_callstack.metrics[rank]["mpi_duration_merged"].append(
                     mpi_durations[rank][cs_i+1])
             try:
                 repeated_idx = callstacks_pool.index(new_callstack)

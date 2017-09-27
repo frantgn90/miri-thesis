@@ -16,6 +16,8 @@ class conditional_rank_block(object):
         self.ranks = ranks
         self.common_callstack = None
         self.common_with_prev = None
+        self.data_condition = False
+        self.probability = 0
         self.callstacks = []
 
     def add_callstack(self, callstack_or_loop):
@@ -30,6 +32,8 @@ class conditional_rank_block(object):
         assert is_complement == False, "Impossible sitation."
         assert is_equal or is_superset, "Must be equal or a subset."
 
+        # TODO: Look for callstack_or_loop.repetitions < loop iterations
+        #
         if is_equal:
             self.callstacks.append(callstack_or_loop)
             return
@@ -255,7 +259,8 @@ class loop (object):
                     break
 
                 if callstack_ref.same_flow(callstack_eval):
-                    callstack_ref.compacted_ranks.append(callstack_eval.rank)
+                    callstack_ref.compact_with(callstack_eval)
+                    #callstack_ref.compacted_ranks.append(callstack_eval.rank)
                     del self.program_order_callstacks[j]
                 else:
                     break

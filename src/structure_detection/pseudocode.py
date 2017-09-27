@@ -52,13 +52,13 @@ class pseudo_call(pseudo_line):
         self.first_col = self.call.call_file
         if self.call.mpi_call:
             self.second_col = "*"
-            self.metric = str(
-                    round(
-                        self.call.my_callstack.metrics["mpi_duration_mean"],
-                        2)) + " (ns)"
+#            self.metric = str(
+#                    round(
+#                        self.call.my_callstack.metrics["mpi_duration_mean"],
+#                        2)) + " (ns)"
             self.metric_2 = str(
                     round(
-                        self.call.my_callstack.metrics["mpi_duration_percent"]
+                        self.call.my_callstack.metrics["global_mpi_duration_percent"]
                         ,2)) + "%"
 
         else:

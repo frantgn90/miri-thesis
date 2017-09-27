@@ -49,16 +49,14 @@ class callstack(object):
         self.condition_level = None
         self.reduced=False
         self.calls=calls
-        self.metrics={
+        self.metrics = {}
+        self.metrics[self.rank] = {
                 "mpi_duration":0,
                 "mpi_duration_merged":[],
                 "mpi_duration_mean":0,
                 "mpi_duration_stdev":0,
                 "mpi_duration_sum":0,
                 "mpi_duration_percent":0,
-                "mpi_cycles":0,
-                "mpi_cycles_merged":[],
-                "mpi_cycles_mean":0
         }
 
         for call in calls:
@@ -91,9 +89,13 @@ class callstack(object):
         self.repetitions+=1
         self.instants.extend(other.instants)
 
-        self.metrics["mpi_duration_merged"].append(
-                other.metrics["mpi_duration"])
+        self.metrics[self.rank]["mpi_duration_merged"].append(
+                other.metrics[self.rank]["mpi_duration"])
  
+    def compact_with(self, other):
+        self.compacted_ranks.append(other.rank)
+        self.metrics[other.rank] = other.metrics[other.rank]
+
     def calc_reduce_info(self):
         self.reduced=True
         if self.repetitions == 1: return
@@ -103,14 +105,23 @@ class callstack(object):
         self.instants_distances_median=numpy.median(self.instants_distances)
         self.instants_distances_mean=numpy.mean(self.instants_distances)
 
-        self.metrics["mpi_duration_mean"]=numpy.mean(
-            self.metrics["mpi_duration_merged"])
-        self.metrics["mpi_duration_stdev"]=numpy.median(
-            self.metrics["mpi_duration_merged"])
-        self.metrics["mpi_duration_sum"]=sum(
-            self.metrics["mpi_duration_merged"])
-        self.metrics["mpi_duration_percent"]=\
-            self.metrics["mpi_duration_sum"]/constants.TOTAL_TIME*100
+    def calc_metrics(self):
+        for rank in self.metrics:
+            self.metrics[rank]["mpi_duration_mean"]=numpy.mean(
+                self.metrics[rank]["mpi_duration_merged"])
+            self.metrics[rank]["mpi_duration_stdev"]=numpy.median(
+                self.metrics[rank]["mpi_duration_merged"])
+            self.metrics[rank]["mpi_duration_sum"]=sum(
+                self.metrics[rank]["mpi_duration_merged"])
+            self.metrics[rank]["mpi_duration_percent"]=\
+                self.metrics[rank]["mpi_duration_sum"]/constants.TOTAL_TIME*100
+
+        sum_mpi_duration_percent = 0
+        for rank in self.metrics:
+            sum_mpi_duration_percent += self.metrics[rank]["mpi_duration_percent"]
+        mean_mpi_duration_percent = sum_mpi_duration_percent/len(self.compacted_ranks)
+        self.metrics.update({"global_mpi_duration_percent":mean_mpi_duration_percent})
+
 
     def is_above_delta(self, delta, total_time):
         if self.repetitions == 1: return False
