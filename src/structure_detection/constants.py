@@ -48,7 +48,7 @@ _x_axis           ="times"
 _y_axis           ="time_mean"
 _z_axis           ="delta"
 
-_eps              =0.4
+_eps              =0.1
 _min_samples      =1
 
 ###############

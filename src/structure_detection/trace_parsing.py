@@ -409,7 +409,8 @@ def get_callstacks(trace, level, image_filter):
 
             main = False
             for i_call in range(len(callstack_series[rank_index][i_stack])):
-                if callstack_series[rank_index][i_stack][i_call] == "main":
+                if callstack_series[rank_index][i_stack][i_call] == "main" \
+                        or callstack_series[rank_index][i_stack][i_call] == "MAIN__":
                     main = True
                 if not main:
                     continue
