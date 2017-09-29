@@ -8,6 +8,7 @@ import random
 import constants
 from delta_calculation import get_cost
 
+
 class call(object):
     def __init__(self, line, call, call_file, callstack):
         self.call=call
@@ -156,6 +157,10 @@ class callstack(object):
         return self.get_signature() == other.get_signature()
 
     def __lt__(self, other):
+        from loop import loop
+        if type(other) == loop:
+            other = other.get_first_callstack()
+        
         assert self.reduced == True and other.reduced == True
         for call_i in range(min(len(self.calls), len(other.calls))):
             if not self.calls[call_i] == other.calls[call_i]:

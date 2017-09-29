@@ -194,6 +194,10 @@ def main(argc, argv):
         len(callstacks_pool), len(fcallstacks_pool)))
     logging.info("Done")
 
+    if len(fcallstacks_pool) == 0:
+        logging.info("All callsacks has been filtered.")
+        exit(0)
+
 
     ''' 4. Callstacks to delta mapping '''
     logging.info("Callstacks delta classification...")
@@ -219,8 +223,14 @@ def main(argc, argv):
         cluster.run_loops_generation()
 
     logging.debug("{0} clusters detected".format(len(clusters_pool)))
+    
+    for cl in clusters_pool:
+        logging.debug("Cluster {0} have {1} loops".format(
+            cl.cluster_id,
+            len(cl.loops)))
     logging.info("Done")
 
+    
     ''' 6. Merging clusters '''
     logging.info("Merging clusters...")
     top_level_clusters = merge_clusters(clusters_pool)
@@ -251,9 +261,6 @@ def main(argc, argv):
 #    logging.info("Done")
 #    fg.show()
 
-
-#    for l in top_level_clusters[0].loops:
-#        print l
 
     ''' 9. Generating pseudo-code '''
     logging.info("Generating pseudocode...")

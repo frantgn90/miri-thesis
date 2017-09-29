@@ -121,7 +121,8 @@ class conditional_rank_block(object):
  
 
 class loop (object):
-    def __init__(self, callstacks):
+    def __init__(self, callstacks, id):
+        self._id = id
         # Maybe this loop is just an statement under a condition of 
         # other loop
         #
@@ -192,10 +193,8 @@ class loop (object):
         # The difference with the previous merge is that now 'other' is a subloop
         # of ourselfs. So new comparative functions have to be added to this class
 
-        for loop_obj in other:
-            loop_obj.iterations /= self.iterations
-
-        merged_subloop = self.program_order_callstacks + other
+        other.iterations /= self.iterations
+        merged_subloop = self.program_order_callstacks + [other]
         self.program_order_callstacks = sorted(merged_subloop)
 
         i=0
@@ -210,6 +209,11 @@ class loop (object):
         else:
             return self.program_order_callstacks[0].calls[0].line
 
+    def get_first_callstack(self):
+        if type(self.program_order_callstacks[0]) == loop:
+            return self.program_order_callstacks[0].get_first_callstack()
+        else:
+            return self.program_order_callstacks[0]
 
     def get_first_callstack_instants(self):
         if type(self.program_order_callstacks[0]) == loop:
@@ -221,22 +225,19 @@ class loop (object):
         its_bounds = self.get_first_callstack_instants()
         sub_times = other.get_first_callstack_instants()
 
-
-#        its_bounds = self.program_order_callstacks[0].instants
-#        sub_times  = other.program_order_callstacks[0].instants
-
+        its_bounds = filter(lambda x: x != 0, its_bounds)
+        sub_times = filter(lambda x: x != 0, sub_times)
 
         last_j = 0
         is_subloop = False
 
         for i in range(len(its_bounds))[0::2]:
             if i+1 >= len(its_bounds): break
-            lower_bound = int(its_bounds[i])
-            upper_bound = int(its_bounds[i+1])
+            lower_bound = its_bounds[i]
+            upper_bound = its_bounds[i+1]
 
             for j in range(last_j, len(sub_times)):
-                if int(sub_times[j]) >= lower_bound\
-                    and int(sub_times[j]) <= upper_bound:
+                if sub_times[j] >= lower_bound and sub_times[j] <= upper_bound:
                     is_subloop = True
                     break
         
@@ -391,13 +392,13 @@ class loop (object):
 
         val = pretty_print(val, "Loop info")
 
-#        for callstack in self.program_order_callstacks:
-#            if type(callstack) == loop:
-#                val += "-> Subloop\n"
-#                val += str(callstack)+"\n"
-#                val += "-> End subloop\n"
-#            else:
-#                val += str(callstack)+"\n"
+        for callstack in self.program_order_callstacks:
+            if type(callstack) == loop:
+                val += "-> Subloop\n"
+                val += str(callstack)+"\n"
+                val += "-> End subloop\n"
+            else:
+                val += str(callstack)+"\n"
 
-        val += str(self.conditional_rank_block)
+#        val += str(self.conditional_rank_blocks)
         return val

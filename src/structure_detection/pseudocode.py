@@ -121,6 +121,10 @@ class pseudocode(object):
 
         # Loop description
         #
+        if not loop_obj.conditional_rank_blocks is None:
+            if not loop_obj.conditional_rank_blocks.common_with_prev is None:
+                tabs += len(loop_obj.conditional_rank_blocks.common_with_prev)
+
         self.lines.append(pseudo_for(loop_obj.iterations, tabs))
         self.parse_conditional_rank_block(
                 loop_obj.conditional_rank_block,
