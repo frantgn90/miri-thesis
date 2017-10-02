@@ -101,24 +101,29 @@ class cluster (object):
    
     def merge(self, other):
         assert self.get_interarrival_median() > other.get_interarrival_median()
-        # Could be this cluster in not a subcluster, so this assertion is not true always
-        #
         #assert len(self.loops) == len(other.loops)
 
         merged = 0
         for i in range(len(self.loops)):
             for j in range(len(other.loops)):
-                is_subloop = self.loops[i].is_subloop(other.loops[j])
-
                 logging.debug("Loop {0}:{1} merged to loop {2}:{3}".format(
                     other.cluster_id,
                     other.loops[j]._id,
                     self.cluster_id,
                     self.loops[i]._id))
 
+                if other.loops[j].already_merged == True:
+                    logging.debug("Loop{0}:{1} already merged".format(
+                        other.cluster_id,
+                        other.loops[j]._id))
+                    continue
+
+                is_subloop = self.loops[i].is_subloop(other.loops[j])
+
                 if is_subloop:
                     logging.debug("Yes")
                     self.loops[i].merge_with_subloop(other.loops[j])
+                    other.loops[j].already_merged = True
                     merged += 1
                 else:
                     logging.debug("No")
@@ -127,7 +132,8 @@ class cluster (object):
             logging.warning("Some loops have not been merged.")
         self.nmerges += 1
 
-        return merged > 0
+#        return merged > 0
+        return merged == len(other.loops)
 
     def get_parent(self):
         return self._id.split(".")[0]
@@ -144,13 +150,13 @@ class cluster (object):
                 self.callstacks)
         return numpy.mean(medians)
 
-    def is_subloop(self, other):
-        if len(self.loops) > 1:
-            logging.warn("TODO: When there is more than one loop to" \
-                    " what loop is subloop must be decided.")
-            return False
-        else:
-            return self.loops[0].is_subloop(other.loops[0])
+#    def is_subloop(self, other):
+#        if len(self.loops) > 1:
+#            logging.warn("TODO: When there is more than one loop to" \
+#                    " what loop is subloop must be decided.")
+#            return False
+#        else:
+#            return self.loops[0].is_subloop(other.loops[0])
 
     def __ranks_level_merge(self, ranks_loops):
         for i in range(1, len(ranks_loops)):
@@ -194,10 +200,11 @@ def merge_clusters(clusters_pool):
         sorted_cluster_ids = [x.cluster_id for x in v]
         logging.debug("Sorted: {0}".format(sorted_cluster_ids))
 
-    # Then, the merge must be done from the little one to the biggest one.
     top_level_clusters=[]
     for delta,clusters in cluster_by_delta.items():
-        logging.debug("Merging {0} clusters with delta={1}".format(len(clusters),delta))
+        logging.debug("Merging {0} clusters with delta={1}".format(
+            len(clusters),
+            delta))
 
         for i in range(len(clusters)-1):
             done=False
@@ -219,14 +226,11 @@ def merge_clusters(clusters_pool):
                         break
 
                 logging.info("... No, there is no a subloop")
-                logging.debug("Cluster {0} IIT: {1}".format(
-                    clusters[i].cluster_id, 
-                    clusters[i].get_interarrival_median()))
-                logging.debug("Cluster {0} IIT: {1}".format(
-                    clusters[j].cluster_id, 
-                    clusters[j].get_interarrival_median()))
                                
-            assert done, "Error at cluster level merge"
+            if not done:
+                logging.warning("Cluster {0} could not be merged completely."\
+                        "Delta aliasing??"
+                        .format(clusters[i].cluster_id))
         top_level_clusters.append(cluster_by_delta[delta][-1])
 
     return top_level_clusters

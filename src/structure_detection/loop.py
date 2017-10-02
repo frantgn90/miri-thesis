@@ -167,6 +167,7 @@ class loop (object):
         # block is the block that is executed by the same ranks as the loop.
         #
         self.conditional_rank_blocks = None
+        self.already_merged = False
 
         logging.debug("New loop with {0} iterations.".format(self.iterations))
 
@@ -228,20 +229,43 @@ class loop (object):
         its_bounds = filter(lambda x: x != 0, its_bounds)
         sub_times = filter(lambda x: x != 0, sub_times)
 
+        if sub_times[0] < its_bounds[0]:
+            its_bounds = [0] + its_bounds
+
         last_j = 0
-        is_subloop = False
+        for i in range(len(its_bounds)-1):
+            lower_bound = int(its_bounds[i])
+            upper_bound = int(its_bounds[i+1])
 
-        for i in range(len(its_bounds))[0::2]:
-            if i+1 >= len(its_bounds): break
-            lower_bound = its_bounds[i]
-            upper_bound = its_bounds[i+1]
-
+            inner_its = 0
             for j in range(last_j, len(sub_times)):
-                if sub_times[j] >= lower_bound and sub_times[j] <= upper_bound:
-                    is_subloop = True
+                inner_time = int(sub_times[j])
+
+                if inner_time > lower_bound and inner_time < upper_bound:
+                    inner_its += 1
+                else:
+                    last_j = j
                     break
-        
-        return is_subloop;
+            if inner_its == 0:
+                return False
+
+        return True
+
+
+#        last_j = 0
+#        is_subloop = False
+#
+#        for i in range(len(its_bounds))[0::2]:
+#            if i+1 >= len(its_bounds): break
+#            lower_bound = its_bounds[i]
+#            upper_bound = its_bounds[i+1]
+#
+#            for j in range(last_j, len(sub_times)):
+#                if sub_times[j] >= lower_bound and sub_times[j] <= upper_bound:
+#                    is_subloop = True
+#                    break
+#       
+#        return is_subloop;
 
     def compact_callstacks(self):
         i = 0

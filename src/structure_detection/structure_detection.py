@@ -228,6 +228,10 @@ def main(argc, argv):
         logging.debug("Cluster {0} have {1} loops".format(
             cl.cluster_id,
             len(cl.loops)))
+        for l in cl.loops:
+            print " -- {0} iterations".format(
+                    l.original_iterations)
+
     logging.info("Done")
 
     
