@@ -229,7 +229,9 @@ def main(argc, argv):
             cl.cluster_id,
             len(cl.loops)))
         for l in cl.loops:
-            print " -- {0} iterations".format(
+            print " -- {0}:{1} {2} iterations".format(
+                    cl.cluster_id,
+                    l._id,
                     l.original_iterations)
 
     logging.info("Done")

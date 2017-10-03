@@ -217,10 +217,16 @@ class loop (object):
             return self.program_order_callstacks[0]
 
     def get_first_callstack_instants(self):
-        if type(self.program_order_callstacks[0]) == loop:
-            return self.program_order_callstacks[0].get_first_callstack_instants()
-        else:
-            return self.program_order_callstacks[0].instants
+#        if type(self.program_order_callstacks[0]) == loop:
+#            return self.program_order_callstacks[0].get_first_callstack_instants()
+#        else:
+#            return self.program_order_callstacks[0].instants
+
+        for cs in self.program_order_callstacks:
+            if type(cs) == callstack:
+                return cs.instants
+
+        assert False
 
     def is_subloop(self, other):
         its_bounds = self.get_first_callstack_instants()

@@ -100,10 +100,14 @@ class cluster (object):
         self.loops_generation_done = True
    
     def merge(self, other):
-        assert self.get_interarrival_median() > other.get_interarrival_median()
+        #assert self.get_interarrival_median() > other.get_interarrival_median()
         #assert len(self.loops) == len(other.loops)
 
         merged = 0
+
+        for l in other.loops:
+            if l.already_merged: merged += 1
+
         for i in range(len(self.loops)):
             for j in range(len(other.loops)):
                 logging.debug("Loop {0}:{1} merged to loop {2}:{3}".format(
@@ -196,7 +200,7 @@ def merge_clusters(clusters_pool):
 
     for k,v in cluster_by_delta.items():
         logging.debug("Sorting clusters ({0}) with delta={1}".format(len(v), k))
-        v.sort(key=lambda x: x.get_interarrival_median(), reverse=False)
+        v.sort(key=lambda x: x.get_interarrival_mean(), reverse=False)
         sorted_cluster_ids = [x.cluster_id for x in v]
         logging.debug("Sorted: {0}".format(sorted_cluster_ids))
 
@@ -213,24 +217,30 @@ def merge_clusters(clusters_pool):
                     clusters[i].cluster_id, 
                     clusters[j].cluster_id))
 
-                if clusters[j].get_interarrival_median() >\
-                        clusters[i].get_interarrival_median():
+                if clusters[j].get_interarrival_mean() >\
+                        clusters[i].get_interarrival_mean():
                     
                     done = clusters[j].merge(clusters[i])
                     if done:
                         logging.debug("Cluster {0} ({1}) merged to {2} ({3})".format(
                             clusters[i].cluster_id, 
-                            clusters[i].get_interarrival_median(),
+                            clusters[i].get_interarrival_mean(),
                             clusters[j].cluster_id, 
-                            clusters[j].get_interarrival_median()))
+                            clusters[j].get_interarrival_mean()))
                         break
 
                 logging.info("... No, there is no a subloop")
                                
             if not done:
-                logging.warning("Cluster {0} could not be merged completely."\
-                        "Delta aliasing??"
-                        .format(clusters[i].cluster_id))
+                loops_merged = 0
+                for l in clusters[i].loops:
+                    if l.already_merged: loops_merged += 1
+                
+                if loops_merged < len(clusters[i].loops):
+                    logging.warning("Cluster {0} could not be merged completely."\
+                            "Delta aliasing??"
+                            .format(clusters[i].cluster_id))
+
         top_level_clusters.append(cluster_by_delta[delta][-1])
 
     return top_level_clusters

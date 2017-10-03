@@ -114,8 +114,10 @@ class pseudocode(object):
         # Callstack to loop
         #
         if not self.only_mpi:
-            if loop_obj.common_callstack.common_with_prev != None:
-                tabs += len(loop_obj.common_callstack.common_with_prev)
+#            if loop_obj.common_callstack.common_with_prev != None:
+#                tabs += len(loop_obj.common_callstack.common_with_prev)
+            if not loop_obj.conditional_rank_block.common_with_prev is None:
+                tabs += len(loop_obj.conditional_rank_block.common_with_prev)
 
             tabs += self.parse_callstack(loop_obj.common_callstack, tabs)
 
