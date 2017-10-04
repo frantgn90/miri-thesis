@@ -123,6 +123,7 @@ class conditional_rank_block(object):
 class loop (object):
     def __init__(self, callstacks, id):
         self._id = id
+        self.cluster_id = 0
         # Maybe this loop is just an statement under a condition of 
         # other loop
         #
@@ -191,12 +192,33 @@ class loop (object):
         self.nmerges += 1
 
     def merge_with_subloop(self, other):
-        # The difference with the previous merge is that now 'other' is a subloop
-        # of ourselfs. So new comparative functions have to be added to this class
-
         other.iterations /= self.iterations
         merged_subloop = self.program_order_callstacks + [other]
-        self.program_order_callstacks = sorted(merged_subloop)
+        
+        #self.program_order_callstacks = sorted(merged_subloop)
+
+        def __sort_loops_and_cs(a, b):
+            result = False
+
+            if type(a) == loop:
+                a_to_compare = a.get_first_callstack()
+            else:
+                a_to_compare = a
+
+            if type(b) == loop:
+                b_to_compare = b.get_first_callstack()
+            else:
+                b_to_compare = b
+
+            if a_to_compare < b_to_compare:
+                result = -1
+            else:
+                result = 1
+
+            return result
+
+        merged_subloop.sort(__sort_loops_and_cs)
+        self.program_order_callstacks = merged_subloop
 
         i=0
         common_callstack = self.program_order_callstacks[i]
@@ -217,20 +239,33 @@ class loop (object):
             return self.program_order_callstacks[0]
 
     def get_first_callstack_instants(self):
-#        if type(self.program_order_callstacks[0]) == loop:
-#            return self.program_order_callstacks[0].get_first_callstack_instants()
-#        else:
-#            return self.program_order_callstacks[0].instants
+        if type(self.program_order_callstacks[0]) == loop:
+            return self.program_order_callstacks[0].get_first_callstack_instants()
+        else:
+            return self.program_order_callstacks[0].instants
 
-        for cs in self.program_order_callstacks:
-            if type(cs) == callstack:
-                return cs.instants
-
-        assert False
+#        for cs in self.program_order_callstacks:
+#            if type(cs) == callstack:
+#                return cs.instants
+#
+#        assert False
 
     def is_subloop(self, other):
-        its_bounds = self.get_first_callstack_instants()
-        sub_times = other.get_first_callstack_instants()
+#        its_bounds = self.get_first_callstack_instants()
+#        sub_times = other.get_first_callstack_instants()
+
+        its_bounds = None
+        sub_times = None
+        for cs in self.program_order_callstacks:
+            if type(cs) == callstack:
+                its_bounds = cs.instants
+
+        for cs in other.program_order_callstacks:
+            if type(cs) == callstack:
+                sub_times = cs.instants
+
+        assert not its_bounds is None and not sub_times is None
+
 
         its_bounds = filter(lambda x: x != 0, its_bounds)
         sub_times = filter(lambda x: x != 0, sub_times)

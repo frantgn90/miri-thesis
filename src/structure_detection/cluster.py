@@ -64,12 +64,16 @@ class cluster (object):
                 callstack_parts = aliasing_detector.get_subloops()
                 subloops = []
                 for x in callstack_parts:
-                    subloops.append(loop(callstacks=x,id=loops_id))
+                    new_loop = loop(callstacks=x,id=loops_id) 
+                    new_loop.cluster_id = self.cluster_id
+                    subloops.append(new_loop)
                     loops_id += 1
                 #subloops = [loop(callstacks=x, id=loops_id) for x in callstack_parts]
                 ranks_subloops.append(subloops)
             else:
-                ranks_loops.append(loop(callstacks=callstacks, id=loops_id))
+                new_loop = loop(callstacks=callstacks, id=loops_id)
+                new_loop.cluster_id = self.cluster_id
+                ranks_loops.append(new_loop)
                 loops_id += 1
 
         if len(ranks_loops) > 0:

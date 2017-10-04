@@ -28,12 +28,14 @@ class pseudo_line(object):
         return res
 
 class pseudo_for(pseudo_line):
-    def __init__(self, iterations, deph):
+    def __init__(self, iterations, misc, deph):
         pseudo_line.__init__(self, deph)
         self.iterations = iterations
         self.first_col = ""
         self.second_col = " "
-        self.third_col = "FOR 1 TO {0}".format(self.iterations)
+        self.third_col = "FOR 1 TO {0} ({1})".format(
+                self.iterations,
+                str(misc))
         self.metric = ""
 
 class pseudo_for_end(pseudo_line):
@@ -114,10 +116,8 @@ class pseudocode(object):
         # Callstack to loop
         #
         if not self.only_mpi:
-#            if loop_obj.common_callstack.common_with_prev != None:
-#                tabs += len(loop_obj.common_callstack.common_with_prev)
-            if not loop_obj.conditional_rank_block.common_with_prev is None:
-                tabs += len(loop_obj.conditional_rank_block.common_with_prev)
+            if not loop_obj.common_callstack.common_with_prev is None:
+                tabs += len(loop_obj.common_callstack.common_with_prev)
 
             tabs += self.parse_callstack(loop_obj.common_callstack, tabs)
 
@@ -127,7 +127,8 @@ class pseudocode(object):
             if not loop_obj.conditional_rank_blocks.common_with_prev is None:
                 tabs += len(loop_obj.conditional_rank_blocks.common_with_prev)
 
-        self.lines.append(pseudo_for(loop_obj.iterations, tabs))
+        loop_id = str(loop_obj.cluster_id) + ":" + str(loop_obj._id)
+        self.lines.append(pseudo_for(loop_obj.iterations, loop_id, tabs))
         self.parse_conditional_rank_block(
                 loop_obj.conditional_rank_block,
                 loop_obj.get_all_ranks(), 

@@ -233,7 +233,6 @@ def main(argc, argv):
                     cl.cluster_id,
                     l._id,
                     l.original_iterations)
-
     logging.info("Done")
 
     

@@ -32,7 +32,7 @@ OMPLIN_EVENT_BASE =""
 PARAVER_EVENT     ="2"
 
 FUNC_MAP_FILE     ="functions.map"
-MPI_LIB_FILE      ="libmpi"
+MPI_LIB_FILE      ="*"
 
 _empty_cell=0
 
