@@ -116,17 +116,13 @@ class pseudocode(object):
         # Callstack to loop
         #
         if not self.only_mpi:
-            if not loop_obj.common_callstack.common_with_prev is None:
-                tabs += len(loop_obj.common_callstack.common_with_prev)
+            if not loop_obj.common_with_prev is None:
+                tabs += len(loop_obj.common_with_prev)
 
             tabs += self.parse_callstack(loop_obj.common_callstack, tabs)
 
         # Loop description
         #
-        if not loop_obj.conditional_rank_blocks is None:
-            if not loop_obj.conditional_rank_blocks.common_with_prev is None:
-                tabs += len(loop_obj.conditional_rank_blocks.common_with_prev)
-
         loop_id = str(loop_obj.cluster_id) + ":" + str(loop_obj._id)
         self.lines.append(pseudo_for(loop_obj.iterations, loop_id, tabs))
         self.parse_conditional_rank_block(
@@ -144,14 +140,14 @@ class pseudocode(object):
 
         if not self.only_mpi:
             for call in calls:
-                if not call in self.last_callstack:
-                    self.lines.append(pseudo_call(call, tabs+my_tabs))
+#               if not call in self.last_callstack:
+                self.lines.append(pseudo_call(call, tabs+my_tabs))
                 my_tabs += 1
         else:
             if len(calls) > 0:
                 self.lines.append(pseudo_call(calls[-1],tabs))
 
-        self.last_callstack = callstack_obj.calls
+#        self.last_callstack = callstack_obj.calls
         return my_tabs
 
     def parse_conditional_rank_block(self, 

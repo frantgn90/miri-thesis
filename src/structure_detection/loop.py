@@ -97,6 +97,7 @@ class conditional_rank_block(object):
             if not isinstance(self.callstacks[callstack_i], callstack):
                 self.callstacks[callstack_i]\
                         .common_callstack -= self.common_callstack
+
             else:
                 self.callstacks[callstack_i] -= self.common_callstack
 
@@ -167,8 +168,9 @@ class loop (object):
         # Main conditional rank block beloging to this loop. The main conditional
         # block is the block that is executed by the same ranks as the loop.
         #
-        self.conditional_rank_blocks = None
+        self.conditional_rank_block = None
         self.already_merged = False
+        self.common_with_prev = None
 
         logging.debug("New loop with {0} iterations.".format(self.iterations))
 
@@ -383,17 +385,20 @@ class loop (object):
 
     def remove_contiguous_common_callstack(self, last_common_callstack):
         
-        if last_common_callstack == None:
+        if last_common_callstack is None:
             if type(self.conditional_rank_block.callstacks[0]) == callstack:
-                last_common_callstack = self.conditional_rank_block.callstacks[0]
+                last_common_callstack = \
+                    self.conditional_rank_block.callstacks[0]
             else:
-                last_common_callstack = self.conditional_rank_block.callstacks[0]\
-                        .common_callstack
+                last_common_callstack = \
+                    self.conditional_rank_block.callstacks[0].common_callstack
         
         for i in range(len(self.conditional_rank_block.callstacks))[1:]:
             item = self.conditional_rank_block.callstacks[i]
 
             if type(item) == conditional_rank_block or type(item) == loop:
+                if type(item) == loop:
+                    item.remove_contiguous_common_callstack(last_common_callstack)
                 common_callstack = self.conditional_rank_block.callstacks[i]\
                         .common_callstack
                 self.conditional_rank_block.callstacks[i].common_with_prev =\
@@ -401,17 +406,19 @@ class loop (object):
                         self.conditional_rank_block.callstacks[i].common_callstack
                 last_common_callstack = self.conditional_rank_block.callstacks[i]\
                         .common_callstack
+
                 self.conditional_rank_block.callstacks[i].common_callstack -= \
                         self.conditional_rank_block.callstacks[i].common_with_prev
+
             else:
                 common_callstack = self.conditional_rank_block.callstacks[i]
                 self.conditional_rank_block.callstacks[i].common_with_prev =\
                         last_common_callstack & common_callstack
 
                 last_common_callstack = self.conditional_rank_block.callstacks[i]
+
                 self.conditional_rank_block.callstacks[i] -=\
                         self.conditional_rank_block.callstacks[i].common_with_prev
-
 
     def __eq__(self, other):
         if type(other) == loop:
@@ -465,5 +472,5 @@ class loop (object):
             else:
                 val += str(callstack)+"\n"
 
-#        val += str(self.conditional_rank_blocks)
+#        val += str(self.conditional_rank_block)
         return val

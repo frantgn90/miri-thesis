@@ -246,6 +246,9 @@ def main(argc, argv):
     logging.info("Postprocessing callstacks...")
     for cluster_obj in top_level_clusters:
         for loop_obj in cluster_obj.loops:
+            logging.debug("-- Posprocessing loop {0}:{1}".format(
+                loop_obj.cluster_id,
+                loop_obj._id))
             loop_obj.compact_callstacks()
             loop_obj.extracting_callstack_common_part()
             loop_obj.group_into_conditional_rank_blocks()
