@@ -99,3 +99,9 @@ OPL_USED_DELTA    ="UsedDelta"
 OPL_POINT_DELTA   ="Cover_dp"
 
 MAX_ITERATIONS = 1
+
+#######
+# LOG #
+#######
+
+log_level = 0

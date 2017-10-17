@@ -24,6 +24,7 @@ class cluster (object):
         self.nmerges = 0
 
     def get_first_line(self):
+        print "{0}: {1}".format(self.cluster_id,len(self.loops))
         if not self.loops[0].common_callstack is None:
             if len(self.loops[0].common_callstack) > 0:
                 return self.loops[0].common_callstack[0].line
@@ -104,6 +105,9 @@ class cluster (object):
         self.loops_generation_done = True
    
     def merge(self, other):
+        assert len(self.loops) > 0
+        assert len(other.loops) > 0
+
         #assert self.get_interarrival_median() > other.get_interarrival_median()
         #assert len(self.loops) == len(other.loops)
 
@@ -112,35 +116,53 @@ class cluster (object):
         for l in other.loops:
             if l.already_merged: merged += 1
 
+        loops_to_remove = []
         for i in range(len(self.loops)):
             for j in range(len(other.loops)):
-                logging.debug("Loop {0}:{1} merged to loop {2}:{3}".format(
-                    other.cluster_id,
-                    other.loops[j]._id,
-                    self.cluster_id,
-                    self.loops[i]._id))
+                other_loop_id="{0}.{1}".format(other.cluster_id, other.loops[j]._id)
+                self_loop_id="{0}.{1}".format(self.cluster_id, self.loops[i]._id)
 
                 if other.loops[j].already_merged == True:
-                    logging.debug("Loop{0}:{1} already merged".format(
-                        other.cluster_id,
-                        other.loops[j]._id))
+                    logging.debug("-- LOOP {0} already merged".format(other_loop_id))
                     continue
 
+                logging.debug("-- Try LOOP {0} merge to LOOP {1}".format(
+                    other_loop_id, self_loop_id))
                 is_subloop = self.loops[i].is_subloop(other.loops[j])
 
                 if is_subloop:
-                    logging.debug("Yes")
+                    n_original_cs = len(self.loops[i])
                     self.loops[i].merge_with_subloop(other.loops[j])
-                    other.loops[j].already_merged = True
+
+                    if len(self.loops[i]) == 0:
+                        logging.debug("-- LOOP {0} MERGED to {1} (Data cond.)"
+                            .format(self_loop_id, other_loop_id))
+                        loops_to_remove.append(self_loop_id)
+                    elif n_original_cs > len(self.loops[i]):
+                        logging.debug("-- LOOP {0} PARTIALLY MERGED to {1} ({2}/{3}) (Data cond.)"
+                            .format(
+                                self_loop_id, 
+                                other_loop_id, 
+                                len(self.loops[i]), 
+                                n_original_cs))
+                    else:
+                        logging.debug("-- LOOP {0} MERGED to {1}".format(
+                            other_loop_id, self_loop_id))
+                        other.loops[j].already_merged = True
                     merged += 1
                 else:
-                    logging.debug("No")
+                    logging.debug("-- LOOP {0} NOT merged to {1}".format(
+                        other_loop_id, self_loop_id))
+
+        # Removing inverselly merged loops
+        self.loops = filter(
+            lambda x: not x.get_str_id() in loops_to_remove,
+            self.loops)
 
         if merged > 0 and merged < len(other.loops):
             logging.warning("Some loops have not been merged.")
         self.nmerges += 1
 
-#        return merged > 0
         return merged == len(other.loops)
 
     def get_parent(self):
@@ -188,7 +210,6 @@ class cluster (object):
         pass
 
 
-
 def merge_clusters(clusters_pool):
     logging.debug("Classifying clusters by delta.")
 
@@ -214,26 +235,31 @@ def merge_clusters(clusters_pool):
             len(clusters),
             delta))
 
+        to_remove = []
         for i in range(len(clusters)-1):
             done=False
+            if clusters[i].cluster_id in to_remove: continue
+
             for j in range(i+1,len(clusters)):
-                logging.debug("Cluster {0} merged to {1}?".format(
-                    clusters[i].cluster_id, 
-                    clusters[j].cluster_id))
+                if clusters[j].cluster_id in to_remove: continue
 
-                if clusters[j].get_interarrival_mean() >\
-                        clusters[i].get_interarrival_mean():
-                    
-                    done = clusters[j].merge(clusters[i])
-                    if done:
-                        logging.debug("Cluster {0} ({1}) merged to {2} ({3})".format(
-                            clusters[i].cluster_id, 
-                            clusters[i].get_interarrival_mean(),
-                            clusters[j].cluster_id, 
-                            clusters[j].get_interarrival_mean()))
-                        break
+                logging.debug("Try MERGE CLUSTER {0} to CLUSTER {1}".format(
+                    clusters[i].cluster_id, clusters[j].cluster_id))
 
-                logging.info("... No, there is no a subloop")
+                done = clusters[j].merge(clusters[i])
+
+                if len(clusters[j].loops) == 0:
+                    logging.debug("CLUSTER {0} MERGED to {1} (Data cond.)".format(
+                        clusters[j].cluster_id, clusters[i].cluster_id))
+                    to_remove.append(clusters[j].cluster_id)
+                    continue
+                elif done:
+                    logging.debug("CLUSTER {0} MERGED to {1}".format(
+                        clusters[i].cluster_id, clusters[j].cluster_id))
+                    assert len(clusters[j].loops) > 0
+                    break
+
+                logging.debug("NOT MERGED")
                                
             if not done:
                 loops_merged = 0
@@ -241,9 +267,15 @@ def merge_clusters(clusters_pool):
                     if l.already_merged: loops_merged += 1
                 
                 if loops_merged < len(clusters[i].loops):
-                    logging.warning("Cluster {0} could not be merged completely."\
-                            "Delta aliasing??"
-                            .format(clusters[i].cluster_id))
+                    logging.warning("Cluster {0} could not be merged completely" \
+                            " ({1}/{2})"
+                            .format(clusters[i].cluster_id, 
+                                loops_merged, 
+                                len(clusters[i].loops)))
+
+        cluster_by_delta[delta] = filter(
+                lambda x: not x.cluster_id in to_remove, 
+                cluster_by_delta[delta])
 
         top_level_clusters.append(cluster_by_delta[delta][-1])
 

@@ -174,6 +174,9 @@ class loop (object):
 
         logging.debug("New loop with {0} iterations.".format(self.iterations))
 
+    def get_str_id(self):
+        return "{0}.{1}".format(self.cluster_id, self._id)
+
     def get_all_ranks(self):
         ranks = []
         for cs in self.program_order_callstacks:
@@ -193,12 +196,56 @@ class loop (object):
         self.program_order_callstacks = sorted(merged_callstacks)
         self.nmerges += 1
 
+    def should_own(self, cs):
+        # WARNING: This function is not working well when the callstack to 
+        # evaluate should be at the beggining or at the end of the loop
+        first_callstack = self.get_first_callstack()
+        last_callstack = self.get_last_callstack()
+
+        return first_callstack < cs and cs < last_callstack
+
+    def add_callstack(self, cs):
+        self.program_order_callstacks.append(cs)
+        self.program_order_callstacks.sort()
+
+    def remove_callstack(self, cs):
+        self.program_order_callstacks.remove(cs)
+
     def merge_with_subloop(self, other):
+
+        # Just for check out if the subloop relationship is the other way
+        # arround.
+
+        merged_to_other = 0
+        not_merged_cs = []
+        for c in self.program_order_callstacks:
+            if other.should_own(c):
+                other.add_callstack(c)
+                merged_to_other += 1
+            else:
+                not_merged_cs.append(c)
+        
+        self.program_order_callstacks = not_merged_cs
+
+        cs = filter(lambda x: type(x) == callstack, self.program_order_callstacks)
+        if len(cs)  == 0:
+            if len(self.program_order_callstacks) > 0:
+                logging.warning("LEFT JUST LOOPS")
+                for l in self.program_order_callstacks:
+                    logging.warning("-- {0}".format(l.get_str_id()))
+            #self.program_order_callstacks = []
+            return
+
+        # Partially merged
+        if merged_to_other > 0:
+            return
+
+
+        # Continue with the actual subloop merging
+        #
         other.iterations /= self.iterations
         merged_subloop = self.program_order_callstacks + [other]
         
-        #self.program_order_callstacks = sorted(merged_subloop)
-
         def __sort_loops_and_cs(a, b):
             result = False
 
@@ -218,7 +265,7 @@ class loop (object):
                 result = 1
 
             return result
-
+        
         merged_subloop.sort(__sort_loops_and_cs)
         self.program_order_callstacks = merged_subloop
 
@@ -240,17 +287,17 @@ class loop (object):
         else:
             return self.program_order_callstacks[0]
 
+    def get_last_callstack(self):
+        if type(self.program_order_callstacks[-1]) == loop:
+            return self.program_order_callstack[-1].get_last_callstack()
+        else:
+            return self.program_order_callstacks[-1]
+
     def get_first_callstack_instants(self):
         if type(self.program_order_callstacks[0]) == loop:
             return self.program_order_callstacks[0].get_first_callstack_instants()
         else:
             return self.program_order_callstacks[0].instants
-
-#        for cs in self.program_order_callstacks:
-#            if type(cs) == callstack:
-#                return cs.instants
-#
-#        assert False
 
     def is_subloop(self, other):
 #        its_bounds = self.get_first_callstack_instants()
@@ -383,6 +430,9 @@ class loop (object):
             self.conditional_rank_block.add_callstack(callstack_obj)
         self.conditional_rank_block.extracting_callstack_common_part()
 
+    def group_into_conditional_data_blocks(self):
+        pass
+
     def remove_contiguous_common_callstack(self, last_common_callstack):
         
         if last_common_callstack is None:
@@ -419,6 +469,16 @@ class loop (object):
 
                 self.conditional_rank_block.callstacks[i] -=\
                         self.conditional_rank_block.callstacks[i].common_with_prev
+
+    def get_iteration_times():
+        first_callstack = self.get_first_callstack()
+        last_callstack = self.get_last_callstack()
+
+        assert len(first_callstack.instants) == len(last_callstacks.instants)
+        return zip(first_callstack.instants, last_callstack.instants)
+
+    def __len__(self):
+        return len(self.program_order_callstacks)
 
     def __eq__(self, other):
         if type(other) == loop:

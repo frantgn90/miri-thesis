@@ -10,15 +10,16 @@ initializations and last treatments of data.
 
 import sys
 import numpy,math
-
+import multiprocessing
+from multiprocessing import Pool
 from sympy.solvers import solve,nsolve
 from sympy import Symbol
-
 import logging
-import constants
 
+import constants
 from cplex_interface import CplexInterface
 from utilities import ProgressBar
+
 _upper_bound=1
 _init_delta=0.5
 
@@ -110,7 +111,11 @@ def get_near_points(data, total_time,  delta, epsilon):
 def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):
     assert False, "Hoy no... mañana!, Execute with --cplex"
 
-def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accuracy, cplex_input):
+def calcule_deltas_cplex(
+        fcallstacks_pool, 
+        total_time, 
+        bottom_bound, 
+        delta_accuracy, cplex_input):
     #
     # Preparing data for CPLEX
     #
@@ -125,7 +130,7 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
             deltas.append(i)
         deltas.append(1)
 
-        pbar = ProgressBar("Generating CPLEX input", npoints*len(deltas))
+#        pbar = ProgressBar("Generating CPLEX input", npoints*len(deltas))
 
         points=[]
         for cs in fcallstacks_pool:
@@ -134,24 +139,38 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
         big_m = 0
         distance_dp = []
 
+        ncpus = multiprocessing.cpu_count()
+        pool = Pool(processes=ncpus)
+
         for delta in deltas:
-            distance_delta=[]
-            for point in points:
-                min_distance = get_minimum_distance(delta, total_time, point)[0]
-                #min_distance = get_minimum_distance_2(delta, total_time, point)[0]
-
-                distance_delta.append(min_distance)
-
-                if min_distance > big_m:
-                    big_m = min_distance
-
-                logging.debug("Point ({0:>5},{1:>15}) to delta {2} = {3:>10}"
-                        .format(point[0], point[1], delta, round(min_distance,1)))
-                pbar.progress_by(1)
-                pbar.show()
-
+            logging.debug("Calculing distances to delta {0} ({1} threads)"
+                    .format(delta, ncpus))
+            pp = zip([delta]*len(points), [total_time]*len(points), points)
+            distance_delta = pool.map(get_minimum_distance,pp)
+            distance_delta = map(get_minimum_distance, pp)
             distance_dp.append(distance_delta)
-            logging.debug("-----------------------------")
+
+#            distance_delta=[]
+#            for point in points:
+#                min_max_distance = get_minimum_distance(
+#                        delta, 
+#                        total_time, point)
+#                min_distance = min_max_distance[0]
+#                distance_delta.append(min_distance)
+#
+#                if min_distance > big_m:
+#                    big_m = min_distance
+#
+#                logging.debug("[{0:>5},{1:>15}] to delta {2} = {3:>10}".format(
+#                    point[0], 
+#                    point[1], 
+#                    delta, 
+#                    round(min_distance,1)))
+#
+#                if constants.log_level == logging.INFO:
+#                    pbar.progress_by(1)
+#                    pbar.show()
+
 
         arguments = {
                 constants.OPL_ARG_BIGM:    big_m,
@@ -159,8 +178,7 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
                 constants.OPL_ARG_NPOINTS: len(points),
                 constants.OPL_ARG_DELTAS:  deltas,
                 constants.OPL_ARG_POINTS:  points,
-                constants.OPL_ARG_DISTDP:  distance_dp
-        }
+                constants.OPL_ARG_DISTDP:  distance_dp}
 
         cplex_int = CplexInterface()
         infile = cplex_int.set_args(arguments)
@@ -199,7 +217,11 @@ def calcule_deltas_cplex(fcallstacks_pool, total_time, bottom_bound, delta_accur
 
 # Inspired on (last comment): http://math.stackexchange.com/questions/967268/
 # finding-the-closest-distance-between-a-point-a-curve
-def get_minimum_distance(delta,total_time, point):
+def get_minimum_distance(arguments):
+    delta = arguments[0]
+    total_time = arguments[1]
+    point = arguments[2]
+
     T=delta*total_time
     X=point[0]
     Y=point[1]
@@ -218,7 +240,8 @@ def get_minimum_distance(delta,total_time, point):
             min_distance = distance
             min_solution = [solution, T/solution]
     
-    return min_distance, min_solution
+#    return min_distance, min_solution
+    return min_distance
 
 def get_minimum_distance_2(delta, total_time, point):
     return _get_minimum_distance_2(delta, total_time, point, 0, 0)

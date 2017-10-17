@@ -109,8 +109,6 @@
   	//writeln("Maximum distance: ", maxDistance);
   	var nUsedDeltas = 0;
   	var total_delta = 0;
-  	var maxDistance = maxDeltaDistance[1];
-  	var maxDDistance = 1;
   	
   	writeln("----------");
   	for (i=1; i<=nDeltas; ++i)
@@ -122,21 +120,15 @@
   			for (j=1; j <= nPoints; j++)
   				pointsCovered += Cover_dp[i][j];
   			
-  			writeln("- Used delta[",i,"] = ", Deltas[i], " , Max distance = ", 
-  				maxDeltaDistance[i], " ud. Covers ", pointsCovered, " points");
+  			writeln("- Used delta[",i,"] = ", Deltas[i], ". Covers ", 
+                pointsCovered, " points");
   				
-  			if (maxDeltaDistance[i] > maxDistance)
-  			{
-  				maxDistance = maxDeltaDistance[i];
-  				maxDDistance = i;
-    		}  				
-  			
   			total_delta += Deltas[i];
   			nUsedDeltas+=1;
   		}
   	}
   	writeln("----------");
   	writeln("Number of used deltas: ", nUsedDeltas);
-  	writeln("Max distance [Delta=", maxDDistance ,"] : ", maxDistance);
+  	writeln("Max distance: ", maxDistance);
   	writeln((total_delta*100), "% of the application is described.");
   }

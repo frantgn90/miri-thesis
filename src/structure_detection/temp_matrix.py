@@ -172,7 +172,8 @@ class tmatrix(object):
                             already_explored=True
                             break
 
-                    if not already_explored and self._matrix[i][j] != 0: # Void cell
+                    if not already_explored and self._matrix[i][j] != 0: 
+                        # Void cell
                         v=h=0
 
                         # Horitzontal min
@@ -215,6 +216,8 @@ class tmatrix(object):
             # If all partitions are completelly disyunctive and can explain all 
             # the matrix, it means that every partition is a loop
             # TODO: Think about complex cases with conditionals...
+            # TODO: Caso especial cuando tenemos subbucles y no tenemos
+            # info sobre el bucle grande.
 
 #            disyunctive=True
 #

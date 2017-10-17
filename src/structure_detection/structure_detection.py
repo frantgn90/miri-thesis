@@ -148,6 +148,12 @@ def main(argc, argv):
                     "whole callstack",
             dest="only_mpi")
 
+    parser.add_argument("--sanity-check",
+            action="store_true",
+            help="Whether replay for sanity check is performed or not",
+            dest="sanity_check")
+
+
 
 
     argcomplete.autocomplete(parser)
@@ -162,7 +168,13 @@ def main(argc, argv):
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: {0}".format(loglevel))
-    logging.basicConfig(level=numeric_level)
+
+    constants.log_level = numeric_level
+
+    # https://docs.python.org/2/library/logging.html#logrecord-attributes
+    # FORMAT="[%(levelname)s] %(asctime)s - %(message)s"
+    FORMAT="[%(levelname)s] (%(filename)s:%(lineno)s) %(message)s"
+    logging.basicConfig(level=numeric_level, format=FORMAT)
 
     ''''''''''''''''''''''''''
     ''' Workflow starting  '''
@@ -235,43 +247,58 @@ def main(argc, argv):
                     l.original_iterations)
     logging.info("Done")
 
-    
+ 
     ''' 6. Merging clusters '''
     logging.info("Merging clusters...")
     top_level_clusters = merge_clusters(clusters_pool)
     logging.info("Done")
 
+    # TODO: Sanity check. Replay the pseudocode in order to check if the order 
+    # of all callstacks are good. Also can be checked if MPI calls results on a 
+    # deadlock. 
+    # - Fail on this step will indicate there is an error on the code infer.
+    # - If there is not fail, the pseudocode will be considered correct even if
+    #   it is not fitting exactly with the actual code.
 
-    ''' 7. Reducing callstacks '''
+    ''' 7. Sanity check '''
+    if arguments.sanity_check:
+        logging.info("Sanity check (replaying)...")
+
+        logging.info("Done")
+
+    ''' 8. Reducing callstacks '''
     logging.info("Postprocessing callstacks...")
     for cluster_obj in top_level_clusters:
         for loop_obj in cluster_obj.loops:
-            logging.debug("-- Posprocessing loop {0}:{1}".format(
+            logging.debug("-- Postprocessing loop {0}:{1}".format(
                 loop_obj.cluster_id,
                 loop_obj._id))
             loop_obj.compact_callstacks()
             loop_obj.extracting_callstack_common_part()
             loop_obj.group_into_conditional_rank_blocks()
+            loop_obj.group_into_conditional_data_blocks()
             loop_obj.remove_contiguous_common_callstack(None)
     logging.info("Done")
 
-
-    ''' 8. Derivating metrics '''
+    ''' 9. Derivating metrics '''
     logging.info("Derivating metrics")
     for callstack in callstacks_pool:
         callstack.calc_metrics()
     logging.info("Done")
 
 
-    ''' 9. Genearting flowgraph '''
+    ''' 10. Genearting flowgraph '''
 #    logging.info("Generating flowgraph...")
 #    fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters 
 #    logging.info("Done")
 #    fg.show()
 
 
-    ''' 9. Generating pseudo-code '''
+    ''' 10. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
+    logging.debug("Top level clusters:")
+    for cl in top_level_clusters:
+        logging.debug("-- CLUSTER {0}".format(cl.cluster_id))
     pc = pseudocode(top_level_clusters, nranks, arguments.only_mpi)
     logging.info("Done...")
 
