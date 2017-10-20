@@ -104,6 +104,43 @@ class cluster (object):
 
         self.loops_generation_done = True
    
+    def push_datacond(self, other):
+        original_nloops = len(self.loops)
+        loops_to_remove = []
+        for i in range(len(self.loops)):
+            for j in range(len(other.loops)):
+                assert not other.loops[j].already_merged
+                self_loop_id = self.loops[i].get_str_id()
+                other_loop_id = other.loops[j].get_str_id()
+
+                result = self.loops[i].push_datacondition_callsacks(other.loops[j])
+
+                if result == 0:
+                    logging.debug("-- LOOP {0} NOT PUSHED to {1}".format(
+                        self_loop_id,
+                        other_loop_id))
+                elif result == 1:
+                    logging.debug("-- LOOP {0} PUSHED to {1}".format(
+                        self_loop_id,
+                        other_loop_id))
+                    loops_to_remove.append(self_loop_id)
+                else:
+                    logging.debug("-- LOOP {0} PARTIALLY PUSHED {1}".format(
+                        self_loop_id,
+                        other_loop_id))
+
+        # Removing inverselly merged loops
+        self.loops = filter(
+            lambda x: not x.get_str_id() in loops_to_remove,
+            self.loops)
+
+        if len(self.loops) == original_nloops:
+            return 0 # No one loop pushed
+        elif len(self.loops) == 0:
+            return 1 # All loops pushed
+        else:
+            return 2 # Some loops pushed
+
     def merge(self, other):
         assert len(self.loops) > 0
         assert len(other.loops) > 0
@@ -132,6 +169,7 @@ class cluster (object):
 
                 if is_subloop:
                     n_original_cs = len(self.loops[i])
+                    self.loops[i].push_datacondition_callsacks(other.loops[j])
                     self.loops[i].merge_with_subloop(other.loops[j])
 
                     if len(self.loops[i]) == 0:
@@ -226,8 +264,7 @@ def merge_clusters(clusters_pool):
     for k,v in cluster_by_delta.items():
         logging.debug("Sorting clusters ({0}) with delta={1}".format(len(v), k))
         v.sort(key=lambda x: x.get_interarrival_mean(), reverse=False)
-        sorted_cluster_ids = [x.cluster_id for x in v]
-        logging.debug("Sorted: {0}".format(sorted_cluster_ids))
+        logging.debug("Sorted: {0}".format([x.cluster_id for x in v]))
 
     top_level_clusters=[]
     for delta,clusters in cluster_by_delta.items():
@@ -235,33 +272,67 @@ def merge_clusters(clusters_pool):
             len(clusters),
             delta))
 
+        '''
+        First step, look for data condition clusters
+        '''
+        cluster_to_remove = []
+        for i in range(len(clusters)-1,-1,-1):
+            for j in range(i-1,-1,-1):
+                logging.debug("Try PUSH DATACOND CLUSTER {0} to CLUSTER {1}"
+                        .format(clusters[i].cluster_id, clusters[j].cluster_id))
+
+                res = clusters[i].push_datacond(clusters[j])
+
+                if res == 0:
+                    logging.debug("CLUSTER {0} NOT PUSHED to {1}".format(
+                        clusters[i].cluster_id, clusters[j].cluster_id))
+                elif res == 1:
+                    logging.debug("CLUSTER {0} PUSHED to {1}".format(
+                        clusters[i].cluster_id, clusters[j].cluster_id))
+                    cluster_to_remove.append(clusters[i].cluster_id)
+                    break
+                else:
+                    logging.debug("CLUSTER {0} PARTIALLY PUSHED to {1}".format(
+                        clusters[i].cluster_id, clusters[j].cluster_id))
+
+        print "==================="
+        print cluster_to_remove
+        print "==================="
+        cluster_by_delta[delta] = filter(
+                lambda x: not x.cluster_id in cluster_to_remove, 
+                cluster_by_delta[delta])
+        clusters = cluster_by_delta[delta]
+
+        for cl in cluster_by_delta[delta]:
+            print cl.cluster_id
+
+        print "==================="
+
+        for cl in clusters:
+            print cl.cluster_id
+
+        print "==================="
+
+        '''
+        Second step, merge clusters
+        '''
         to_remove = []
         for i in range(len(clusters)-1):
-            done=False
-            if clusters[i].cluster_id in to_remove: continue
-
+            merged=False
             for j in range(i+1,len(clusters)):
-                if clusters[j].cluster_id in to_remove: continue
-
                 logging.debug("Try MERGE CLUSTER {0} to CLUSTER {1}".format(
                     clusters[i].cluster_id, clusters[j].cluster_id))
 
-                done = clusters[j].merge(clusters[i])
+                merged = clusters[j].merge(clusters[i])
 
-                if len(clusters[j].loops) == 0:
-                    logging.debug("CLUSTER {0} MERGED to {1} (Data cond.)".format(
-                        clusters[j].cluster_id, clusters[i].cluster_id))
-                    to_remove.append(clusters[j].cluster_id)
-                    continue
-                elif done:
+                if merged:
                     logging.debug("CLUSTER {0} MERGED to {1}".format(
                         clusters[i].cluster_id, clusters[j].cluster_id))
-                    assert len(clusters[j].loops) > 0
                     break
-
-                logging.debug("NOT MERGED")
-                               
-            if not done:
+                else:
+                    logging.debug("NOT MERGED")
+                           
+            if not merged:
                 loops_merged = 0
                 for l in clusters[i].loops:
                     if l.already_merged: loops_merged += 1
@@ -272,10 +343,6 @@ def merge_clusters(clusters_pool):
                             .format(clusters[i].cluster_id, 
                                 loops_merged, 
                                 len(clusters[i].loops)))
-
-        cluster_by_delta[delta] = filter(
-                lambda x: not x.cluster_id in to_remove, 
-                cluster_by_delta[delta])
 
         top_level_clusters.append(cluster_by_delta[delta][-1])
 

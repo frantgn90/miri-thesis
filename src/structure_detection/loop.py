@@ -198,7 +198,7 @@ class loop (object):
 
     def should_own(self, cs):
         # WARNING: This function is not working well when the callstack to 
-        # evaluate should be at the beggining or at the end of the loop
+        # evaluate is be at the beggining or at the end of the loop
         first_callstack = self.get_first_callstack()
         last_callstack = self.get_last_callstack()
 
@@ -211,14 +211,24 @@ class loop (object):
     def remove_callstack(self, cs):
         self.program_order_callstacks.remove(cs)
 
-    def merge_with_subloop(self, other):
-
-        # Just for check out if the subloop relationship is the other way
-        # arround.
-
+    def push_datacondition_callsacks(self, other):
+        '''
+        Data condition callstacks are these callstacks that should be owned by one cluster
+        that represents its loop but the use of data conditionals makes them behave
+        different from the parent loop. In this case it will be treated as a different loop
+        by the clustering.
+        In order to avoid false loops, we can check whether a callstack should be owned
+        by other loop or not by means of the code position.
+        This functions is devoted to push self owned data conditional callstacks to the
+        real owner.
+        '''
         merged_to_other = 0
         not_merged_cs = []
         for c in self.program_order_callstacks:
+            '''
+            Because at this point no merge has to be done yey
+            '''
+            assert not type(c) == loop
             if other.should_own(c):
                 other.add_callstack(c)
                 merged_to_other += 1
@@ -227,22 +237,15 @@ class loop (object):
         
         self.program_order_callstacks = not_merged_cs
 
-        cs = filter(lambda x: type(x) == callstack, self.program_order_callstacks)
-        if len(cs)  == 0:
-            if len(self.program_order_callstacks) > 0:
-                logging.warning("LEFT JUST LOOPS")
-                for l in self.program_order_callstacks:
-                    logging.warning("-- {0}".format(l.get_str_id()))
-            #self.program_order_callstacks = []
-            return
+        if merged_to_other == 0:
+            return 0 # Not pushed
+        elif len(self.program_order_callstacks) == 0:
+            return 1 # Completelly pushed
+        else:
+            return 2 # Partially pushed
+        
 
-        # Partially merged
-        if merged_to_other > 0:
-            return
-
-
-        # Continue with the actual subloop merging
-        #
+    def merge_with_subloop(self, other):
         other.iterations /= self.iterations
         merged_subloop = self.program_order_callstacks + [other]
         

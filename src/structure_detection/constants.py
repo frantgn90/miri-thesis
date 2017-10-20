@@ -78,11 +78,11 @@ RANDOM_SEED       =5748473
 ### CPLEX ###
 #############
 
-OPL_PROJECT = "/home/jmartinez/MIRI/master-thesis/repo/miri-thesis/"\
+OPL_PROJECT = "/home/jmartinez/MIRI/master-thesis/git/miri-thesis/"\
         "src/structure_detection/opl/deltas_fitting"
-OPL_RUN_SCRIPT    ="/home/jmartinez/MIRI/master-thesis/repo/miri-thesis/"\
+OPL_RUN_SCRIPT    ="/home/jmartinez/MIRI/master-thesis/git/miri-thesis/"\
         "src/structure_detection/opl/run.sh"
-OPL_PROBLEM_IN    ="/home/jmartinez/MIRI/master-thesis/repo/miri-thesis/"\
+OPL_PROBLEM_IN    ="/home/jmartinez/MIRI/master-thesis/git/miri-thesis/"\
         "src/structure_detection/opl/deltas_fitting/input_problem.dat"
 OPL_PROBLEM_OUT   ="cplex.out"
 OPL_PROBLEM_ERR   ="cplex.err"

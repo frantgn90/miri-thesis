@@ -80,8 +80,8 @@ def getDelta(cdist, total_time, bottom_bound):
 
 
 def filter_by_distance(callstacks, total_time, delta, epsilon):
-    result = {k:v for k,v in callstacks.items() \
-                if get_minimum_distance(delta, total_time, [v["times"],v["time_mean"]])[0] <= epsilon}
+    result = {k:v for k,v in callstacks.items() if get_minimum_distance(
+                    delta, total_time, [v["times"],v["time_mean"]]) <= epsilon}
 
     return result
 
@@ -102,7 +102,7 @@ def get_near_points(data, total_time,  delta, epsilon):
 
     sum_square_distances=0
     for point in points:
-        sum_square_distances += get_minimum_distance(delta, total_time, point)[0]
+        sum_square_distances += get_minimum_distance(delta, total_time, point)
 
     mean_square_distances = sum_square_distances/len(points)
     return points, mean_square_distances
@@ -139,38 +139,21 @@ def calcule_deltas_cplex(
         big_m = 0
         distance_dp = []
 
-        ncpus = multiprocessing.cpu_count()
-        pool = Pool(processes=ncpus)
+        #ncpus = multiprocessing.cpu_count()
+        pool = Pool()
 
         for delta in deltas:
-            logging.debug("Calculing distances to delta {0} ({1} threads)"
-                    .format(delta, ncpus))
+            logging.debug("Calculing distances to delta {0}".format(delta))
+
             pp = zip([delta]*len(points), [total_time]*len(points), points)
+            logging.debug("Zip done")
+
             distance_delta = pool.map(get_minimum_distance,pp)
-            distance_delta = map(get_minimum_distance, pp)
-            distance_dp.append(distance_delta)
+            distance_dp.append(distance_delta) 
 
-#            distance_delta=[]
-#            for point in points:
-#                min_max_distance = get_minimum_distance(
-#                        delta, 
-#                        total_time, point)
-#                min_distance = min_max_distance[0]
-#                distance_delta.append(min_distance)
-#
-#                if min_distance > big_m:
-#                    big_m = min_distance
-#
-#                logging.debug("[{0:>5},{1:>15}] to delta {2} = {3:>10}".format(
-#                    point[0], 
-#                    point[1], 
-#                    delta, 
-#                    round(min_distance,1)))
-#
-#                if constants.log_level == logging.INFO:
-#                    pbar.progress_by(1)
-#                    pbar.show()
-
+            max_dist = max(distance_delta)
+            if max_dist > big_m:
+                big_m = max_dist
 
         arguments = {
                 constants.OPL_ARG_BIGM:    big_m,
