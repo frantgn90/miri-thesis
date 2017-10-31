@@ -295,23 +295,11 @@ def merge_clusters(clusters_pool):
                     logging.debug("CLUSTER {0} PARTIALLY PUSHED to {1}".format(
                         clusters[i].cluster_id, clusters[j].cluster_id))
 
-        print "==================="
-        print cluster_to_remove
-        print "==================="
         cluster_by_delta[delta] = filter(
                 lambda x: not x.cluster_id in cluster_to_remove, 
                 cluster_by_delta[delta])
         clusters = cluster_by_delta[delta]
 
-        for cl in cluster_by_delta[delta]:
-            print cl.cluster_id
-
-        print "==================="
-
-        for cl in clusters:
-            print cl.cluster_id
-
-        print "==================="
 
         '''
         Second step, merge clusters
@@ -343,7 +331,9 @@ def merge_clusters(clusters_pool):
                             .format(clusters[i].cluster_id, 
                                 loops_merged, 
                                 len(clusters[i].loops)))
-
+        
+        # TODO: When there is some cluster that could not be merged,
+        # it has to be included as a top_level_clusters
         top_level_clusters.append(cluster_by_delta[delta][-1])
 
     return top_level_clusters

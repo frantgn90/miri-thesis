@@ -114,19 +114,11 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
 
         class_member_mask = (labels == k)
         xy = X[class_member_mask & core_samples_mask]
-        lab,=ax.plot(
-                xy[:, 0], 
-                xy[:, 1], 
-                'o', 
-                markerfacecolor=col,
-                markeredgecolor=col, 
-                markersize=5, 
-                marker='o', 
-                label="Cluster {0}".format(k),
-                picker=5)
+        lab,=ax.plot(xy[:, 0], xy[:, 1], 'o', 
+                markerfacecolor=col,markeredgecolor=col, markersize=5, 
+                marker='o', label="Cluster {0}".format(k),picker=5)
 
         plt_labels.append(lab)
-
         
         xy = X[class_member_mask & ~core_samples_mask]
         lab,=ax.plot(
@@ -224,10 +216,17 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
 
     ''' 4. Show plots '''
     if show_plot:
-        show_plot_thread=multiprocessing.Process(
-                target=show_clustering,
-                args=(data, fcallstacks_pool, labels, core_samples_mask, nclusters, 
-                    total_time, delta, bound))
+#        show_plot_thread=multiprocessing.Process(
+#                target=show_clustering,
+#                args=(data, fcallstacks_pool, labels, core_samples_mask, nclusters, 
+#                    total_time, delta, bound))
+        show_clustering(data, 
+                fcallstacks_pool, 
+                labels, 
+                core_samples_mask, 
+                nclusters, 
+                total_time, 
+                delta, bound)
 
         show_plot_thread.start()
 

@@ -303,9 +303,6 @@ class loop (object):
             return self.program_order_callstacks[0].instants
 
     def is_subloop(self, other):
-#        its_bounds = self.get_first_callstack_instants()
-#        sub_times = other.get_first_callstack_instants()
-
         its_bounds = None
         sub_times = None
         for cs in self.program_order_callstacks:
@@ -317,7 +314,6 @@ class loop (object):
                 sub_times = cs.instants
 
         assert not its_bounds is None and not sub_times is None
-
 
         its_bounds = filter(lambda x: x != 0, its_bounds)
         sub_times = filter(lambda x: x != 0, sub_times)
