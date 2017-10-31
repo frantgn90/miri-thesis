@@ -292,7 +292,7 @@ class loop (object):
 
     def get_last_callstack(self):
         if type(self.program_order_callstacks[-1]) == loop:
-            return self.program_order_callstack[-1].get_last_callstack()
+            return self.program_order_callstacks[-1].get_last_callstack()
         else:
             return self.program_order_callstacks[-1]
 
