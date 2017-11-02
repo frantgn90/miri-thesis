@@ -119,7 +119,7 @@ class conditional_rank_block(object):
                     res += str(callstack_obj) + "\n"
             res += "*********************\n"
         return res
- 
+
 
 class loop (object):
     def __init__(self, callstacks, id):
@@ -138,19 +138,23 @@ class loop (object):
         # This loop is made by how many merges
         #
         self.nmerges = 1
-        
+
         # Number of iterations of the loop. The original iterations
         # are needed because number of iterations will change in case
         # this loop was indeed a subloop
         #
-        self.iterations = callstacks[0].repetitions
+        if not callstacks is None:
+            self.iterations = callstacks[0].repetitions
+        else:
+            self.iterations = 0
+
         self.original_iterations = self.iterations
 
         # Sanity check 1 !!!
         #
-#        for callstack in callstacks:
-#            assert callstack.repetitions == self.iterations, \
-#                    "Loop: Sanity check #1 fail"
+        #for callstack in callstacks:
+        #    assert callstack.repetitions == self.iterations, \
+        #            "Loop: Sanity check #1 fail"
 
         # We have a chain of calls, this variable indicates where
         # in this chain the loop represented by this object is. The way
@@ -159,11 +163,13 @@ class loop (object):
         #
         self.loop_deph = None
         self.common_callstack = None
-        
         # Until now, the order of the callstacks were not important
         # but now it is, so lets sort it. The order should be the
         # program order so the line is the parameter to take into account
-        self.program_order_callstacks = sorted(callstacks)
+        if not callstacks is None:
+            self.program_order_callstacks = sorted(callstacks)
+        else:
+            self.program_order_callstacks = []
 
         # Main conditional rank block beloging to this loop. The main conditional
         # block is the block that is executed by the same ranks as the loop.
@@ -213,14 +219,14 @@ class loop (object):
 
     def push_datacondition_callsacks(self, other):
         '''
-        Data condition callstacks are these callstacks that should be owned by one cluster
-        that represents its loop but the use of data conditionals makes them behave
-        different from the parent loop. In this case it will be treated as a different loop
-        by the clustering.
-        In order to avoid false loops, we can check whether a callstack should be owned
-        by other loop or not by means of the code position.
-        This functions is devoted to push self owned data conditional callstacks to the
-        real owner.
+        Data condition callstacks are these callstacks that should be owned by
+        one cluster that represents its loop but the use of data conditionals
+        makes them behave different from the parent loop. In this case it will
+        be treated as a different loop by the clustering.
+        In order to avoid false loops, we can check whether a callstack should
+        be owned by other loop or not by means of the code position.
+        This functions is devoted to push self owned data conditional callstacks
+        to the real owner.
         '''
         merged_to_other = 0
         not_merged_cs = []
@@ -234,7 +240,6 @@ class loop (object):
                 merged_to_other += 1
             else:
                 not_merged_cs.append(c)
-        
         self.program_order_callstacks = not_merged_cs
 
         if merged_to_other == 0:
@@ -243,12 +248,11 @@ class loop (object):
             return 1 # Completelly pushed
         else:
             return 2 # Partially pushed
-        
 
     def merge_with_subloop(self, other):
         other.iterations /= self.iterations
         merged_subloop = self.program_order_callstacks + [other]
-        
+
         def __sort_loops_and_cs(a, b):
             result = False
 
@@ -268,15 +272,24 @@ class loop (object):
                 result = 1
 
             return result
-        
+
         merged_subloop.sort(__sort_loops_and_cs)
         self.program_order_callstacks = merged_subloop
 
-        i=0
-        common_callstack = self.program_order_callstacks[i]
-        while isinstance(common_callstack, loop):
-            i += 1
-            common_callstack = self.program_order_callstacks[i]
+        for toc in self.program_order_callstacks:
+            if type(toc) == callstack:
+                common_callstack = toc
+
+        # TODO
+        # This is assuming all loops will have at least one callstack
+        # but now we have synthetic superloops that just have subloops
+        # think about it
+
+#        i=0
+#        common_callstack = self.program_order_callstacks[i]
+#        while isinstance(common_callstack, loop):
+#            i += 1
+#            common_callstack = self.program_order_callstacks[i]
 
     def get_first_line(self):
         if type(self.program_order_callstacks[0]) == loop:

@@ -12,6 +12,8 @@ class tmatrix(object):
         self._matrix=matrix
         self._transformations=transformations
         self._sorted_callstacks=callstacks
+        self._hidden_superloop=False
+        self._hidden_superloop_its=0
 
     @classmethod
     def fromMatrix(cls, matrix):
@@ -25,6 +27,12 @@ class tmatrix(object):
         sorted_matrix, transformations = cls.__boundaries_sort(matrix)
 
         return cls(sorted_matrix, scallstacks, transformations)
+
+    def is_hidden_superloop(self):
+        return self._hidden_superloop
+
+    def get_hidden_superloop_its(self):
+        return self._hidden_superloop_its
 
     def getMatrix(self):
         return self._matrix
@@ -53,18 +61,18 @@ class tmatrix(object):
 
     @classmethod
     def __get_matrix(self, callstacks_list):
-        keys_cs=[]; tomat=[]; index=0; max_size=0 
+        keys_cs=[]; tomat=[]; index=0; max_size=0
 
         cs_map={}
         for cs in callstacks_list:
             k=cs.keys()[0]
-            
+
             # TODO: Eventually they can happen at same first time
             # so the key is not completelly unique. Use the position of the list
             cs_map.update({cs[k]["when"][0]:k})
 
             if len(cs[k]["when"]) > max_size:
-                max_size=len(cs[k]["when"]) 
+                max_size=len(cs[k]["when"])
                 for i in range(index-1, -1, -1):
                     holes=max_size-len(tomat[i])
                     tomat[i].extend([constants._empty_cell]*holes)
@@ -75,7 +83,6 @@ class tmatrix(object):
             tomat.append(cs[k]["when"])
             keys_cs.append(k)
             index+=1
-    
 
         tmat=np.matrix(tomat)
 
@@ -105,7 +112,7 @@ class tmatrix(object):
         last=mat[0][0]
         lastcol=lastrow=col=0
         transformed=0
-    
+
         while col < len(mat[0]):
             for row in range(mheight):
                 if mat[row][col]==0: continue
@@ -131,7 +138,7 @@ class tmatrix(object):
                 if row[i]!=0: break
                 zeros+=1
 
-            if zeros < minzeros: 
+            if zeros < minzeros:
                 minzeros=zeros
 
         if minzeros > 0:
@@ -163,7 +170,6 @@ class tmatrix(object):
 
             for i in range(len(self._matrix)):
                 for j in range(len(self._matrix[0])):
-                    
                     already_explored=False
                     # Already explored i
                     for sm in subm:
@@ -172,7 +178,7 @@ class tmatrix(object):
                             already_explored=True
                             break
 
-                    if not already_explored and self._matrix[i][j] != 0: 
+                    if not already_explored and self._matrix[i][j] != 0:
                         # Void cell
                         v=h=0
 
@@ -195,6 +201,8 @@ class tmatrix(object):
                             if v < min_v: min_v=v
 
                         subm.append([(j,j+min_h-1),(i,i+min_v-1)])
+
+            self.__look_for_superloop(subm)
 
             # Now group submatrixes into loops
             if len(subm) > 1:
@@ -219,53 +227,42 @@ class tmatrix(object):
             # TODO: Caso especial cuando tenemos subbucles y no tenemos
             # info sobre el bucle grande.
 
-#            disyunctive=True
-#
-#            visited_rows=[]
-#            visited_cols=[]
-#
-#            for s in subm:
-#                # Let's test the rows
-#
-#                rows_range=s[1]
-#                for i in range(rows_range[0], rows_range[1]):
-#                    if not i in visited_rows:
-#                        visited_rows.append(i)
-#                    else:
-#                        disyunctive=False
-#                        break
-#
-#                # Let's test the cols
-#                
-#                cols_range=s[0]
-#                for i in range(cols_range[0], cols_range[1]):
-#                    if not i in visited_cols:
-#                        visited_cols.append(i)
-#                    else:
-#                        disyunctive=False
-#                        break
-#                
-#
-#            if len(visited_rows)==len(mat[0]) and \
-#                    len(visited_cols)==len(mat):
-#                        completed=True
-#            else:
-#                completed=False
-#
-#            if completed and disyunctive:
-#                # The partitioned matrixes have to be returned
-#                res=[]
-#                rescs=[]
-#                for s in subm:
-#                    pmat=[]
-#                    for i in range(s[1][0], s[1][1]):
-#                        pmat.append(mat[i][s[0][0]:(s[0][1])])
-#                    
-#                    res.append(pmat)
-#                    rescs.append(self._sorted_callstacks[s[1][0]:s[1][1]])
-#            else:
-#                res=[mat]
-#                rescs=[self._sorted_callstacks]
-#
-#            return res, rescs
 
+    def __look_for_superloop(self, subm):
+        def __sort_subm(a,b):
+            if a[0][0] > b[0][0]:
+                return 1
+            else:
+                return -1
+
+        def __map_subm(a):
+            return (a[0][1]-a[0][0]+1, a[1][0])
+
+        ssubm = sorted(subm, __sort_subm)
+        ssubm = map(__map_subm, ssubm)
+
+        # Looking for the minimum expression
+        split_by = 1
+        done = False
+        while not done and split_by < len(ssubm):
+            res = []
+            done = True
+            for i in range(0,len(ssubm), split_by):
+                res.append(ssubm[i:i+split_by])
+
+            prev = res[0]
+            for r in res[1:]:
+                done &= (r[0]==prev[0] and r[1]==prev[1])
+                if not done:
+                    break
+                prev=r
+            if done:
+                break
+            else:
+                split_by += 1
+
+        if done:
+            min_times = len(res)
+            min_ssubm = res[0]
+            self._hidden_superloop = True
+            self._hidden_superloop_its = min_times

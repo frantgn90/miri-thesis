@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     for (int ii=0; ii < 50; ++ii)
     {
-    //MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+//    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     for (int i=0; i < NITS; ++i)
     {
         int nrequest = i%NCOMMS;

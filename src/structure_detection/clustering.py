@@ -17,6 +17,7 @@ from sklearn.cluster import DBSCAN
 from cluster import cluster
 from utilities import pretty_print
 import constants
+import logging
 
 """
 This is a customized matplotlib scale.

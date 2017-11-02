@@ -65,11 +65,10 @@ class cluster (object):
                 callstack_parts = aliasing_detector.get_subloops()
                 subloops = []
                 for x in callstack_parts:
-                    new_loop = loop(callstacks=x,id=loops_id) 
+                    new_loop = loop(callstacks=x,id=loops_id)
                     new_loop.cluster_id = self.cluster_id
                     subloops.append(new_loop)
                     loops_id += 1
-                #subloops = [loop(callstacks=x, id=loops_id) for x in callstack_parts]
                 ranks_subloops.append(subloops)
             else:
                 new_loop = loop(callstacks=callstacks, id=loops_id)
@@ -80,7 +79,6 @@ class cluster (object):
         if len(ranks_loops) > 0:
             self.loops.append(self.__ranks_level_merge(ranks_loops))
             self.nloops = 1
-            
         elif len(ranks_subloops) > 0:
             # Here i am assuming that all subloops of all ranks are related
             # between them in function of the order they appear in the ranks_
@@ -90,6 +88,8 @@ class cluster (object):
             #                        |        |         |
             #                      merged   merged   merged
 
+            ssubloops = []
+            nsubloops = 0
             for i in range(len(max(ranks_subloops))):
                 loops_to_merge = []
                 for subloops in ranks_subloops:
@@ -97,13 +97,30 @@ class cluster (object):
 
                 merged_ranks_loop = self.__ranks_level_merge(loops_to_merge)
 
-                self.loops.append(merged_ranks_loop)
-                self.nloops += 1
+                ssubloops.append(merged_ranks_loop)
+                nsubloops += 1
+#                self.loops.append(merged_ranks_loop)
+#                self.nloops += 1
+
+            if aliasing_detector.is_hidden_superloop():
+                superloop = loop(None, 0) # Void loop
+                superloop.iterations = aliasing_detector.get_hidden_superloop_its()
+
+                for sl in ssubloops:
+                    superloop.merge_with_subloop(sl)
+
+                self.loops.append(superloop)
+                self.nloops = 1
+
+                #assert False, "Implementation not done yet"
+            else:
+                self.loops.extend(ssubloops)
+                self.nloops = nsubloops
         else:
             assert False, "Not managed situation."
 
         self.loops_generation_done = True
-   
+
     def push_datacond(self, other):
         original_nloops = len(self.loops)
         loops_to_remove = []

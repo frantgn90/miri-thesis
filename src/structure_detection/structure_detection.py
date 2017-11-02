@@ -19,19 +19,12 @@ from cluster import merge_clusters
 
 import constants
 
-def Usage(cmd):
-    print("Usage(): {0} [-l call_level] [-f img1[,img2,...]] [-ri N] <trace>\n"
-        .format(cmd))
-    exit(1)
-
-
 def main(argc, argv):
-
     parser = argparse.ArgumentParser(
-        description="This script analyze a Paraver trace in order to extract the needed"\
-                " information for infer the internal structure of the traced application."\
-                " This analysis can be used for improve the understanding of the"\
-                " analyzed application.")
+            description="This script analyze a Paraver trace in order to extract"\
+                    " the needed information for infer the internal structure of"\
+                    " the traced application. This analysis can be used for "\
+                    " improve the understanding of the analyzed application.")
 
     parser.add_argument("--trace",
             action="store",
@@ -41,7 +34,7 @@ def main(argc, argv):
             help="The Paraver trace to be analyzed.",
             metavar="PRVTRACE",
             dest="prv_trace")
-    
+
     parser.add_argument("--call-level",
             action="store",
             nargs=1,
@@ -58,7 +51,8 @@ def main(argc, argv):
             type=str,
             required=False,
             default=["ALL"],
-            help="The callstack for these images will be taken into account by the analyzer.",
+            help="The callstack for these images will be taken into account"\
+                    " by the analyzer.",
             metavar="IMAGES",
             dest="image_filter")
 
@@ -95,8 +89,8 @@ def main(argc, argv):
             default=[0.01],
             help="The clusters that explains a portion below this boundary will"\
                     " be ignored",
-            metavar="BOUND",
-            dest="bottom_bound")
+           metavar="BOUND",
+           dest="bottom_bound")
 
     parser.add_argument("--epsilon",
             action="store",
@@ -121,7 +115,7 @@ def main(argc, argv):
             action="store_true",
             help="Whether you want that the delta calculation will be done by"\
                     " CPLEX optimization engine or by a heuristics.",
-            dest="use_cplex")
+           dest="use_cplex")
 
     parser.add_argument("--cplex-input",
             action="store",
@@ -131,8 +125,8 @@ def main(argc, argv):
             default=[None],
             help="Whether you want to use already generated input for CPLEX, you "\
                     "must specify here the path to it.",
-            metavar="CPLEXINPUT",
-            dest="cplex_input")
+           metavar="CPLEXINPUT",
+           dest="cplex_input")
 
     parser.add_argument("--delta-accuracy",
             action="store",
@@ -141,20 +135,28 @@ def main(argc, argv):
             required=False,
             default=[0.1],
             help="Inverse of number of deltas provided to cplex.")
-    
+
     parser.add_argument("--only-mpi",
             action="store_true",
             help="Whether you want to see just MPI calls or the "\
                     "whole callstack",
-            dest="only_mpi")
+           dest="only_mpi")
 
     parser.add_argument("--sanity-check",
             action="store_true",
             help="Whether replay for sanity check is performed or not",
             dest="sanity_check")
 
-
-
+    parser.add_argument("--output",
+            action="store",
+            nargs=1,
+            type=str,
+            required=False,
+            default=[None],
+            help="Whether you want the output into a file, indicate the file"\
+                    " whit this flag",
+            metavar="OUTFILE",
+            dest="output_filename")
 
     argcomplete.autocomplete(parser)
     arguments = parser.parse_args(args=argv[1:])
@@ -189,8 +191,8 @@ def main(argc, argv):
     app_time = get_app_time(trace)
     constants.TOTAL_TIME = app_time
     logging.debug("{0} ns total trace time.".format(app_time))
-    
-    
+
+
     ''' 2. Getting callstack metrics '''
     logging.info("Reducing information...")
     for callstack in callstacks_pool:
@@ -223,7 +225,7 @@ def main(argc, argv):
                 arguments.delta_accuracy[0],
                 arguments.cplex_input[0])
 
-    logging.debug("{0} super-loops detected".format(len(deltas)))
+        logging.debug("{0} super-loops detected".format(len(deltas)))
     logging.info("Done")
 
 
@@ -235,19 +237,19 @@ def main(argc, argv):
         cluster.run_loops_generation()
 
     logging.debug("{0} clusters detected".format(len(clusters_pool)))
-    
+
     for cl in clusters_pool:
         logging.debug("Cluster {0} have {1} loops".format(
             cl.cluster_id,
             len(cl.loops)))
         for l in cl.loops:
-            print " -- {0}:{1} {2} iterations".format(
+            logging.debug(" -- {0}:{1} {2} iterations".format(
                     cl.cluster_id,
                     l._id,
-                    l.original_iterations)
+                    l.original_iterations))
     logging.info("Done")
 
- 
+
     ''' 6. Merging clusters '''
     logging.info("Merging clusters...")
     top_level_clusters = merge_clusters(clusters_pool)
@@ -262,7 +264,7 @@ def main(argc, argv):
 
     ''' 7. Sanity check '''
     if arguments.sanity_check:
-        logging.info("Sanity check (replaying)...")
+        logging.info("TODO: Sanity check (replaying)...")
 
         logging.info("Done")
 
