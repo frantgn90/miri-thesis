@@ -144,10 +144,7 @@ def calcule_deltas_cplex(
 
         for delta in deltas:
             logging.debug("Calculing distances to delta {0}".format(delta))
-
             pp = zip([delta]*len(points), [total_time]*len(points), points)
-            logging.debug("Zip done")
-
             distance_delta = pool.map(get_minimum_distance,pp)
             distance_dp.append(distance_delta) 
 
@@ -224,7 +221,7 @@ def get_minimum_distance(arguments):
             min_solution = [solution, T/solution]
     
 #    return min_distance, min_solution
-    return min_distance
+    return min_distance**2
 
 def get_minimum_distance_2(delta, total_time, point):
     return _get_minimum_distance_2(delta, total_time, point, 0, 0)

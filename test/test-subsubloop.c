@@ -26,6 +26,28 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_size(MPI_COMM_WORLD, &nranks);
 
+    for (int i=0; i < 5; ++i)
+    {
+        MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+        for (int j=0; j < 5; ++j)
+        {
+            MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+            for (int k=0; k < 5; ++k)
+            {
+                if (! (myrank%2))
+                    do_work_pair();
+                else
+                    do_work_odd();
+
+                if (! (myrank%2))
+                    do_work_pair();
+                else
+                    do_work_odd();
+            }
+        }
+    }
+
+
     for (int i=0; i < 10; ++i)
     {
         MPI_Comm_size(MPI_COMM_WORLD, &nranks);

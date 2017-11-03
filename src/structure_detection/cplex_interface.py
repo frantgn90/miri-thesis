@@ -22,12 +22,18 @@ class CplexInterface(object):
         self.deltas = args[constants.OPL_ARG_DELTAS]
 
         ff = open(self.infile, "w")
-        ff.write("{0}={1};\n".format(constants.OPL_ARG_BIGM, args[constants.OPL_ARG_BIGM]))
-        ff.write("{0}={1};\n".format(constants.OPL_ARG_NDELTAS, args[constants.OPL_ARG_NDELTAS]))
-        ff.write("{0}={1};\n".format(constants.OPL_ARG_NPOINTS, args[constants.OPL_ARG_NPOINTS]))
-        ff.write("{0}={1};\n".format(constants.OPL_ARG_DELTAS, args[constants.OPL_ARG_DELTAS]))
-        ff.write("{0}={1};\n".format(constants.OPL_ARG_POINTS, args[constants.OPL_ARG_POINTS]))
-        ff.write("{0}={1};\n".format(constants.OPL_ARG_DISTDP, args[constants.OPL_ARG_DISTDP]))
+        ff.write("{0}={1};\n".format(constants.OPL_ARG_BIGM, 
+            args[constants.OPL_ARG_BIGM]))
+        ff.write("{0}={1};\n".format(constants.OPL_ARG_NDELTAS, 
+            args[constants.OPL_ARG_NDELTAS]))
+        ff.write("{0}={1};\n".format(constants.OPL_ARG_NPOINTS, 
+            args[constants.OPL_ARG_NPOINTS]))
+        ff.write("{0}={1};\n".format(constants.OPL_ARG_DELTAS, 
+            args[constants.OPL_ARG_DELTAS]))
+        ff.write("{0}={1};\n".format(constants.OPL_ARG_POINTS, 
+            args[constants.OPL_ARG_POINTS]))
+        ff.write("{0}={1};\n".format(constants.OPL_ARG_DISTDP, 
+            args[constants.OPL_ARG_DISTDP]))
         ff.close()
 
         return self.infile

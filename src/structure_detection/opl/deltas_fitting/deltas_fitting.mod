@@ -47,9 +47,8 @@
  
  // The maximum distance from function delta to points that are
  // covered by it
- dvar float+ maxDeltaDistance[d in D];
-
  dvar float+ maxDistance;
+ dvar float+ maxPointDistance[p in P];
  
  
  execute {
@@ -73,10 +72,11 @@
   // Is more important to have less deltas than the maximum distance
   // so extra deltas have extra penalization of *100. This number should
   // be set empirically
-  minimize
-  	maxDistance + sum(d in D) UsedDelta[d];
+  //minimize
+  //	maxDistance + sum(d in D) UsedDelta[d];
 
-  //minimize maxDistance;
+  minimize
+    sum (p in P) maxPointDistance[p] + sum(d in D) UsedDelta[d];
  
   subject to {
   	
@@ -92,9 +92,12 @@
   		UsedDelta[d] <= sum (p in P) Cover_dp[d,p];
     }  		
   	
-  	// Good value for maxDeltaDistance (assuming we are minimizing it)
-  	forall (d in D, p in P)
-        maxl(Distance_dp[d,p] - (1-Cover_dp[d,p])*bigM, 0) <= maxDistance;
+  	// Good value for maxDistance (assuming we are minimizing it)
+  	//forall (d in D, p in P)
+    //    maxl(Distance_dp[d,p] - (1-Cover_dp[d,p])*bigM, 0) <= maxDistance;
+
+    forall (p in P, d in D)
+        maxl(Distance_dp[d,p] - (1-Cover_dp[d,p])*bigM, 0) <= maxPointDistance[p];
 
   }
   
