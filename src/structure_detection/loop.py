@@ -127,31 +127,29 @@ class loop (object):
         self.cluster_id = 0
         # Maybe this loop is just an statement under a condition of 
         # other loop
-        #
         self.is_condition = False
         self.condition_probability = 0
 
+        # Whether this loop is a hidden loop
+        self.hidden_loop = False
+
         # Is the position where the condition of the first callstack is
-        #
         self.condition_level = None
 
         # This loop is made by how many merges
-        #
         self.nmerges = 1
 
         # Number of iterations of the loop. The original iterations
         # are needed because number of iterations will change in case
         # this loop was indeed a subloop
-        #
         if not callstacks is None:
-            self.iterations = callstacks[0].repetitions
+            self.iterations = callstacks[0].repetitions[callstacks[0].rank]
         else:
             self.iterations = 0
 
         self.original_iterations = self.iterations
 
         # Sanity check 1 !!!
-        #
         #for callstack in callstacks:
         #    assert callstack.repetitions == self.iterations, \
         #            "Loop: Sanity check #1 fail"
@@ -250,8 +248,14 @@ class loop (object):
             return 2 # Partially pushed
 
     def merge_with_subloop(self, other):
-        other.iterations /= self.iterations
-        merged_subloop = self.program_order_callstacks + [other]
+        # This sitation happens when hidden super-loop is detected
+        # on subloop cluster
+        if other.iterations == self.iterations:
+            merged_subloop = self.program_order_callstacks + \
+                    other.program_order_callstacks
+        else:
+            other.iterations /= self.iterations
+            merged_subloop = self.program_order_callstacks + [other]
 
         def __sort_loops_and_cs(a, b):
             result = False
@@ -318,13 +322,20 @@ class loop (object):
     def is_subloop(self, other):
         its_bounds = None
         sub_times = None
+
+        # Could be the situation where self of other just have subloops
+        # w/o callstacks when temp_matrix detect a hidden superloop
         for cs in self.program_order_callstacks:
             if type(cs) == callstack:
                 its_bounds = cs.instants
+            elif type(cs) == loop:
+                its_bounds = cs.get_first_callstack().instants
 
         for cs in other.program_order_callstacks:
             if type(cs) == callstack:
                 sub_times = cs.instants
+            elif type(cs) == loop:
+                sub_times = cs.get_first_callstack().instants
 
         assert not its_bounds is None and not sub_times is None
 
@@ -440,6 +451,7 @@ class loop (object):
         #
         for callstack_obj in self.program_order_callstacks:
             self.conditional_rank_block.add_callstack(callstack_obj)
+
         self.conditional_rank_block.extracting_callstack_common_part()
 
     def group_into_conditional_data_blocks(self):

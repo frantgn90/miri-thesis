@@ -54,14 +54,10 @@ class pseudo_call(pseudo_line):
         self.first_col = self.call.call_file
         if self.call.mpi_call:
             self.second_col = "*"
-#            self.metric = str(
-#                    round(
-#                        self.call.my_callstack.metrics["mpi_duration_mean"],
-#                        2)) + " (ns)"
-            self.metric_2 = str(
-                    round(
+            self.metric_2 = str(round(
                         self.call.my_callstack.metrics["global_mpi_duration_percent"]
                         ,2)) + "%"
+#            self.metric_2 = str(self.call.my_callstack.repetitions)
 
         else:
             self.second_col = str(self.call.line)
@@ -154,13 +150,10 @@ class pseudocode(object):
             conditional_rank_block_obj, 
             prev_ranks,
             tabs):
-        condition_tabs=0
-        my_ranks = set(conditional_rank_block_obj.ranks)
-        
-        condition_obj = condition(my_ranks, prev_ranks)
+
+        item = conditional_rank_block_obj
 
         # Print the common callstack
-        #
         if not self.only_mpi:
             if conditional_rank_block_obj.common_with_prev != None:
                 tabs += len(conditional_rank_block_obj.common_with_prev)
@@ -170,30 +163,37 @@ class pseudocode(object):
                         tabs)
 
         # Print the conditional
-        #
-        item = conditional_rank_block_obj
-        if condition_obj.is_equal:
-            pass
-        elif condition_obj.is_subset:
-            #condition_tabs += 1
+        condition_tabs=0
+
+        if item.ranks != self.all_ranks:
             self.lines.append(pseudo_condition(
                 item.ranks, False, False, tabs+condition_tabs))
             condition_tabs += 1
-        elif condition_obj.is_complement:
-            if set(prev_ranks).union(set(item.ranks)) == set(self.all_ranks):
-                el = False; eli = True
-            else:
-                el = False; eli = True
 
-            #condition_tabs += 1
-            self.lines.append(pseudo_condition(item.ranks, 
-                el, eli,tabs+condition_tabs))
-            condition_tabs += 1
-        elif condition_obj.is_superset:
-            assert False # ????
-            self.lines.append(pseudo_condition(item.ranks, False, False,
-                tabs+condition_tabs))
-            condition_tabs += 1
+#        my_ranks = set(conditional_rank_block_obj.ranks)
+#        condition_obj = condition(my_ranks, prev_ranks)
+#        if condition_obj.is_equal:
+#            pass
+#        elif condition_obj.is_subset:
+#            #condition_tabs += 1
+#            self.lines.append(pseudo_condition(
+#                item.ranks, False, False, tabs+condition_tabs))
+#            condition_tabs += 1
+#        elif condition_obj.is_complement:
+#            if set(prev_ranks).union(set(item.ranks)) == set(self.all_ranks):
+#                el = False; eli = True
+#            else:
+#                el = False; eli = True
+#
+#            #condition_tabs += 1
+#            self.lines.append(pseudo_condition(item.ranks, 
+#                el, eli,tabs+condition_tabs))
+#            condition_tabs += 1
+#        elif condition_obj.is_superset:
+#            assert False # ????
+#            self.lines.append(pseudo_condition(item.ranks, False, False,
+#                tabs+condition_tabs))
+#            condition_tabs += 1
     
 
         # Print whatever we have under the conditional

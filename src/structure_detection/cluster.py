@@ -105,14 +105,15 @@ class cluster (object):
             if aliasing_detector.is_hidden_superloop():
                 superloop = loop(None, 0) # Void loop
                 superloop.iterations = aliasing_detector.get_hidden_superloop_its()
+                superloop.hidden_loop = True
+                logging.debug("Cluster {0}: Superloop detected ({1} its)"
+                        .format(self.cluster_id, superloop.iterations)) 
 
                 for sl in ssubloops:
                     superloop.merge_with_subloop(sl)
 
                 self.loops.append(superloop)
                 self.nloops = 1
-
-                #assert False, "Implementation not done yet"
             else:
                 self.loops.extend(ssubloops)
                 self.nloops = nsubloops

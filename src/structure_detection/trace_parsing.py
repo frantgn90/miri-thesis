@@ -401,6 +401,9 @@ def get_callstacks(trace, level, image_filter):
     # If this aplication is using mpl, then consider it as the very
     # low level MPI call.
 
+    csbar = ProgressBar("Reordering information", len(callstack_series))
+    csbar.show()
+
     for rank_index in range(len(callstack_series)):
         for i_stack in range(len(callstack_series[rank_index])):
             new_stack_call=[]
@@ -425,7 +428,9 @@ def get_callstacks(trace, level, image_filter):
             callstack_series[rank_index][i_stack] = new_stack_call
             lines_series[rank_index][i_stack] = new_stack_line
             files_series[rank_index][i_stack] = new_stack_file
- 
+        csbar.progress_by(1)
+        csbar.show()
+
 
 #    logging.info("Starting alignement of callstacks")
 #
@@ -446,6 +451,10 @@ def get_callstacks(trace, level, image_filter):
 #    logging.info("Done")
  
     callstacks_pool=[]
+    
+    cpbar = ProgressBar("Generating callstacks pool", len(callstack_series))
+    cpbar.show()
+
     for rank in range(len(callstack_series)):
         for cs_i in range(len(callstack_series[rank])):
             new_callstack = callstack.from_trace(rank,
@@ -462,6 +471,9 @@ def get_callstacks(trace, level, image_filter):
                 callstacks_pool[repeated_idx].merge(new_callstack)
             except Exception:
                 callstacks_pool.append(new_callstack)
+        cpbar.progress_by(1)
+        cpbar.show()
+
 
     # Sanity check
     #

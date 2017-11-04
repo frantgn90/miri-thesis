@@ -98,7 +98,7 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
                 yd = ydata[i]
 
                 for cs in cdist:
-                    if cs.repetitions == xd and cs.instants_distances_mean == yd:
+                    if cs.repetitions[cs.rank] == xd and cs.instants_distances_mean == yd:
                         points_info += str(cs)+"\n"
             print pretty_print(points_info, "Points info")
 
@@ -141,24 +141,24 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
                 color=col, linestyle="--", label="delta={0}".format(delta))
         plt_labels.append(lab)
 
-#    occurrences = X[:, 0]
-#    occurrences.sort()
-#
-#    # Upper boundary
-#    occ_points = np.array(\
-#            range(\
-#                int(min(occurrences)),\
-#                int(max(occurrences)),\
-#                int((max(occurrences)-min(occurrences))/50)))
-#    ax.plot(occ_points, (total_time/occ_points),"k--", color="blue", lw=1)
-#
-#    # Bottom boundary
-#    ax.plot(occ_points,(bound*total_time)/occ_points, "k--", color="red", lw=1) 
-#
-#    ax.set_title("Number of clusters: {0} (eps={1}, mins={2})"
-#            .format(n_clusters_, 
-#            constants._eps, 
-#            constants._min_samples))
+    #occurrences = X[:, 0]
+    #occurrences.sort()
+    #
+    ## Upper boundary
+    #occ_points = np.array(\
+    #        range(\
+    #            int(min(occurrences)),\
+    #            int(max(occurrences)),\
+    #            int((max(occurrences)-min(occurrences))/50)))
+    #ax.plot(occ_points, (total_time/occ_points),"k--", color="blue", lw=1)
+    #
+    ## Bottom boundary
+    #ax.plot(occ_points,(bound*total_time)/occ_points, "k--", color="red", lw=1) 
+    #
+    #ax.set_title("Number of clusters: {0} (eps={1}, mins={2})"
+    #        .format(n_clusters_, 
+    #        constants._eps, 
+    #        constants._min_samples))
     
     
     ''' Show plot '''
@@ -184,7 +184,7 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
     ''' 1. Preparing data '''
     data=[]
     for cs in fcallstacks_pool:
-        data.append([cs.repetitions, cs.instants_distances_mean])
+        data.append([cs.repetitions[cs.rank], cs.instants_distances_mean])
 
     normdata=normalize_data(data)
 

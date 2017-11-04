@@ -39,8 +39,9 @@ class callstack(object):
     def __init__(self, rank, instant, calls):
         self.common_with_prev = None
         self.rank=rank
-        self.repetitions=1
-        self.instants=[int(instant)] # TODO: Classify in ranks
+        self.repetitions={}
+        self.repetitions[self.rank]=1
+        self.instants=[int(instant)] 
         self.instants_distances=[]
         self.instants_distances_mean=None
         self.instants_distances_median=None
@@ -87,7 +88,7 @@ class callstack(object):
 
     def merge(self, other):
         assert self.get_signature() == other.get_signature()
-        self.repetitions+=1
+        self.repetitions[self.rank]+=1
         self.instants.extend(other.instants)
 
         self.metrics[self.rank]["mpi_duration_merged"].append(
@@ -96,10 +97,11 @@ class callstack(object):
     def compact_with(self, other):
         self.compacted_ranks.append(other.rank)
         self.metrics[other.rank] = other.metrics[other.rank]
+        self.repetitions[other.rank] = other.repetitions[other.rank]
 
     def calc_reduce_info(self):
         self.reduced=True
-        if self.repetitions == 1: return
+        if self.repetitions[self.rank] == 1: return
 
         self.instants.sort()
         self.instants_distances=self.__get_distances(self.instants)
@@ -125,8 +127,8 @@ class callstack(object):
 
 
     def is_above_delta(self, delta, total_time):
-        if self.repetitions == 1: return False
-        cost=get_cost(self.repetitions, 
+        if self.repetitions[self.rank] == 1: return False
+        cost=get_cost(self.repetitions[self.rank], 
                 total_time, 
                 self.instants_distances_mean, 
                 delta)
@@ -274,7 +276,7 @@ class callstack(object):
     def __str__(self):
         val = "R:{0} IT:{1} -".format(
                 self.compacted_ranks, 
-                self.repetitions,
+                self.repetitions[self.rank],
                 self.condition_level)
         for call in self.calls:
             val += ">{0}({1})".format(call.call, call.line)

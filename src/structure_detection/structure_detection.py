@@ -195,8 +195,14 @@ def main(argc, argv):
 
     ''' 2. Getting callstack metrics '''
     logging.info("Reducing information...")
+    ribar = ProgressBar("Updating points", len(callstacks_pool))
+    ribar.show()
+
     for callstack in callstacks_pool:
         callstack.calc_reduce_info()
+        ribar.progress_by(1)
+        ribar.show()
+
 
 
     ''' 3. Filtering below delta '''

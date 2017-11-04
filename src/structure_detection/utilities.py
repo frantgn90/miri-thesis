@@ -76,7 +76,7 @@ class ProgressBar(object):
     def __init__(self, msg, total):
         self.total = total
         self.progression = 0
-        self.bar_size=50
+        self.bar_size=40
         self.msg_size=30
         self.update_every_percent=5
         self.count = 0
@@ -108,19 +108,19 @@ class ProgressBar(object):
             else:
                 endc="\r"
 
-#            print("{0} [{1}>{2}] {3}% {4}/{5}"
-#                    .format(
-#                        self.msg,
-#                        "="*(pbar_syms), 
-#                        " "*pbar_spac, 
-#                        str(percent), 
-#                        str(self.progression),
-#                        str(self.total)), end=endc)
+            print("{0} [{1}>{2}] {3}%  {4}/{5}"
+                    .format(
+                        self.msg,
+                        "="*(pbar_syms), 
+                        " "*pbar_spac, 
+                        str(percent), 
+                        str(self.progression),
+                        str(self.total)), end=endc)
 
-            print("{0} [{1}>{2}] {3}%".format(
-                self.msg,
-                "="*(pbar_syms), 
-                " "*pbar_spac, 
-                str(percent)), end=endc)
+#            print("{0} [{1}>{2}] {3}%".format(
+#                self.msg,
+#                "="*(pbar_syms), 
+#                " "*pbar_spac, 
+#                str(percent)), end=endc)
             
             self.count = 0

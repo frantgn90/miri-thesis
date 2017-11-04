@@ -134,7 +134,7 @@ def calcule_deltas_cplex(
 
         points=[]
         for cs in fcallstacks_pool:
-            points.append([cs.repetitions,cs.instants_distances_mean])
+            points.append([cs.repetitions[cs.rank],cs.instants_distances_mean])
 
         big_m = 0
         distance_dp = []
