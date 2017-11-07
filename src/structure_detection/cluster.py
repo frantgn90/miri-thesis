@@ -103,9 +103,11 @@ class cluster (object):
 #                self.nloops += 1
 
             if aliasing_detector.is_hidden_superloop():
-                superloop = loop(None, 0) # Void loop
-                superloop.iterations = aliasing_detector.get_hidden_superloop_its()
-                superloop.hidden_loop = True
+                superloop = loop(callstacks=None, id=-1) # Void loop
+                superloop.cluster_id = self.cluster_id
+                superloop.iterations = aliasing_detector\
+                    .get_hidden_superloop_its()
+                superloop.set_hidden_loop()
                 logging.debug("Cluster {0}: Superloop detected ({1} its)"
                         .format(self.cluster_id, superloop.iterations)) 
 
@@ -125,27 +127,50 @@ class cluster (object):
     def push_datacond(self, other):
         original_nloops = len(self.loops)
         loops_to_remove = []
+
         for i in range(len(self.loops)):
             for j in range(len(other.loops)):
                 assert not other.loops[j].already_merged
                 self_loop_id = self.loops[i].get_str_id()
                 other_loop_id = other.loops[j].get_str_id()
 
-                result = self.loops[i].push_datacondition_callsacks(other.loops[j])
-
-                if result == 0:
-                    logging.debug("-- LOOP {0} NOT PUSHED to {1}".format(
-                        self_loop_id,
-                        other_loop_id))
-                elif result == 1:
-                    logging.debug("-- LOOP {0} PUSHED to {1}".format(
-                        self_loop_id,
-                        other_loop_id))
-                    loops_to_remove.append(self_loop_id)
+                if self.loops[i].hidden_loop:
+                    #print "-- {0} loop is hidden_loop".format(self_loop_id)
+                    i_loops = self.loops[i].program_order_callstacks
                 else:
-                    logging.debug("-- LOOP {0} PARTIALLY PUSHED {1}".format(
-                        self_loop_id,
-                        other_loop_id))
+                    i_loops = [self.loops[i]]
+
+                if other.loops[j].hidden_loop:
+                    #print "-- {0} loop is hidden_loop".format(other_loop_id)
+                    j_loops = other.loops[j].program_order_callstacks
+                else:
+                    j_loops = [other.loops[j]]
+
+                #import pdb; pdb.set_trace()
+                for i_l in i_loops:
+                    for j_l in j_loops:
+                        assert type(i_l) == loop
+                        assert type(j_l) == loop
+                        self_sloop_id = i_l.get_str_id()
+                        other_sloop_id = j_l.get_str_id()
+
+                        result = i_l.push_datacondition_callsacks(j_l)
+                        #result = self.loops[i].push_datacondition_callsacks(
+                        #        other.loops[j])
+                        if result == 0:
+                            logging.debug("-- LOOP {0} NOT PUSHED to {1}"
+                                    .format(self_sloop_id,other_sloop_id))
+                        elif result == 1:
+                            logging.debug("-- LOOP {0} PUSHED to {1}"
+                                    .format(self_sloop_id,other_sloop_id))
+                            loops_to_remove.append(self_loop_id) # OJO
+                        else:
+                            logging.debug("-- LOOP {0} PARTIALLY PUSHED {1}"
+                                    .format(self_sloop_id,other_sloop_id))
+
+                # TODO: self_loop_id only have to be removed if all 
+                # self_sloop_id have been inverselly merged
+                # (for the moment is enough for MG)
 
         # Removing inverselly merged loops
         self.loops = filter(
@@ -293,6 +318,7 @@ def merge_clusters(clusters_pool):
         '''
         First step, look for data condition clusters
         '''
+        logging.debug("Reserse merge for data conditions...")
         cluster_to_remove = []
         for i in range(len(clusters)-1,-1,-1):
             for j in range(i-1,-1,-1):
@@ -317,11 +343,13 @@ def merge_clusters(clusters_pool):
                 lambda x: not x.cluster_id in cluster_to_remove, 
                 cluster_by_delta[delta])
         clusters = cluster_by_delta[delta]
+        logging.debug("Reverse merge for data conditions DONE")
 
 
         '''
         Second step, merge clusters
         '''
+        logging.debug("Actually mergin clusters")
         to_remove = []
         for i in range(len(clusters)-1):
             merged=False
@@ -349,6 +377,8 @@ def merge_clusters(clusters_pool):
                             .format(clusters[i].cluster_id, 
                                 loops_merged, 
                                 len(clusters[i].loops)))
+
+        logging.debug("Merges done")
         
         # TODO: When there is some cluster that could not be merged,
         # it has to be included as a top_level_clusters

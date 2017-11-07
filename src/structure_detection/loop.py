@@ -178,6 +178,10 @@ class loop (object):
 
         logging.debug("New loop with {0} iterations.".format(self.iterations))
 
+    def set_hidden_loop(self):
+        assert self._id == -1
+        self.hidden_loop = True
+
     def get_str_id(self):
         return "{0}.{1}".format(self.cluster_id, self._id)
 
@@ -216,6 +220,8 @@ class loop (object):
         self.program_order_callstacks.remove(cs)
 
     def push_datacondition_callsacks(self, other):
+        assert self != other
+
         '''
         Data condition callstacks are these callstacks that should be owned by
         one cluster that represents its loop but the use of data conditionals
@@ -230,9 +236,12 @@ class loop (object):
         not_merged_cs = []
         for c in self.program_order_callstacks:
             '''
-            Because at this point no merge has to be done yey
+            Because at this point no merge has to be done yet.
+            Now c could be a loop because hiden super-loop analysis
+            is done, so in this case, self is a hiden super-loop
             '''
             assert not type(c) == loop
+
             if other.should_own(c):
                 other.add_callstack(c)
                 merged_to_other += 1
