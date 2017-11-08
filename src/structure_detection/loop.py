@@ -323,28 +323,56 @@ class loop (object):
             return self.program_order_callstacks[-1]
 
     def get_first_callstack_instants(self):
-        if type(self.program_order_callstacks[0]) == loop:
-            return self.program_order_callstacks[0].get_first_callstack_instants()
+        instants = None
+        if self.hidden_loop:
+            first_loop = None
+            for l in self.program_order_callstacks:
+                if type(l) == loop:
+                    first_loop = l
+                    break
+            instants = first_loop.get_first_callstack_instants()
+            instants = instants[::self.iterations]
         else:
-            return self.program_order_callstacks[0].instants
+            first_callstack = None
+            for c in self.program_order_callstacks:
+                if type(c) == callstack:
+                    first_callstack = c
+                    break
+            instants = first_callstack.instants
+
+        assert not instants is None
+        return instants
+
+#        if type(self.program_order_callstacks[0]) == loop:
+#            return self.program_order_callstacks[0]\
+#                .get_first_callstack_instants()
+#        else:
+#            return self.program_order_callstacks[0].instants
 
     def is_subloop(self, other):
         its_bounds = None
         sub_times = None
 
+        if self.iterations == other.iterations:
+            logging.warning("Think little bit more about it!!")
+            return True
+
         # Could be the situation where self of other just have subloops
         # w/o callstacks when temp_matrix detect a hidden superloop
-        for cs in self.program_order_callstacks:
-            if type(cs) == callstack:
-                its_bounds = cs.instants
-            elif type(cs) == loop:
-                its_bounds = cs.get_first_callstack().instants
+#        for cs in self.program_order_callstacks:
+#            if type(cs) == callstack:
+#                its_bounds = cs.instants
+#            elif type(cs) == loop:
+#                its_bounds = cs.get_first_callstack().instants
+#
+#        for cs in other.program_order_callstacks:
+#            if type(cs) == callstack:
+#                sub_times = cs.instants
+#            elif type(cs) == loop:
+#                sub_times = cs.get_first_callstack().instants
 
-        for cs in other.program_order_callstacks:
-            if type(cs) == callstack:
-                sub_times = cs.instants
-            elif type(cs) == loop:
-                sub_times = cs.get_first_callstack().instants
+        its_bounds = self.get_first_callstack_instants()
+        sub_times = other.get_first_callstack_instants()
 
         assert not its_bounds is None and not sub_times is None
 
@@ -389,7 +417,7 @@ class loop (object):
 #       
 #        return is_subloop;
 
-    def compact_callstacks(self):
+    def compact_callstacks(self, callstacks_pool):
         i = 0
         while i < len(self.program_order_callstacks):
             callstack_ref = self.program_order_callstacks[i]
@@ -408,6 +436,7 @@ class loop (object):
                 if callstack_ref.same_flow(callstack_eval):
                     callstack_ref.compact_with(callstack_eval)
                     #callstack_ref.compacted_ranks.append(callstack_eval.rank)
+                    callstacks_pool.remove(self.program_order_callstacks[j])
                     del self.program_order_callstacks[j]
                 else:
                     break

@@ -199,11 +199,16 @@ class cluster (object):
         loops_to_remove = []
         for i in range(len(self.loops)):
             for j in range(len(other.loops)):
-                other_loop_id="{0}.{1}".format(other.cluster_id, other.loops[j]._id)
-                self_loop_id="{0}.{1}".format(self.cluster_id, self.loops[i]._id)
+                other_loop_id = other.loops[j].get_str_id()
+                self_loop_id = self.loops[i].get_str_id()
+                #other_loop_id="{0}.{1}"
+                #    .format(other.cluster_id, other.loops[j]._id)
+                #self_loop_id="{0}.{1}"
+                #    .format(self.cluster_id, self.loops[i]._id)
 
                 if other.loops[j].already_merged == True:
-                    logging.debug("-- LOOP {0} already merged".format(other_loop_id))
+                    logging.debug("-- LOOP {0} already merged"
+                            .format(other_loop_id))
                     continue
 
                 logging.debug("-- Try LOOP {0} merge to LOOP {1}".format(
@@ -212,7 +217,7 @@ class cluster (object):
 
                 if is_subloop:
                     n_original_cs = len(self.loops[i])
-                    self.loops[i].push_datacondition_callsacks(other.loops[j])
+                    #self.loops[i].push_datacondition_callsacks(other.loops[j])
                     self.loops[i].merge_with_subloop(other.loops[j])
 
                     if len(self.loops[i]) == 0:
@@ -220,12 +225,10 @@ class cluster (object):
                             .format(self_loop_id, other_loop_id))
                         loops_to_remove.append(self_loop_id)
                     elif n_original_cs > len(self.loops[i]):
-                        logging.debug("-- LOOP {0} PARTIALLY MERGED to {1} ({2}/{3}) (Data cond.)"
-                            .format(
-                                self_loop_id, 
-                                other_loop_id, 
-                                len(self.loops[i]), 
-                                n_original_cs))
+                        logging.debug("-- LOOP {0} PARTIALLY MERGED to {1}"\
+                                " ({2}/{3}) (Data cond.)"
+                            .format(self_loop_id, other_loop_id, 
+                                len(self.loops[i]), n_original_cs))
                     else:
                         logging.debug("-- LOOP {0} MERGED to {1}".format(
                             other_loop_id, self_loop_id))
@@ -318,7 +321,7 @@ def merge_clusters(clusters_pool):
         '''
         First step, look for data condition clusters
         '''
-        logging.debug("Reserse merge for data conditions...")
+        logging.debug("Reverse merge for data conditions...")
         cluster_to_remove = []
         for i in range(len(clusters)-1,-1,-1):
             for j in range(i-1,-1,-1):
@@ -349,7 +352,7 @@ def merge_clusters(clusters_pool):
         '''
         Second step, merge clusters
         '''
-        logging.debug("Actually mergin clusters")
+        logging.debug("Actually merging clusters")
         to_remove = []
         for i in range(len(clusters)-1):
             merged=False
@@ -378,7 +381,7 @@ def merge_clusters(clusters_pool):
                                 loops_merged, 
                                 len(clusters[i].loops)))
 
-        logging.debug("Merges done")
+        logging.debug("Merging done")
         
         # TODO: When there is some cluster that could not be merged,
         # it has to be included as a top_level_clusters

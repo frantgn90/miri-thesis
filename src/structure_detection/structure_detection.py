@@ -140,23 +140,32 @@ def main(argc, argv):
             action="store_true",
             help="Whether you want to see just MPI calls or the "\
                     "whole callstack",
-           dest="only_mpi")
+            dest="only_mpi")
 
-    parser.add_argument("--sanity-check",
-            action="store_true",
-            help="Whether replay for sanity check is performed or not",
-            dest="sanity_check")
+#    parser.add_argument("--sanity-check",
+#            action="store_true",
+#            help="Whether replay for sanity check is performed or not",
+#            dest="sanity_check")
 
-    parser.add_argument("--output",
+#    parser.add_argument("--output",
+#            action="store",
+#            nargs=1,
+#            type=str,
+#            required=False,
+#            default=[None],
+#            help="Whether you want the output into a file, indicate the file"\
+#                    " whit this flag",
+#            metavar="OUTFILE",
+#            dest="output_filename")
+
+    parser.add_argument("--in-mpi-metric",
             action="store",
-            nargs=1,
+            nargs='+',
             type=str,
             required=False,
-            default=[None],
-            help="Whether you want the output into a file, indicate the file"\
-                    " whit this flag",
-            metavar="OUTFILE",
-            dest="output_filename")
+            default=[],
+            dest="in_mpi_metric",
+            help="In MPI Paraver event type(s) to gather information.")
 
     argcomplete.autocomplete(parser)
     arguments = parser.parse_args(args=argv[1:])
@@ -186,8 +195,11 @@ def main(argc, argv):
     logging.info("Parsing trace...")
     # Assuming every task just have one thread
     constants.TRACE_NAME = trace[trace.rfind("/")+1:]
-    callstacks_pool, nranks=\
-            get_callstacks(trace=trace, level=level, image_filter=image_filter)
+    callstacks_pool, nranks=get_callstacks(
+            trace=trace, 
+            level=level, 
+            image_filter=image_filter,
+            metric_types=arguments.in_mpi_metric)
     app_time = get_app_time(trace)
     constants.TOTAL_TIME = app_time
     logging.debug("{0} ns total trace time.".format(app_time))
@@ -269,10 +281,9 @@ def main(argc, argv):
     #   it is not fitting exactly with the actual code.
 
     ''' 7. Sanity check '''
-    if arguments.sanity_check:
-        logging.info("TODO: Sanity check (replaying)...")
-
-        logging.info("Done")
+    #if arguments.sanity_check:
+    #    logging.info("TODO: Sanity check (replaying)...")
+    #    logging.info("Done")
 
     ''' 8. Reducing callstacks '''
     logging.info("Postprocessing callstacks...")
@@ -281,12 +292,17 @@ def main(argc, argv):
             logging.debug("-- Postprocessing loop {0}:{1}".format(
                 loop_obj.cluster_id,
                 loop_obj._id))
-            loop_obj.compact_callstacks()
+            loop_obj.compact_callstacks(callstacks_pool)
             loop_obj.extracting_callstack_common_part()
             loop_obj.group_into_conditional_rank_blocks()
             loop_obj.group_into_conditional_data_blocks()
             loop_obj.remove_contiguous_common_callstack(None)
     logging.info("Done")
+
+    print("Check!!")
+
+    ''' 8.2 Removing callstacks that just appears one time '''
+    callstacks_pool = filter(lambda x: x.repetitions[x.rank] > 1, callstacks_pool)
 
     ''' 9. Derivating metrics '''
     logging.info("Derivating metrics")

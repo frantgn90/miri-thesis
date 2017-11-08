@@ -33,7 +33,7 @@ class pseudo_for(pseudo_line):
         self.iterations = iterations
         self.first_col = ""
         self.second_col = " "
-        self.third_col = "FOR 1 TO {0} ({1})".format(
+        self.third_col = "FOR 1 TO {0} [[{1}]]".format(
                 self.iterations,
                 str(misc))
         self.metric = ""
@@ -53,11 +53,11 @@ class pseudo_call(pseudo_line):
         self.call = call
         self.first_col = self.call.call_file
         if self.call.mpi_call:
+            metric = self.call.my_callstack\
+                    .metrics["global_mpi_duration_merged_percent"]
             self.second_col = "*"
-            self.metric_2 = str(round(
-                        self.call.my_callstack.metrics["global_mpi_duration_percent"]
-                        ,2)) + "%"
-#            self.metric_2 = str(self.call.my_callstack.repetitions)
+            self.metric_2 = str(round(metric,2)) + "%"
+#           self.metric_2 = str(self.call.my_callstack.repetitions)
 
         else:
             self.second_col = str(self.call.line)

@@ -144,7 +144,7 @@ def get_mpi_calls(trace):
         letter=next_letter(letter)
 
 
-def parse_events(events,image_filter, time, task, mpi_durations):
+def parse_events(events,image_filter, time, task, mpi_durations, metrics):
     tmp_call_stack= [""]*constants.CALLSTACK_SIZE
     tmp_image_stack=[""]*constants.CALLSTACK_SIZE
     tmp_line_stack= [""]*constants.CALLSTACK_SIZE 
@@ -175,6 +175,11 @@ def parse_events(events,image_filter, time, task, mpi_durations):
                 mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["name"] 
                 mpi_durations[task-1].append(time)
                 #ncalls_m+=1
+        elif event_key in metrics.keys():
+            if event_value == "0":
+                pass
+            else:
+                metrics[event_key][task-1].append(event_value)
 
     assert ncalls_m==nimags_m, "{0} == {1}".format(ncalls_m, nimags_m)
     #assert(ncalls_s&ncalls_m==0) 
@@ -246,7 +251,7 @@ def get_app_time(trace):
     return app_time
 
 
-def get_callstacks(trace, level, image_filter):
+def get_callstacks(trace, level, image_filter, metric_types):
     global CALLER_EVENT, CALLIN_EVENT, MPICAL_EVENT, MPILIN_EVENT, MPI_EVENT
 
     if level == "0":
@@ -285,6 +290,9 @@ def get_callstacks(trace, level, image_filter):
         COUNTER_TYPE_CALLS = [dict() for x in range(total_threads)]
         COUNTER_CALLS = [0]*total_threads
         mpi_durations = [[] for x in range(total_threads)]
+        metrics = {}
+        for mtype in metric_types:
+            metrics.update({mtype:[[] for x in range(total_threads)]})
 
         ########################
         ### Getting pcf info ###
@@ -372,7 +380,8 @@ def get_callstacks(trace, level, image_filter):
                         image_filter,
                         time,
                         task,
-                        mpi_durations)
+                        mpi_durations,
+                        metrics)
 
                 if not fcalls is None:
                     callstack_series[task-1].append(fcalls)
@@ -391,7 +400,8 @@ def get_callstacks(trace, level, image_filter):
                 image_filter,
                 time,
                 task,
-                mpi_durations)
+                mpi_durations,
+                metrics)
         if not fcalls is None:
             callstack_series[task-1].append(fcalls)
             timestamp_series[task-1].append(v["time"])
@@ -464,8 +474,11 @@ def get_callstacks(trace, level, image_filter):
                     files_series[rank][cs_i])
             new_callstack.metrics[rank]["mpi_duration"]=\
                     mpi_durations[rank][cs_i+1]
-            new_callstack.metrics[rank]["mpi_duration_merged"].append(
-                    mpi_durations[rank][cs_i+1])
+#            new_callstack.metrics[rank]["mpi_duration_merged"].append(
+#                    mpi_durations[rank][cs_i+1])
+            for tmetric, values in metrics.iteritems():
+                new_callstack.metrics[rank].update(
+                        {tmetric:values[cs_i+1]})
             try:
                 repeated_idx = callstacks_pool.index(new_callstack)
                 callstacks_pool[repeated_idx].merge(new_callstack)
