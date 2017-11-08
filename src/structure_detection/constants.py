@@ -30,6 +30,7 @@ OMPCAL_EVENT_BASE =""
 OMPLIN_EVENT_BASE =""
 
 PARAVER_EVENT     ="2"
+PARAVER_COMM      ="3"
 
 FUNC_MAP_FILE     ="functions.map"
 MPI_LIB_FILE      ="*"

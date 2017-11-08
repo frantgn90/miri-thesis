@@ -422,7 +422,7 @@ class loop (object):
         while i < len(self.program_order_callstacks):
             callstack_ref = self.program_order_callstacks[i]
             if isinstance(callstack_ref, loop):
-                callstack_ref.compact_callstacks()
+                callstack_ref.compact_callstacks(callstacks_pool)
                 i += 1
                 continue
 
@@ -430,7 +430,7 @@ class loop (object):
             while j < len(self.program_order_callstacks):
                 callstack_eval = self.program_order_callstacks[j]
                 if isinstance(callstack_eval, loop):
-                    callstack_eval.compact_callstacks()
+                    callstack_eval.compact_callstacks(callstacks_pool)
                     break
 
                 if callstack_ref.same_flow(callstack_eval):

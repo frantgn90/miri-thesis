@@ -14,17 +14,19 @@ class pseudo_line(object):
         self.second_col = "--"
         self.third_col = "--"
         self.metric = "metric..."
-        self.metric_2 = ""
+        self.metric_2 = "-"
+        self.metric_3 = "-"
 
     def get_tabs(self):
         return ": "*self.deph
 
     def __str__(self):
-        res = "{0:10.10} {1:>5.5} {2:40.40} {3:15.15}".format(
+        res = "{0:10.10} {1:>5.5} {2:35.35} | {3:6.6} | {4:10.10}".format(
                 self.first_col,
                 self.second_col, 
                 (self.get_tabs() + self.third_col), 
-                self.metric_2)
+                self.metric_2,
+                self.metric_3)
         return res
 
 class pseudo_for(pseudo_line):
@@ -53,10 +55,13 @@ class pseudo_call(pseudo_line):
         self.call = call
         self.first_col = self.call.call_file
         if self.call.mpi_call:
-            metric = self.call.my_callstack\
+            metric_2 = self.call.my_callstack\
                     .metrics["global_mpi_duration_merged_percent"]
+            metric_3 = self.call.my_callstack\
+                    .metrics["global_mpi_msg_size_merged_mean"]
             self.second_col = "*"
-            self.metric_2 = str(round(metric,2)) + "%"
+            self.metric_2 = str(round(metric_2,2)) + "%"
+            self.metric_3 = str(metric_3) + "B"
 #           self.metric_2 = str(self.call.my_callstack.repetitions)
 
         else:

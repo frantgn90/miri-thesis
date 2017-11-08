@@ -54,6 +54,7 @@ class callstack(object):
         self.metrics = {}
         self.metrics[self.rank] = {
                 "mpi_duration":0,
+                "mpi_msg_size":0,
 #               "mpi_duration_merged":[],
 #               "mpi_duration_mean":0,
 #               "mpi_duration_stdev":0,
@@ -163,7 +164,6 @@ class callstack(object):
         global_results = map(lambda (k,v):(k,v/mean_of), 
                 global_results.iteritems())
         self.metrics.update(global_results)
-        print self.metrics
 
 #        sum_mpi_duration_percent = 0
 #        for rank in self.metrics:
