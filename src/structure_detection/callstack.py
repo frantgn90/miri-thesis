@@ -127,6 +127,7 @@ class callstack(object):
 
     def calc_metrics(self):
         assert self.repetitions[self.rank] > 1
+
         for rank in self.metrics:
             rank_calc_metrics={}
             keys_to_remove = [] # For memory print purposes

@@ -37,7 +37,7 @@ def merge_arrays(a, b):
 
 def pretty_print(content, title):
     result = ""
-    WIDTH = 80
+    WIDTH = 100
     side=(WIDTH-4-len(title))/2
     if len(title)%2 == 0: 
         offs=2

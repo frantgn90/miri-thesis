@@ -167,6 +167,12 @@ def main(argc, argv):
             dest="in_mpi_metric",
             help="In MPI Paraver event type(s) to gather information.")
 
+    parser.add_argument("--html-gui",
+            action="store_true",
+            dest="html_output",
+            help="Whether you want to display the output in an enriched"\
+                    " html format")
+
     argcomplete.autocomplete(parser)
     arguments = parser.parse_args(args=argv[1:])
 
@@ -323,12 +329,24 @@ def main(argc, argv):
     logging.debug("Top level clusters:")
     for cl in top_level_clusters:
         logging.debug("-- CLUSTER {0}".format(cl.cluster_id))
-    pc = pseudocode(top_level_clusters, nranks, arguments.only_mpi)
+
+    from console_gui import console_gui
+    from html_gui import html_gui
+
+    if arguments.html_output:
+        gui_class = html_gui
+    else:
+        gui_class = console_gui
+
+    pc = pseudocode(top_level_clusters, nranks, 
+            arguments.only_mpi, gui_class)
+
     logging.info("Done...")
 
 
     ''' 9. Show GUI '''
-    pc.show_console()
+    print
+    pc.show()
 
 
 #    ''' 10. Print some statistics '''
