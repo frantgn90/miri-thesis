@@ -61,6 +61,7 @@ class callstack(object):
 #               "mpi_duration_sum":0,
 #               "mpi_duration_percent":0,
         }
+        self.in_program_order = False
 
         for call in calls:
             call.my_callstack = self
@@ -217,33 +218,50 @@ class callstack(object):
         assert self.reduced == True and other.reduced == True
         for call_i in range(min(len(self.calls), len(other.calls))):
             if not self.calls[call_i] == other.calls[call_i]:
-#               assert self.calls[call_i].call == other.calls[call_i].call,\
-#                        "{0} < {1}".format(self, other)
                 if not self.calls[call_i].call == other.calls[call_i].call:
                     logging.warn("Same code line jumps to more than one target"\
                             " locations. Assuming arbitrary order.")
-                return self.calls[call_i].line < other.calls[call_i].line
+                if self.in_program_order:
+                    return self.calls[call_i].line < other.calls[call_i].line
+                else:
+                    return self.calls[call_i].my_callstack.instants[0] < \
+                        other.calls[call_i].my_callstack.instants[0]
 
     def __gt__(self, other):
         assert self.reduced == True and other.reduced == True
         for call_i in range(min(len(self.calls), len(other.calls))):
             if self.calls[call_i] != other.calls[call_i]:
                 assert self.calls[call_i].call == other.calls[call_i].call
-                return self.calls[call_i].line > other.calls[call_i].line
+
+                if self.in_program_order:
+                    return self.calls[call_i].line > other.calls[call_i].line
+                else:
+                    return self.calls[call_i].my_callstack.instants[0] < \
+                        other.calls[call_i].my_callstack.instants[0]
 
     def __le__(self, other):
         assert self.reduced == True and other.reduced == True
         for call_i in range(min(len(self.calls), len(other.calls))):
             if self.calls[call_i] != other.calls[call_i]:
                 assert self.calls[call_i].call == other.calls[call_i].call
-                return self.calls[call_i].line <= other.calls[call_i].line
+
+                if self.in_program_order:
+                    return self.calls[call_i].line <= other.calls[call_i].line
+                else:
+                    return self.calls[call_i].my_callstack.instants[0] < \
+                        other.calls[call_i].my_callstack.instants[0]
 
     def __ge__(self, other):
         assert self.reduced == True and other.reduced == True
         for call_i in range(min(len(self.calls), len(other.calls))):
             if self.calls[call_i] != other.calls[call_i]:
                 assert self.calls[call_i].call == other.calls[call_i].call
-                return self.calls[call_i].line >= other.calls[call_i].line
+
+                if self.in_program_order:
+                    return self.calls[call_i].line >= other.calls[call_i].line
+                else:
+                    return self.calls[call_i].my_callstack.instants[0] < \
+                        other.calls[call_i].my_callstack.instants[0]
 
     def __and__(self, other):
         result = []

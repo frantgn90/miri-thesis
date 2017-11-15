@@ -23,6 +23,7 @@ class tmatrix(object):
     @classmethod
     def from_callstacks_obj(cls, callstacks):
         scallstacks = sorted(callstacks, key=lambda x: x.instants[0])
+        #scallstacks = sorted(callstacks)
         matrix = [x.instants for x in scallstacks]
         sorted_matrix, transformations = cls.__boundaries_sort(matrix)
 
@@ -221,12 +222,7 @@ class tmatrix(object):
             else:
                 return subm
 
-            # If all partitions are completelly disyunctive and can explain all 
-            # the matrix, it means that every partition is a loop
-            # TODO: Think about complex cases with conditionals...
-            # TODO: Caso especial cuando tenemos subbucles y no tenemos
-            # info sobre el bucle grande.
-
+    # TODO: Think about complex cases with conditionals...
 
     def __look_for_superloop(self, subm):
         def __sort_subm(a,b):

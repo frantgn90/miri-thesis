@@ -173,6 +173,13 @@ def main(argc, argv):
             help="Whether you want to display the output in an enriched"\
                     " html format")
 
+    parser.add_argument("--in-program-order",
+            action="store_true",
+            help="Whether you want pseudocode callstacks in program order"\
+                    " or in dynamic order",
+            dest="in_program_order")
+
+
     argcomplete.autocomplete(parser)
     arguments = parser.parse_args(args=argv[1:])
 
@@ -217,6 +224,7 @@ def main(argc, argv):
     ribar.show()
 
     for callstack in callstacks_pool:
+        callstack.in_program_order = arguments.in_program_order
         callstack.calc_reduce_info()
         ribar.progress_by(1)
         ribar.show()
@@ -268,9 +276,7 @@ def main(argc, argv):
             len(cl.loops)))
         for l in cl.loops:
             logging.debug(" -- {0}:{1} {2} iterations".format(
-                    cl.cluster_id,
-                    l._id,
-                    l.original_iterations))
+                    cl.cluster_id, l._id, l.original_iterations))
     logging.info("Done")
 
 
@@ -278,13 +284,6 @@ def main(argc, argv):
     logging.info("Merging clusters...")
     top_level_clusters = merge_clusters(clusters_pool)
     logging.info("Done")
-
-    # TODO: Sanity check. Replay the pseudocode in order to check if the order 
-    # of all callstacks are good. Also can be checked if MPI calls results on a 
-    # deadlock. 
-    # - Fail on this step will indicate there is an error on the code infer.
-    # - If there is not fail, the pseudocode will be considered correct even if
-    #   it is not fitting exactly with the actual code.
 
     ''' 7. Sanity check '''
     #if arguments.sanity_check:
@@ -308,7 +307,8 @@ def main(argc, argv):
     print("Check!!")
 
     ''' 8.2 Removing callstacks that just appears one time '''
-    callstacks_pool = filter(lambda x: x.repetitions[x.rank] > 1, callstacks_pool)
+    callstacks_pool = filter(lambda x: x.repetitions[x.rank] > 1, 
+            callstacks_pool)
 
     ''' 9. Derivating metrics '''
     logging.info("Derivating metrics")
@@ -318,10 +318,10 @@ def main(argc, argv):
 
 
     ''' 10. Genearting flowgraph '''
-#    logging.info("Generating flowgraph...")
-#    fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters 
-#    logging.info("Done")
-#    fg.show()
+    #logging.info("Generating flowgraph...")
+    #fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters
+    #logging.info("Done")
+    #fg.show()
 
 
     ''' 10. Generating pseudo-code '''

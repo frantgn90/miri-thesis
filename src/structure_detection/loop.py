@@ -419,15 +419,18 @@ class loop (object):
 
     def compact_callstacks(self, callstacks_pool):
         i = 0
+        cs_to_remove = []
+    
         while i < len(self.program_order_callstacks):
+            if i in cs_to_remove: i+=1; continue
             callstack_ref = self.program_order_callstacks[i]
             if isinstance(callstack_ref, loop):
                 callstack_ref.compact_callstacks(callstacks_pool)
-                i += 1
-                continue
+                i += 1; continue
 
             j = i+1
             while j < len(self.program_order_callstacks):
+                if j in cs_to_remove: j+=1; continue
                 callstack_eval = self.program_order_callstacks[j]
                 if isinstance(callstack_eval, loop):
                     callstack_eval.compact_callstacks(callstacks_pool)
@@ -436,11 +439,21 @@ class loop (object):
                 if callstack_ref.same_flow(callstack_eval):
                     callstack_ref.compact_with(callstack_eval)
                     #callstack_ref.compacted_ranks.append(callstack_eval.rank)
-                    callstacks_pool.remove(self.program_order_callstacks[j])
-                    del self.program_order_callstacks[j]
+                    callstacks_pool.remove(callstack_eval)
+                    #del self.program_order_callstacks[j]
+                    cs_to_remove.append(j)
+                    j+=1
                 else:
-                    break
+                    #break
+                    j+=1; continue
             i += 1
+
+        aux = []
+        for i in range(len(self.program_order_callstacks)):
+            if not i in cs_to_remove:
+                aux.append(self.program_order_callstacks[i])
+        self.program_order_callstacks = aux
+
 
     def extracting_callstack_common_part(self):
         # Calculing the common part for subloops

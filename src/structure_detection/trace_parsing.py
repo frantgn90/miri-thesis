@@ -179,15 +179,15 @@ def parse_events(events,image_filter, time, task, mpi_durations,
             if event_value == "0":
                 assert in_mpi_comm[task-1]
                 if comm_size_pushed[task-1] == False:
-                    comm_matched = False
-                    for recv in buffer_comm_sizes[task-1]:
-                        physic_recv_time = recv[1]
-                        msg_size = recv[0]
-                        if physic_recv_time > mpi_durations[task-1][-1]\
-                                and physic_recv_time <= time:
-                            comm_sizes_series[task-1].append(msg_size)
-                            comm_matched = True
-                    if not comm_matched:
+
+                    if time in buffer_comm_sizes[task-1]:
+                        msg_size = buffer_comm_sizes[task-1][time][0]
+                        del buffer_comm_sizes[task-1][time][0]
+
+                        comm_sizes_series[task-1].append(msg_size)
+                        if len(buffer_comm_sizes[task-1][time]) == 0:
+                            del buffer_comm_sizes[task-1][time]
+                    else:
                         comm_sizes_series[task-1].append(0)
 
                 mpi_durations[task-1][-1] = time-mpi_durations[task-1][-1]
@@ -361,7 +361,8 @@ def get_callstacks(trace, level, image_filter, metric_types):
             comm_sizes_series.append(list())
             in_mpi_comm.append(False)
             comm_size_pushed.append(False)
-            buffer_comm_sizes.append(list())
+            #buffer_comm_sizes.append(list())
+            buffer_comm_sizes.append(dict())
 
         events_buffer = {}
         for line in tr:
@@ -420,14 +421,20 @@ def get_callstacks(trace, level, image_filter, metric_types):
                 task_recv_id = int(line_fields[9])
                 #thread_recv_id = line_fields[10]
                 #logica_recv_time = line_fields[11]
-                physic_recv_time = line_fields[12]
+                physic_recv_time = int(line_fields[12])
                 #message_tag = line_fields[14]
-                message_size = line_fields[13]
-                comm_sizes_series[task-1].append(int(message_size))
+                message_size = int(line_fields[13])
+                comm_sizes_series[task-1].append(message_size)
                 comm_size_pushed[task-1] = True
 
-                buffer_comm_sizes[task_recv_id-1].append(
-                        [int(message_size), int(physic_recv_time)])
+                if physic_recv_time in buffer_comm_sizes[task_recv_id-1]:
+                    #buffer_comm_sizes[task_recv_id-1][physic_recv_time].append(
+                    #        message_size)
+                    buffer_comm_sizes[task_recv_id-1][physic_recv_time][0]\
+                            +=message_size
+                else:
+                    buffer_comm_sizes[task_recv_id-1].update(
+                            {physic_recv_time: [message_size]})
 
             pbar.show()
 
