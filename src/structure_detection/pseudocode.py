@@ -38,7 +38,13 @@ class pseudocode(object):
 
         for cluster in clusters_set:
             for loop_obj in cluster.loops:
+                cc = self.get_common_callstack_part(loop_obj)
                 self.parse_loop(loop_obj, 0)
+
+    def get_common_callstack_part(self, loop_obj):
+        # 1st common callstack of condition blocks
+        # 2nd common callstack of common callstacks of condition blocks
+        pass
 
     def parse_loop(self, loop_obj, tabs):
         # Callstack to loop
@@ -52,7 +58,8 @@ class pseudocode(object):
         # Loop description
         #
         loop_id = str(loop_obj.cluster_id) + ":" + str(loop_obj._id)
-        self.lines.append(self.pseudo_for(loop_obj.iterations, loop_id, tabs))
+        self.lines.append(self.pseudo_for(loop_obj.iterations, loop_id, 
+            tabs))
         self.parse_conditional_rank_block(
                 loop_obj.conditional_rank_block,
                 loop_obj.get_all_ranks(), 
@@ -101,32 +108,6 @@ class pseudocode(object):
             self.lines.append(self.pseudo_condition(
                 item.ranks, False, False, tabs+condition_tabs))
             condition_tabs += 1
-
-#        my_ranks = set(conditional_rank_block_obj.ranks)
-#        condition_obj = condition(my_ranks, prev_ranks)
-#        if condition_obj.is_equal:
-#            pass
-#        elif condition_obj.is_subset:
-#            #condition_tabs += 1
-#            self.lines.append(self.pseudo_condition(
-#                item.ranks, False, False, tabs+condition_tabs))
-#            condition_tabs += 1
-#        elif condition_obj.is_complement:
-#            if set(prev_ranks).union(set(item.ranks)) == set(self.all_ranks):
-#                el = False; eli = True
-#            else:
-#                el = False; eli = True
-#
-#            #condition_tabs += 1
-#            self.lines.append(self.pseudo_condition(item.ranks, 
-#                el, eli,tabs+condition_tabs))
-#            condition_tabs += 1
-#        elif condition_obj.is_superset:
-#            assert False # ????
-#            self.lines.append(self.pseudo_condition(item.ranks, False, False,
-#                tabs+condition_tabs))
-#            condition_tabs += 1
-    
 
         # Print whatever we have under the conditional
         #

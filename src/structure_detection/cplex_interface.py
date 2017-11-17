@@ -57,7 +57,8 @@ class CplexInterface(object):
     def run(self):
         assert os.path.isfile(self.infile)
 
-        os.remove(constants.OPL_PROBLEM_IN)
+        if os.path.islink(constants.OPL_PROBLEM_IN):
+            os.remove(constants.OPL_PROBLEM_IN)
         os.symlink(self.infile, constants.OPL_PROBLEM_IN)
 
         foutfile = open(self.outfile, "w")

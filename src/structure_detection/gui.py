@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
+
+# TODO: Implement this class as an abstract one
 import constants
-from utilities import pretty_print
 
 class gui(object):
     def __init__(self, pseudocode):

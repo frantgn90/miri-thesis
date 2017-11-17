@@ -142,21 +142,21 @@ def main(argc, argv):
                     "whole callstack",
             dest="only_mpi")
 
-#    parser.add_argument("--sanity-check",
-#            action="store_true",
-#            help="Whether replay for sanity check is performed or not",
-#            dest="sanity_check")
+    #parser.add_argument("--sanity-check",
+    #        action="store_true",
+    #        help="Whether replay for sanity check is performed or not",
+    #        dest="sanity_check")
 
-#    parser.add_argument("--output",
-#            action="store",
-#            nargs=1,
-#            type=str,
-#            required=False,
-#            default=[None],
-#            help="Whether you want the output into a file, indicate the file"\
-#                    " whit this flag",
-#            metavar="OUTFILE",
-#            dest="output_filename")
+    #parser.add_argument("--output",
+    #        action="store",
+    #        nargs=1,
+    #        type=str,
+    #        required=False,
+    #        default=[None],
+    #        help="Whether you want the output into a file, indicate the file"\
+    #                " whit this flag",
+    #        metavar="OUTFILE",
+    #        dest="output_filename")
 
     parser.add_argument("--in-mpi-metric",
             action="store",
@@ -178,7 +178,6 @@ def main(argc, argv):
             help="Whether you want pseudocode callstacks in program order"\
                     " or in dynamic order",
             dest="in_program_order")
-
 
     argcomplete.autocomplete(parser)
     arguments = parser.parse_args(args=argv[1:])
@@ -218,6 +217,16 @@ def main(argc, argv):
     logging.debug("{0} ns total trace time.".format(app_time))
 
 
+    for cs in callstacks_pool:
+        last_line = cs.calls[0].line
+        cs.calls[0].line = 0
+        for c in cs.calls[1:]:
+            aux = c.line
+            c.line = last_line
+            last_line = aux
+            
+            
+
     ''' 2. Getting callstack metrics '''
     logging.info("Reducing information...")
     ribar = ProgressBar("Updating points", len(callstacks_pool))
@@ -228,8 +237,6 @@ def main(argc, argv):
         callstack.calc_reduce_info()
         ribar.progress_by(1)
         ribar.show()
-
-
 
     ''' 3. Filtering below delta '''
     logging.info("Filtering callstacks...")
@@ -298,13 +305,12 @@ def main(argc, argv):
                 loop_obj.cluster_id,
                 loop_obj._id))
             loop_obj.compact_callstacks(callstacks_pool)
-            loop_obj.extracting_callstack_common_part()
+            #loop_obj.extracting_callstack_common_part()
             loop_obj.group_into_conditional_rank_blocks()
             loop_obj.group_into_conditional_data_blocks()
-            loop_obj.remove_contiguous_common_callstack(None)
+            #loop_obj.remove_contiguous_common_callstack(None)
+            loop_obj.callstack_set_owner_loop()
     logging.info("Done")
-
-    print("Check!!")
 
     ''' 8.2 Removing callstacks that just appears one time '''
     callstacks_pool = filter(lambda x: x.repetitions[x.rank] > 1, 
@@ -322,7 +328,6 @@ def main(argc, argv):
     #fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters
     #logging.info("Done")
     #fg.show()
-
 
     ''' 10. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
@@ -349,14 +354,14 @@ def main(argc, argv):
     pc.show()
 
 
-#    ''' 10. Print some statistics '''
-#    final_stats =  "{0} clusters detected\n".format(len(clusters_pool))
-#    final_stats+=  "Grouped in {0} super-loops\n".format(len(deltas))
-#    for i, delta in zip(range(len(deltas)),deltas):
-#        final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
-#    final_stats+=("Time in pseudocode: {0}%\n".format(sum(deltas)*100))
-#
-#    print pretty_print(final_stats, "Final stats")
+    #''' 10. Print some statistics '''
+    #final_stats =  "{0} clusters detected\n".format(len(clusters_pool))
+    #final_stats+=  "Grouped in {0} super-loops\n".format(len(deltas))
+    #for i, delta in zip(range(len(deltas)),deltas):
+    #    final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
+    #final_stats+=("Time in pseudocode: {0}%\n".format(sum(deltas)*100))
+    #
+    #print pretty_print(final_stats, "Final stats")
 
     logging.info("All done")
     return 0
