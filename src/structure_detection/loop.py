@@ -14,13 +14,69 @@ from utilities import *
 class conditional_rank_block(object):
     def __init__(self, ranks):
         self.ranks = ranks
-        self.common_callstack = None
-        self.common_with_prev = None
-        self.data_condition = False
-        self.probability = 0
         self.callstacks = []
+        self.common_callstack = None
+
+    def get_all_ranks(self):
+        return self.ranks
+
+    def agrupate(self):
+        tmp_ranks = set()
+        tmp = []
+        result = []
+
+        grouping_callstacks = False
+        grouping_crb = False
+        for cs in self.callstacks:
+            if type(cs) == callstack or type(cs) == loop:
+                if grouping_crb == True:
+                    new_crb = conditional_rank_block(list(tmp_ranks))
+                    new_crb.callstacks = tmp
+                    result.append(new_crb)
+                    tmp = []
+                    tmp_ranks = set()
+                    grouping_crb = False
+
+                if grouping_callstacks == False:
+                    tmp = [cs]
+                    grouping_callstacks = True
+                else:
+                    tmp.append(cs)
+            else:
+                if grouping_callstacks == True:
+                    new_crb = conditional_rank_block(self.get_all_ranks())
+                    new_crb.callstacks = tmp
+                    result.append(new_crb)
+                    tmp = []
+                    grouping_callstacks = False
+                    
+                if grouping_crb == False:
+                    grouping_crb = True
+
+                tmp_ranks.update(cs.get_all_ranks())
+                tmp.append(cs)
+
+                if tmp_ranks == set(self.get_all_ranks()):
+                    new_crb = conditional_rank_block(list(tmp_ranks))
+                    new_crb.callstacks = tmp
+                    result.append(new_crb)
+                    tmp = []
+                    tmp_ranks = set()
+                    grouping_crb = False
+
+        if len(tmp) > 0:
+            assert grouping_callstacks or grouping_crb
+            if grouping_callstacks == True:
+                new_crb = conditional_rank_block(self.get_all_ranks())
+            elif grouping_crb == True:
+                new_crb = conditional_rank_block(list(tmp_ranks))
+            new_crb.callstacks = tmp
+            result.append(new_crb)
+
+        return result
 
     def add_callstack(self, callstack_or_loop):
+
         set1 = set(self.ranks)
         set2 = set(callstack_or_loop.get_all_ranks())
         is_equal = set1 == set2
@@ -32,8 +88,6 @@ class conditional_rank_block(object):
         assert is_complement == False, "Impossible sitation."
         assert is_equal or is_superset, "Must be equal or a subset."
 
-        # TODO: Look for callstack_or_loop.repetitions < loop iterations
-        #
         if is_equal:
             self.callstacks.append(callstack_or_loop)
             return
@@ -170,14 +224,11 @@ class loop (object):
         else:
             self.program_order_callstacks = []
 
-        # Main conditional rank block beloging to this loop. The main conditional
-        # block is the block that is executed by the same ranks as the loop.
-        #
         self.conditional_rank_block = None
         self.already_merged = False
-        self.common_with_prev = None
 
-        logging.debug("New loop with {0} iterations.".format(self.iterations))
+        logging.debug("New loop with {0} iterations."
+                .format(self.iterations))
 
     def set_hidden_loop(self):
         assert self._id == -1
@@ -546,22 +597,19 @@ class loop (object):
 
     def group_into_conditional_rank_blocks(self):
         # Grouping to condititional rank blocks for subloops
-        #
         for loop_obj in self.program_order_callstacks:
             if isinstance(loop_obj, loop):
                 loop_obj.group_into_conditional_rank_blocks()
 
         # Generate the first global conditional rank block
-        # 
-        self.conditional_rank_block = conditional_rank_block(
-                self.get_all_ranks())
+        crb = conditional_rank_block(self.get_all_ranks())
 
         # Now generate the conditional subblocks by mean of adding the 
         # subsequent callstacks/subloops
-        #
         for callstack_obj in self.program_order_callstacks:
-            self.conditional_rank_block.add_callstack(callstack_obj)
+            crb.add_callstack(callstack_obj)
 
+        self.conditional_rank_block = crb.agrupate()
         #self.conditional_rank_block.extracting_callstack_common_part()
 
     def group_into_conditional_data_blocks(self):

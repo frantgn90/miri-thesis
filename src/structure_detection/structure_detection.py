@@ -214,18 +214,7 @@ def main(argc, argv):
             metric_types=arguments.in_mpi_metric)
     app_time = get_app_time(trace)
     constants.TOTAL_TIME = app_time
-    logging.debug("{0} ns total trace time.".format(app_time))
-
-
-    for cs in callstacks_pool:
-        last_line = cs.calls[0].line
-        cs.calls[0].line = 0
-        for c in cs.calls[1:]:
-            aux = c.line
-            c.line = last_line
-            last_line = aux
-            
-            
+    logging.debug("{0} ns total trace time.".format(app_time))            
 
     ''' 2. Getting callstack metrics '''
     logging.info("Reducing information...")
@@ -328,6 +317,20 @@ def main(argc, argv):
     #fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters
     #logging.info("Done")
     #fg.show()
+
+    for cs in callstacks_pool:
+        last_line = cs.calls[0].line
+        last_file = cs.calls[0].call_file
+        cs.calls[0].line = 0
+        cs.calls[0].call_file = ""
+        for c in cs.calls[1:]:
+            auxl = c.line
+            c.line = last_line
+            last_line = auxl
+            auxf = c.call_file
+            c.call_file = last_file
+            last_file = auxf
+ 
 
     ''' 10. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
