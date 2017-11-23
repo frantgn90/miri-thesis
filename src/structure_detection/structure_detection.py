@@ -281,10 +281,6 @@ def main(argc, argv):
     top_level_clusters = merge_clusters(clusters_pool)
     logging.info("Done")
 
-    ''' 7. Sanity check '''
-    #if arguments.sanity_check:
-    #    logging.info("TODO: Sanity check (replaying)...")
-    #    logging.info("Done")
 
     ''' 8. Reducing callstacks '''
     logging.info("Postprocessing callstacks...")
@@ -294,10 +290,7 @@ def main(argc, argv):
                 loop_obj.cluster_id,
                 loop_obj._id))
             loop_obj.compact_callstacks(callstacks_pool)
-            #loop_obj.extracting_callstack_common_part()
             loop_obj.group_into_conditional_rank_blocks()
-            loop_obj.group_into_conditional_data_blocks()
-            #loop_obj.remove_contiguous_common_callstack(None)
             loop_obj.callstack_set_owner_loop()
     logging.info("Done")
 

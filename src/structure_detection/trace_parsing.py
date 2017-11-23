@@ -177,8 +177,8 @@ def parse_events(events,image_filter, time, task, mpi_durations,
             tmp_file_stack[int(event_key[-1])-1]=IMAGES[event_value]["file"]
         elif not MPI_EVENT.match(event_key) is None:
             if event_value == "0":
-                #assert in_mpi_comm[task-1]
-                if not in_mpi_comm[task-1]: continue
+                assert in_mpi_comm[task-1]
+                #if not in_mpi_comm[task-1]: continue
                 if comm_size_pushed[task-1] == False:
 
                     if time in buffer_comm_sizes[task-1]:
@@ -517,8 +517,8 @@ def get_callstacks(trace, level, image_filter, metric_types):
                     files_series[rank][cs_i])
             new_callstack.metrics[rank]["mpi_duration"]=\
                     mpi_durations[rank][cs_i+1]
-            #new_callstack.metrics[rank]["mpi_msg_size"]=\
-            #        comm_sizes_series[rank][cs_i+1]
+            new_callstack.metrics[rank]["mpi_msg_size"]=\
+                    comm_sizes_series[rank][cs_i+1]
 
             for tmetric, values in metrics.iteritems():
                 new_callstack.metrics[rank].update(

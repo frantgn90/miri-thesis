@@ -24,15 +24,7 @@ class cluster (object):
         self.nmerges = 0
 
     def get_first_line(self):
-        print "{0}: {1}".format(self.cluster_id,len(self.loops))
-        if not self.loops[0].common_callstack is None:
-            if len(self.loops[0].common_callstack) > 0:
-                return self.loops[0].common_callstack[0].line
-
-        if type(self.loops[0].program_order_callstacks[0]) == loop:
-            return self.loops[0].program_order_callstacks[0].get_first_line()
-        else:
-            return self.loops[0].program_order_callstacks[0].calls[0].line
+        return self.loops[0].get_first_line()
 
     def add_callstack(self, callstack):
         assert self.loops_generation_done == False
@@ -103,10 +95,11 @@ class cluster (object):
 #                self.nloops += 1
 
             if aliasing_detector.is_hidden_superloop():
-                superloop = loop(callstacks=None, id=-1) # Void loop
+                superloop = loop(callstacks=[], id=-1) # Void loop
                 superloop.cluster_id = self.cluster_id
                 superloop.iterations = aliasing_detector\
                     .get_hidden_superloop_its()
+                superloop.original_iterations = superloop.iterations
                 superloop.set_hidden_loop()
                 logging.debug("Cluster {0}: Superloop detected ({1} its)"
                         .format(self.cluster_id, superloop.iterations)) 
@@ -136,13 +129,13 @@ class cluster (object):
 
                 if self.loops[i].hidden_loop:
                     #print "-- {0} loop is hidden_loop".format(self_loop_id)
-                    i_loops = self.loops[i].program_order_callstacks
+                    i_loops = self.loops[i].callstack_list
                 else:
                     i_loops = [self.loops[i]]
 
                 if other.loops[j].hidden_loop:
                     #print "-- {0} loop is hidden_loop".format(other_loop_id)
-                    j_loops = other.loops[j].program_order_callstacks
+                    j_loops = other.loops[j].callstack_list
                 else:
                     j_loops = [other.loops[j]]
 

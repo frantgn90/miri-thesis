@@ -78,7 +78,7 @@ class callstack(object):
         return cls(rank, instant, calls_obj)
 
     def get_all_ranks(self):
-        return list(set(self.compacted_ranks))
+        return set(self.compacted_ranks)
 
     def get_line_at_level(self, level):
         return self.calls[level].line
@@ -310,6 +310,10 @@ class callstack(object):
             result.my_loop = self.my_loop
 
         return result
+
+        #common_len = len(self & other)
+        #self.calls = self.calls[common_len:]
+        #return self
 
     def __add__(self, other):
         calls = self.calls

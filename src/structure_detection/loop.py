@@ -11,14 +11,149 @@ from callstack import callstack
 from temp_matrix import tmatrix
 from utilities import *
 
-class conditional_rank_block(object):
-    def __init__(self, ranks):
-        self.ranks = ranks
-        self.callstacks = []
+class callstack_ordered_list(object):
+    def __init__(self, callstacks):
+        self.callstack_ranks = set()
         self.common_callstack = None
+        if callstack is None:
+            self.callstack_list = []
+        else:
+            self.callstack_list = callstacks
+
+    def add_callstack(self, callstack):
+        assert not callstack in self.callstack_list
+
+        self.callstack_list.append(callstack)
+        self.callstack_list.sort()
+
+    def remove_callstack(self, callstack):
+        res = False
+        if callstack in self.callstack_list:
+            i = self.callstack_list.index(callstack)
+            del self.callstack_list[i]
+            res = True
+        else:
+            for cs in self.callstack_list:
+                if isinstance(cs, callstack_ordered_list):
+                    done = cs.remove_callstack(callstack)
+                    if done: res = True
+
+        self.callstack_ranks = set([x.get_all_ranks() 
+            for x in self.callstack_list])
+        return res
 
     def get_all_ranks(self):
-        return self.ranks
+        for cs in self.callstack_list:
+            self.callstack_ranks.update(cs.get_all_ranks())
+        return self.callstack_ranks
+
+    def get_common_callstack(self):
+        """ could be implemented as a parallel reduce """
+        common_callstack = self.callstack_list[0]
+        if isinstance(common_callstack, callstack_ordered_list):
+            common_callstack = common_callstack.common_callstack
+
+        for item in self.callstack_list:
+            if isinstance(item, callstack_ordered_list):
+                assert not item.common_callstack is None
+                common_callstack &= item.common_callstack
+            else:
+                common_callstack &= item
+
+        return common_callstack
+
+    def remove_calls_from_callstacks(self, callstack):
+        nitems = len(self.callstack_list)
+        for i,item in zip(range(nitems),self.callstack_list):
+            if isinstance(item, callstack_ordered_list):
+                item.common_callstack -= callstack
+                item.remove_calls_from_callstacks(callstack)
+            else:
+                self.callstack_list[i] = item - callstack
+
+    def set_common_callstack(self, callstack):
+        """ could be done completely in parallel """
+        assert self.common_callstack is None
+        self.common_callstack = callstack
+        self.remove_calls_from_callstacks(self.common_callstack)
+
+    def extract_common_callstack_r(self):
+        """ extract common callstack recursivelly """
+        for item in self.callstack_list:
+            if isinstance(item, callstack_ordered_list):
+                item.extract_common_callstack_r()
+
+        common_callstack = self.get_common_callstack()
+        self.set_common_callstack(common_callstack)
+
+    def get_flat_callstack_list(self):
+        result = []
+        self.get_flat_callstack_list_r(result)
+        return result
+
+    def get_flat_callstack_list_r(self, result):
+        for item in self.callstack_list:
+            if isinstance(item, callstack_ordered_list):
+                item.get_flat_callstack_list_r(result)
+            else:
+                result.append(item)
+
+    def hide_contiguous_callstacks(self):
+        callstacks = self.get_flat_callstack_list()
+        last_cs = callstacks[0]
+
+        for cs in callstacks[1:]:
+            last_calls = last_cs.calls
+            next_calls = cs.calls
+
+            for i in range(min(len(next_calls), len(last_calls))):
+                if next_calls[i] == last_calls[i]:
+                    next_calls[i].print_call = False
+                else:
+                    break
+            last_cs = cs
+
+        self.hide_continguous_common_callstacks()
+
+    def hide_continguous_common_callstacks(self):
+        last_cs = self.common_callstack
+
+        for cs in self.callstack_list:
+            if isinstance(cs, callstack_ordered_list):
+                next_cs = cs.common_callstack
+
+                last_calls = last_cs.calls
+                next_calls = next_cs.calls
+
+                for i in range(min(len(next_calls), len(last_calls))):
+                    if next_calls[i] == last_calls[i]:
+                        next_calls[i].print_call = False
+                    else:
+                        break
+                last_cs = cs.common_callstack
+                cs.hide_continguous_common_callstacks()
+
+
+    def get_first_callstack(self):
+        return self.get_callstack_from_pos(0)
+
+    def get_last_callstack(self):
+        return self.get_callstack_from_pos(-1)
+
+    def get_callstack_from_pos(self, pos):
+        item = self.callstack_list[pos]
+        if isinstance(item, callstack_ordered_list):
+            return item.get_callstack_from_pos(0)
+        return item
+
+class conditional_rank_block(callstack_ordered_list):
+    def __init__(self, ranks):
+        super(conditional_rank_block, self)\
+                .__init__([])
+        self.ranks = ranks
+
+    def get_all_ranks(self):
+        return set(self.ranks)
 
     def agrupate(self):
         tmp_ranks = set()
@@ -27,7 +162,7 @@ class conditional_rank_block(object):
 
         grouping_callstacks = False
         grouping_crb = False
-        for cs in self.callstacks:
+        for cs in self.callstack_list:
             if type(cs) == callstack or type(cs) == loop:
                 if grouping_crb == True:
                     new_crb = conditional_rank_block(list(tmp_ranks))
@@ -36,7 +171,6 @@ class conditional_rank_block(object):
                     tmp = []
                     tmp_ranks = set()
                     grouping_crb = False
-
                 if grouping_callstacks == False:
                     tmp = [cs]
                     grouping_callstacks = True
@@ -58,7 +192,7 @@ class conditional_rank_block(object):
 
                 if tmp_ranks == set(self.get_all_ranks()):
                     new_crb = conditional_rank_block(list(tmp_ranks))
-                    new_crb.callstacks = tmp
+                    new_crb.callstack_list = tmp
                     result.append(new_crb)
                     tmp = []
                     tmp_ranks = set()
@@ -70,7 +204,7 @@ class conditional_rank_block(object):
                 new_crb = conditional_rank_block(self.get_all_ranks())
             elif grouping_crb == True:
                 new_crb = conditional_rank_block(list(tmp_ranks))
-            new_crb.callstacks = tmp
+            new_crb.callstack_list = tmp
             result.append(new_crb)
 
         return result
@@ -89,12 +223,12 @@ class conditional_rank_block(object):
         assert is_equal or is_superset, "Must be equal or a subset."
 
         if is_equal:
-            self.callstacks.append(callstack_or_loop)
+            self.callstack_list.append(callstack_or_loop)
             return
         elif is_superset:
-            if len(self.callstacks) > 0:
-                if isinstance(self.callstacks[-1], conditional_rank_block):
-                    last_cond_block = self.callstacks[-1]
+            if len(self.callstack_list) > 0:
+                if isinstance(self.callstack_list[-1], conditional_rank_block):
+                    last_cond_block = self.callstack_list[-1]
 
                     # Let's see if we have a subsubblock or just a subblock
                     #
@@ -106,65 +240,44 @@ class conditional_rank_block(object):
                     is_complement = len(set1.intersection(set2)) == 0
 
                     if is_equal or is_superset:
-                        self.callstacks[-1].add_callstack(callstack_or_loop)
+                        self.callstack_list[-1].add_callstack(callstack_or_loop)
                     else:
                         new_cond_block = conditional_rank_block(
                             callstack_or_loop.get_all_ranks())
                         new_cond_block.add_callstack(callstack_or_loop)
-                        self.callstacks.append(new_cond_block)
+                        self.callstack_list.append(new_cond_block)
                 else:
                     new_cond_block = conditional_rank_block(
                         callstack_or_loop.get_all_ranks())
                     new_cond_block.add_callstack(callstack_or_loop)
-                    self.callstacks.append(new_cond_block)
+                    self.callstack_list.append(new_cond_block)
             else:
                 new_cond_block = conditional_rank_block(
                         callstack_or_loop.get_all_ranks())
                 new_cond_block.add_callstack(callstack_or_loop)
-                self.callstacks.append(new_cond_block)
+                self.callstack_list.append(new_cond_block)
             return
         assert False
 
-    def extracting_callstack_common_part(self):
-        # Calculing the common part for subblocks
-        #
-        for cond_block_obj in self.callstacks:
-            if isinstance(cond_block_obj, conditional_rank_block):
-                cond_block_obj.extracting_callstack_common_part()
-
-        first_callstack = self.callstacks[0]
-        if not isinstance(first_callstack, callstack):
-            first_callstack = first_callstack.common_callstack
-
-
-        # Getting the common callstacks
-        #
-        for callstack_obj in self.callstacks:
-            if not isinstance(callstack_obj, callstack):
-                callstack_obj = callstack_obj.common_callstack
-            first_callstack &= callstack_obj
-        self.common_callstack = first_callstack
-
-        # Removing the common callstacks for callstacks
-        #
-        for callstack_i in range(len(self.callstacks)):
-            if not isinstance(self.callstacks[callstack_i], callstack):
-                self.callstacks[callstack_i]\
-                        .common_callstack -= self.common_callstack
-
+    def callstack_set_owner_loop(self, owner):
+        for item in self.callstack_list:
+            if isinstance(item, loop):
+                item.callstack_set_owner_loop()
+            elif isinstance(item, conditional_rank_block):
+                item.callstack_set_owner_loop(owner)
             else:
-                self.callstacks[callstack_i] -= self.common_callstack
+                item.my_loop = owner
 
     def __str__(self):
         res  = "Ranks: {0}\n".format(self.ranks)
         res += "Common: {0}\n".format(self.common_callstack)
-        if len(self.callstacks) > 0:
+        if len(self.callstack_list) > 0:
             res += "***** [CONTENT] *****\n"
-            for callstack_obj in self.callstacks:
+            for callstack_obj in self.callstack_list:
                 if isinstance(callstack_obj, loop):
                     res += "LOOP Ranks:{0} Ncallstacks:{1}\n"\
                             .format(callstack_obj.get_all_ranks(), 
-                                    len(callstack_obj.program_order_callstacks))
+                                    len(callstack_obj.callstack_list))
                 elif isinstance(callstack_obj, conditional_rank_block):
                     res += "--- Subblock ---\n"
                     res += str(callstack_obj)
@@ -174,22 +287,15 @@ class conditional_rank_block(object):
             res += "*********************\n"
         return res
 
-
-class loop (object):
+class loop (callstack_ordered_list):
     def __init__(self, callstacks, id):
+        super(loop, self).__init__(callstacks)
+
         self._id = id
         self.cluster_id = 0
 
-        # Maybe this loop is just an statement under a condition of 
-        # other loop
-        self.is_condition = False
-        self.condition_probability = 0
-
         # Whether this loop is a hidden loop
         self.hidden_loop = False
-
-        # Is the position where the condition of the first callstack is
-        self.condition_level = None
 
         # This loop is made by how many merges
         self.nmerges = 1
@@ -197,34 +303,12 @@ class loop (object):
         # Number of iterations of the loop. The original iterations
         # are needed because number of iterations will change in case
         # this loop was indeed a subloop
-        if not callstacks is None:
+        if len(callstacks) > 0:
             self.iterations = callstacks[0].repetitions[callstacks[0].rank]
         else:
             self.iterations = 0
-
         self.original_iterations = self.iterations
-
-        # Sanity check 1 !!!
-        #for callstack in callstacks:
-        #    assert callstack.repetitions == self.iterations, \
-        #            "Loop: Sanity check #1 fail"
-
-        # We have a chain of calls, this variable indicates where
-        # in this chain the loop represented by this object is. The way
-        # to calculate it is to get just the common part of all the
-        # chains
-        #
-        self.loop_deph = None
-        self.common_callstack = None
-        # Until now, the order of the callstacks were not important
-        # but now it is, so lets sort it. The order should be the
-        # program order so the line is the parameter to take into account
-        if not callstacks is None:
-            self.program_order_callstacks = sorted(callstacks)
-        else:
-            self.program_order_callstacks = []
-
-        self.conditional_rank_block = None
+        #self.conditional_rank_block = None
         self.already_merged = False
 
         logging.debug("New loop with {0} iterations."
@@ -237,23 +321,13 @@ class loop (object):
     def get_str_id(self):
         return "{0}.{1}".format(self.cluster_id, self._id)
 
-    def get_all_ranks(self):
-        ranks = []
-        for cs in self.program_order_callstacks:
-            if isinstance(cs, callstack):
-                ranks.extend(cs.get_all_ranks())
-            elif isinstance(cs, loop):
-                ranks.extend(cs.get_all_ranks())
-
-        return list(set(ranks))
-    
     def merge(self, other):
         assert type(other) == loop
         assert other.nmerges == 1
 
-        merged_callstacks = other.program_order_callstacks\
-                + self.program_order_callstacks
-        self.program_order_callstacks = sorted(merged_callstacks)
+        merged_callstacks = other.callstack_list\
+                + self.callstack_list
+        self.callstack_list = sorted(merged_callstacks)
         self.nmerges += 1
 
     def should_own(self, cs):
@@ -279,13 +353,6 @@ class loop (object):
 
         return res
 
-    def add_callstack(self, cs):
-        self.program_order_callstacks.append(cs)
-        self.program_order_callstacks.sort()
-
-    def remove_callstack(self, cs):
-        self.program_order_callstacks.remove(cs)
-
     def push_datacondition_callsacks(self, other):
         assert self != other
 
@@ -301,7 +368,7 @@ class loop (object):
         '''
         merged_to_other = 0
         not_merged_cs = []
-        for c in self.program_order_callstacks:
+        for c in self.callstack_list:
             '''
             Because at this point no merge has to be done yet.
             Now c could be a loop because hiden super-loop analysis
@@ -314,11 +381,11 @@ class loop (object):
                 merged_to_other += 1
             else:
                 not_merged_cs.append(c)
-        self.program_order_callstacks = not_merged_cs
+        self.callstack_list = not_merged_cs
 
         if merged_to_other == 0:
             return 0 # Not pushed
-        elif len(self.program_order_callstacks) == 0:
+        elif len(self.callstack_list) == 0:
             return 1 # Completelly pushed
         else:
             return 2 # Partially pushed
@@ -327,11 +394,11 @@ class loop (object):
         # This sitation happens when hidden super-loop is detected
         # on subloop cluster
         if other.iterations == self.iterations:
-            merged_subloop = self.program_order_callstacks + \
-                    other.program_order_callstacks
+            merged_subloop = self.callstack_list + \
+                    other.callstack_list
         else:
             other.iterations /= self.iterations
-            merged_subloop = self.program_order_callstacks + [other]
+            merged_subloop = self.callstack_list + [other]
 
         def __sort_loops_and_cs(a, b):
             result = False
@@ -354,9 +421,9 @@ class loop (object):
             return result
 
         merged_subloop.sort(__sort_loops_and_cs)
-        self.program_order_callstacks = merged_subloop
+        self.callstack_list = merged_subloop
 
-        for toc in self.program_order_callstacks:
+        for toc in self.callstack_list:
             if type(toc) == callstack:
                 common_callstack = toc
 
@@ -366,78 +433,43 @@ class loop (object):
         # think about it
 
         #i=0
-        #common_callstack = self.program_order_callstacks[i]
+        #common_callstack = self.callstack_list[i]
         #while isinstance(common_callstack, loop):
         #    i += 1
-        #    common_callstack = self.program_order_callstacks[i]
+        #    common_callstack = self.callstack_list[i]
 
     def get_first_line(self):
-        if type(self.program_order_callstacks[0]) == loop:
-            return self.program_order_callstacks[0].get_first_line()
-        else:
-            return self.program_order_callstacks[0].calls[0].line
+        cs = self.get_first_callstack_po()
+        return cs.calls[0].line 
 
-    def get_first_callstack(self):
-        if type(self.program_order_callstacks[0]) == loop:
-            return self.program_order_callstacks[0].get_first_callstack()
-        else:
-            return self.program_order_callstacks[0]
-
-    def get_last_callstack(self):
-        if type(self.program_order_callstacks[-1]) == loop:
-            return self.program_order_callstacks[-1].get_last_callstack()
-        else:
-            return self.program_order_callstacks[-1]
+        #if type(self.callstack_list[0]) == loop:
+        #    return self.callstack_list[0].get_first_line()
+        #else:
+        #    return self.callstack_list[0].calls[0].line
 
     def get_first_callstack_po(self):
-        import copy
-        prev_order = []
-        for cs in self.program_order_callstacks:
-            prev_order.append(cs.in_program_order)
+        callstacks_copy = copy.deepcopy(self.get_flat_callstack_list())
 
-        po_callstack = copy.copy(self.program_order_callstacks)
-        for cs in po_callstack:
+        for cs in callstacks_copy:
             cs.in_program_order = True
-        po_callstack.sort()
 
-        if type(po_callstack[0]) == loop:
-            res = po_callstack[0].get_first_callstack_po()
-        else:
-            res = po_callstack[0]
-
-        nrange = range(len(self.program_order_callstacks))
-        for cs in zip(self.program_order_callstacks, nrange):
-            cs[0].in_program_order = prev_order[cs[1]]
-
-        return res
+        callstacks_copy.sort()
+        return callstacks_copy[0]
 
     def get_last_callstack_po(self):
-        import copy
-        prev_order = []
-        for cs in self.program_order_callstacks:
-            prev_order.append(cs.in_program_order)
+        callstacks_copy = copy.deepcopy(self.get_flat_callstack_list())
 
-        po_callstack = copy.copy(self.program_order_callstacks)
-        for cs in po_callstack:
+        for cs in callstacks_copy:
             cs.in_program_order = True
-        po_callstack.sort()
 
-        if type(po_callstack[-1]) == loop:
-            res = po_callstack[-1].get_last_callstack_po()
-        else:
-            res = po_callstack[-1]
-
-        nrange = range(len(self.program_order_callstacks))
-        for cs in zip(self.program_order_callstacks, nrange):
-            cs[0].in_program_order = prev_order[cs[1]]
-
-        return res
+        callstacks_copy.sort()
+        return callstacks_copy[-1]
 
     def get_first_callstack_instants(self):
         instants = None
         if self.hidden_loop:
             first_loop = None
-            for l in self.program_order_callstacks:
+            for l in self.callstack_list:
                 if type(l) == loop:
                     first_loop = l
                     break
@@ -445,7 +477,7 @@ class loop (object):
             instants = instants[::self.iterations]
         else:
             first_callstack = None
-            for c in self.program_order_callstacks:
+            for c in self.callstack_list:
                 if type(c) == callstack:
                     first_callstack = c
                     break
@@ -454,11 +486,11 @@ class loop (object):
         assert not instants is None
         return instants
 
-        #if type(self.program_order_callstacks[0]) == loop:
-        #    return self.program_order_callstacks[0]\
+        #if type(self.callstack_list[0]) == loop:
+        #    return self.callstack_list[0]\
         #        .get_first_callstack_instants()
         #else:
-        #    return self.program_order_callstacks[0].instants
+        #    return self.callstack_list[0].instants
 
     def is_subloop(self, other):
         its_bounds = None
@@ -470,13 +502,13 @@ class loop (object):
 
         # Could be the situation where self of other just have subloops
         # w/o callstacks when temp_matrix detect a hidden superloop
-        #for cs in self.program_order_callstacks:
+        #for cs in self.callstack_list:
         #    if type(cs) == callstack:
         #        its_bounds = cs.instants
         #    elif type(cs) == loop:
         #        its_bounds = cs.get_first_callstack().instants
         #
-        #for cs in other.program_order_callstacks:
+        #for cs in other.callstack_list:
         #    if type(cs) == callstack:
         #        sub_times = cs.instants
         #    elif type(cs) == loop:
@@ -532,17 +564,17 @@ class loop (object):
         i = 0
         cs_to_remove = []
     
-        while i < len(self.program_order_callstacks):
+        while i < len(self.callstack_list):
             if i in cs_to_remove: i+=1; continue
-            callstack_ref = self.program_order_callstacks[i]
+            callstack_ref = self.callstack_list[i]
             if isinstance(callstack_ref, loop):
                 callstack_ref.compact_callstacks(callstacks_pool)
                 i += 1; continue
 
             j = i+1
-            while j < len(self.program_order_callstacks):
+            while j < len(self.callstack_list):
                 if j in cs_to_remove: j+=1; continue
-                callstack_eval = self.program_order_callstacks[j]
+                callstack_eval = self.callstack_list[j]
                 if isinstance(callstack_eval, loop):
                     callstack_eval.compact_callstacks(callstacks_pool)
                     break
@@ -551,7 +583,7 @@ class loop (object):
                     callstack_ref.compact_with(callstack_eval)
                     #callstack_ref.compacted_ranks.append(callstack_eval.rank)
                     callstacks_pool.remove(callstack_eval)
-                    #del self.program_order_callstacks[j]
+                    #del self.callstack_list[j]
                     cs_to_remove.append(j)
                     j+=1
                 else:
@@ -560,97 +592,29 @@ class loop (object):
             i += 1
 
         aux = []
-        for i in range(len(self.program_order_callstacks)):
+        for i in range(len(self.callstack_list)):
             if not i in cs_to_remove:
-                aux.append(self.program_order_callstacks[i])
-        self.program_order_callstacks = aux
-
-    def extracting_callstack_common_part(self):
-        # Calculing the common part for subloops
-        #
-        for loop_obj in self.program_order_callstacks:
-            if isinstance(loop_obj, loop):
-                loop_obj.extracting_callstack_common_part()
-
-        first_callstack = self.program_order_callstacks[0]
-        if isinstance(first_callstack, loop):
-            first_callstack = first_callstack.common_callstack
-
-        # Getting the common callstacks
-        #
-        for callstack_obj in self.program_order_callstacks:
-            if isinstance(callstack_obj, loop):
-                callstack_obj = callstack_obj.common_callstack
-            first_callstack &= callstack_obj
-        self.common_callstack = first_callstack
-
-        # Removing the common callstacks for callstacks
-        #
-        for callstack_i in range(len(self.program_order_callstacks)):
-            if isinstance(self.program_order_callstacks[callstack_i], loop):
-                self.program_order_callstacks[callstack_i]\
-                        .common_callstack -= self.common_callstack
-            else:
-                self.program_order_callstacks[callstack_i] -= self.common_callstack
-
-        self.loop_deph = len(self.common_callstack)-1
+                aux.append(self.callstack_list[i])
+        self.callstack_list = aux
 
     def group_into_conditional_rank_blocks(self):
         # Grouping to condititional rank blocks for subloops
-        for loop_obj in self.program_order_callstacks:
+        for loop_obj in self.callstack_list:
             if isinstance(loop_obj, loop):
                 loop_obj.group_into_conditional_rank_blocks()
 
+        #import pdb; pdb.set_trace()
         # Generate the first global conditional rank block
         crb = conditional_rank_block(self.get_all_ranks())
 
         # Now generate the conditional subblocks by mean of adding the 
         # subsequent callstacks/subloops
-        for callstack_obj in self.program_order_callstacks:
+        for callstack_obj in self.callstack_list:
             crb.add_callstack(callstack_obj)
 
-        self.conditional_rank_block = crb.agrupate()
-        #self.conditional_rank_block.extracting_callstack_common_part()
-
-    def group_into_conditional_data_blocks(self):
-        pass
-
-    def remove_contiguous_common_callstack(self, last_common_callstack):
-        
-        if last_common_callstack is None:
-            if type(self.conditional_rank_block.callstacks[0]) == callstack:
-                last_common_callstack = \
-                    self.conditional_rank_block.callstacks[0]
-            else:
-                last_common_callstack = \
-                    self.conditional_rank_block.callstacks[0].common_callstack
-        
-        for i in range(len(self.conditional_rank_block.callstacks))[1:]:
-            item = self.conditional_rank_block.callstacks[i]
-
-            if type(item) == conditional_rank_block or type(item) == loop:
-                if type(item) == loop:
-                    item.remove_contiguous_common_callstack(last_common_callstack)
-                common_callstack = self.conditional_rank_block.callstacks[i]\
-                        .common_callstack
-                self.conditional_rank_block.callstacks[i].common_with_prev =\
-                        last_common_callstack & \
-                        self.conditional_rank_block.callstacks[i].common_callstack
-                last_common_callstack = self.conditional_rank_block.callstacks[i]\
-                        .common_callstack
-
-                self.conditional_rank_block.callstacks[i].common_callstack -= \
-                        self.conditional_rank_block.callstacks[i].common_with_prev
-
-            else:
-                common_callstack = self.conditional_rank_block.callstacks[i]
-                self.conditional_rank_block.callstacks[i].common_with_prev =\
-                        last_common_callstack & common_callstack
-
-                last_common_callstack = self.conditional_rank_block.callstacks[i]
-
-                self.conditional_rank_block.callstacks[i] -=\
-                        self.conditional_rank_block.callstacks[i].common_with_prev
+        #self.callstack_list = crb.agrupate()
+        self.callstack_list = [crb]
+        #self.conditional_rank_block = crb.agrupate()
 
     def get_iteration_times():
         first_callstack = self.get_first_callstack()
@@ -660,57 +624,61 @@ class loop (object):
         return zip(first_callstack.instants, last_callstack.instants)
 
     def callstack_set_owner_loop(self):
-        for cs in self.program_order_callstacks:
-            if type(cs) == loop:
-                cs.callstack_set_owner_loop()
+        #callstacks = self.get_flat_callstack_list()
+        #for cs in callstacks:
+        #    cs.my_loop = self
+
+        for item in self.callstack_list:
+            if isinstance(item, loop):
+                item.callstack_set_owner_loop()
+            elif isinstance(item, conditional_rank_block):
+                item.callstack_set_owner_loop(self)
             else:
-                cs.my_loop = self               
+                item.my_loop = self
+                
 
     def __len__(self):
-        return len(self.program_order_callstacks)
+        return len(self.callstack_list)
 
     def __eq__(self, other):
         if type(other) == loop:
             return self.iterations == other.iterations
         elif type(other) == callstack:
-            return self.program_order_callstacks[0] == other
+            return self.callstack_list[0] == other
 
     def __lt__(self, other):
         if type(other) == loop:
             return self.iterations < other.iterations
         elif type(other) == callstack:
-            return self.program_order_callstacks[0] < other
+            return self.callstack_list[0] < other
 
     def __gt__(self, other):
         if type(other) == loop:
             return self.iterations > other.iterations
         elif type(other) == callstack:
-            return self.program_order_callstacks[0] > other
+            return self.callstack_list[0] > other
 
     def __le__(self, other):
         if type(other) == loop:
             return self.iterations <= other.iterations
         elif type(other) == callstack:
-            return self.program_order_callstacks[0] <= other
+            return self.callstack_list[0] <= other
 
     def __ge__(self, other):
         if type(other) == loop:
             return self.iterations >= other.iterations
         elif type(other) == callstack:
-            return self.program_order_callstacks[0] >= other
+            return self.callstack_list[0] >= other
 
     def __str__(self):
         val  = "> Loop iterations = {0}\n".format(self.iterations)
-        val += "> Is condition = {0} ({1})\n"\
-                .format(self.is_condition, self.condition_probability)
         val += "> Number of merges = {0}\n".format(self.nmerges)
         val += "> Ranks involved = {0}\n".format(self.get_all_ranks())
-        val += "> Loop deph = {0}\n".format(self.loop_deph)
         val += "> Common callstack = {0}\n".format(self.common_callstack)
 
         val = pretty_print(val, "Loop info")
 
-        for callstack in self.program_order_callstacks:
+        for callstack in self.callstack_list:
             if type(callstack) == loop:
                 val += "-> Subloop\n"
                 val += str(callstack)+"\n"
