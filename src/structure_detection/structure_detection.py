@@ -142,11 +142,6 @@ def main(argc, argv):
                     "whole callstack",
             dest="only_mpi")
 
-    #parser.add_argument("--sanity-check",
-    #        action="store_true",
-    #        help="Whether replay for sanity check is performed or not",
-    #        dest="sanity_check")
-
     #parser.add_argument("--output",
     #        action="store",
     #        nargs=1,
@@ -164,7 +159,7 @@ def main(argc, argv):
             type=str,
             required=False,
             default=[],
-            dest="in_mpi_metric",
+            dest="in_mpi_events",
             help="In MPI Paraver event type(s) to gather information.")
 
     parser.add_argument("--html-gui",
@@ -179,6 +174,12 @@ def main(argc, argv):
                     " or in dynamic order",
             dest="in_program_order")
 
+    parser.add_argument("--burst-info",
+            action="store_true",
+            help="Whether you want burst info be showed or not",
+            dest="show_burst_info")
+
+
     argcomplete.autocomplete(parser)
     arguments = parser.parse_args(args=argv[1:])
 
@@ -188,6 +189,10 @@ def main(argc, argv):
     ri = arguments.nrandits
     tmp_files_dir = arguments.tmp_files[0]
     numeric_level = getattr(logging, arguments.log_level[0].upper(), None)
+
+    in_mpi_events = arguments.in_mpi_events
+    in_mpi_events.append("42000050")
+    in_mpi_events.append("42000059")
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: {0}".format(loglevel))
@@ -211,7 +216,8 @@ def main(argc, argv):
             trace=trace, 
             level=level, 
             image_filter=image_filter,
-            metric_types=arguments.in_mpi_metric)
+            metric_types=in_mpi_events,
+            burst_info=arguments.show_burst_info)
     app_time = get_app_time(trace)
     constants.TOTAL_TIME = app_time
     logging.debug("{0} ns total trace time.".format(app_time))            
@@ -340,10 +346,9 @@ def main(argc, argv):
         gui_class = console_gui
 
     pc = pseudocode(top_level_clusters, nranks, 
-            arguments.only_mpi, gui_class)
+            arguments.only_mpi, gui_class, arguments.show_burst_info)
 
     logging.info("Done...")
-
 
     ''' 9. Show GUI '''
     print

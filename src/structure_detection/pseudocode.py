@@ -19,18 +19,20 @@ class condition(object):
         self.is_complement = len(set1.intersection(set2)) == 0
 
 class pseudocode(object):
-    def __init__(self, clusters_set, nranks, only_mpi, gui_class):
+    def __init__(self, clusters_set, nranks, only_mpi, gui_class, 
+            show_burst_info):
         self.gui_class = gui_class
         self.pseudo_line = gui_class.get_pseudo_line()
         self.pseudo_for = gui_class.get_pseudo_for()
         self.pseudo_for_end = gui_class.get_pseudo_for_end()
         self.pseudo_call = gui_class.get_pseudo_call()
         self.pseudo_condition = gui_class.get_pseudo_condition()
+        self.pseudo_computation = gui_class.get_pseudo_computation()
 
         self.lines = []
         self.all_ranks = set(range(nranks))
         self.only_mpi = only_mpi
-        self.last_callstack = []
+        self.show_burst_info = show_burst_info
 
         # Sort the clusters by program order
         clusters_set.sort(key=lambda x: x.get_first_line(), reverse=False)
@@ -67,6 +69,9 @@ class pseudocode(object):
             for call in calls:
                 if not call.print_call is False:
                     self.lines.append(self.pseudo_call(call, tabs+my_tabs))
+                    if call.mpi_call and self.show_burst_info:
+                        self.lines.append(
+                                self.pseudo_computation(call,tabs+my_tabs))
                 my_tabs += 1
         else:
             if len(calls) > 0:

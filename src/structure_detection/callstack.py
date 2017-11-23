@@ -61,6 +61,8 @@ class callstack(object):
         self.metrics[self.rank] = {
                 "mpi_duration":0,
                 "mpi_msg_size":0}
+        self.burst_metrics[self.rank] = {
+                "burst_duration":0}
         self.in_program_order = False
         self.my_loop = None
 
@@ -167,15 +169,6 @@ class callstack(object):
         global_results = map(lambda (k,v):(k,v/mean_of), 
                 global_results.iteritems())
         self.metrics.update(global_results)
-
-        #sum_mpi_duration_percent = 0
-        #for rank in self.metrics:
-        #    sum_mpi_duration_percent += \
-        #        self.metrics[rank]["mpi_duration_merged_percent"]
-        #mean_mpi_duration_percent = \
-        #    sum_mpi_duration_percent/len(self.compacted_ranks)
-        #self.metrics.update(
-        #        {"global_mpi_duration_percent":mean_mpi_duration_percent})
 
     def is_above_delta(self, delta, total_time):
         if self.repetitions[self.rank] == 1: return False

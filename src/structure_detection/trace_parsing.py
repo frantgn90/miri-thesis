@@ -273,7 +273,7 @@ def get_app_time(trace):
     return app_time
 
 
-def get_callstacks(trace, level, image_filter, metric_types):
+def get_callstacks(trace, level, image_filter, metric_types, burst_info):
     global CALLER_EVENT, CALLIN_EVENT, MPICAL_EVENT, MPILIN_EVENT, MPI_EVENT
 
     if level == "0":
