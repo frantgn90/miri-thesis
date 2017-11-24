@@ -147,7 +147,7 @@ def get_mpi_calls(trace):
         letter=next_letter(letter)
 
 
-def parse_events(events,image_filter, time, task, mpi_durations, 
+def parse_events(events,image_filter, time, task, mpi_durations, burst_durations,
         metrics, comm_sizes_series, buffer_comm_sizes):
 
     global in_mpi_comm, comm_size_pushed
@@ -192,11 +192,19 @@ def parse_events(events,image_filter, time, task, mpi_durations,
                         comm_sizes_series[task-1].append(0)
 
                 mpi_durations[task-1][-1] = time-mpi_durations[task-1][-1]
+                burst_durations[task-1].append(time)
                 comm_size_pushed[task-1] = False
                 in_mpi_comm[task-1] = False
             else:
                 mpi_call_to_add=CALL_NAMES["mpi_"+event_value]["name"] 
                 mpi_durations[task-1].append(time)
+                if len(burst_durations[task-1]) == 0:
+                    # First burst
+                    burst_durations[task-1].append(time)
+                else:
+                    burst_durations[task-1][-1] =\
+                            time-burst_durations[task-1][-1]
+
                 in_mpi_comm[task-1] = True
         elif event_key in metrics.keys():
             if event_value == "0":
@@ -313,6 +321,7 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
         COUNTER_TYPE_CALLS = [dict() for x in range(total_threads)]
         COUNTER_CALLS = [0]*total_threads
         mpi_durations = [[] for x in range(total_threads)]
+        burst_durations = [[] for x in range(total_threads)]
         metrics = {}
         for mtype in metric_types:
             metrics.update({mtype:[[] for x in range(total_threads)]})
@@ -400,7 +409,7 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                     continue
                 
                 fcalls, flines, ffiles = parse_events(events, image_filter, time,
-                        task, mpi_durations, metrics, comm_sizes_series,
+                        task, mpi_durations, burst_durations, metrics, comm_sizes_series,
                         buffer_comm_sizes)
                 if not fcalls is None:
                     callstack_series[task-1].append(fcalls)
@@ -443,7 +452,7 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
     # TODO: Terminar de vaciar el events_buffer
     for k,v in events_buffer.items():
         fcalls, flines, ffiles = parse_events(v["events"], image_filter,
-                time, task, mpi_durations, metrics, comm_sizes_series, 
+                time, task, mpi_durations, burst_durations, metrics, comm_sizes_series, 
                 buffer_comm_sizes)
         if not fcalls is None:
             callstack_series[task-1].append(fcalls)
@@ -508,6 +517,28 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
     cpbar = ProgressBar("Generating callstacks pool", len(callstack_series))
     cpbar.show()
 
+    # Remember Paraver uses next Event Value for show HWC.
+    
+    mpi_metrics = {}
+    burst_metrics = {}
+    for key, val in metrics.iteritems():
+        mpi_vals = []
+        burst_vals = []
+        for rank in range(len(val)):
+            mpi_vals.append(val[rank][1::2])
+            burst_vals.append(val[rank][0::2])
+    
+        mpi_metrics.update({key:mpi_vals})
+        burst_metrics.update({key:burst_vals})
+
+    #for i in range(len(callstack_series)):
+    #    print len(mpi_metrics["42000059"][i])
+    #    print len(mpi_metrics["42000050"][i])
+    #    print len(burst_metrics["42000059"][i])
+    #    print len(burst_metrics["42000050"][i])
+    #    print len(callstack_series[i])
+    #exit(0)
+
     for rank in range(len(callstack_series)):
         for cs_i in range(len(callstack_series[rank])):
             new_callstack = callstack.from_trace(rank,
@@ -517,12 +548,20 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                     files_series[rank][cs_i])
             new_callstack.metrics[rank]["mpi_duration"]=\
                     mpi_durations[rank][cs_i+1]
+            new_callstack.burst_metrics[rank]["burst_duration"]=\
+                    burst_durations[rank][cs_i+1]
+
             new_callstack.metrics[rank]["mpi_msg_size"]=\
                     comm_sizes_series[rank][cs_i+1]
 
-            for tmetric, values in metrics.iteritems():
+            for tmetric, values in mpi_metrics.iteritems():
                 new_callstack.metrics[rank].update(
                         {tmetric:int(values[rank][cs_i+1])})
+
+            for tmetric, values in burst_metrics.iteritems():
+                new_callstack.burst_metrics[rank].update(
+                        {tmetric:int(values[rank][cs_i+1])})
+
             try:
                 repeated_idx = callstacks_pool.index(new_callstack)
                 callstacks_pool[repeated_idx].merge(new_callstack)

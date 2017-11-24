@@ -68,10 +68,10 @@ class pseudocode(object):
         if not self.only_mpi:
             for call in calls:
                 if not call.print_call is False:
-                    self.lines.append(self.pseudo_call(call, tabs+my_tabs))
                     if call.mpi_call and self.show_burst_info:
                         self.lines.append(
                                 self.pseudo_computation(call,tabs+my_tabs))
+                    self.lines.append(self.pseudo_call(call, tabs+my_tabs))
                 my_tabs += 1
         else:
             if len(calls) > 0:

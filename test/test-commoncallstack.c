@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <mpi.h>
+#include <unistd.h>
 
 void flevel1(int myrank);
 void flevel2();
@@ -15,6 +16,7 @@ void CommSend(int myrank)
     MPI_Status st;
 
     MPI_Send(&buf, 1, MPI_INT, mydest, 1, MPI_COMM_WORLD);
+    usleep(100);
     MPI_Recv(&buf, 1, MPI_INT, mydest, 1, MPI_COMM_WORLD, &st);
 }
 
@@ -65,6 +67,7 @@ int main(int argc, char *argv[])
         flevel1(myrank);
         MPI_Barrier(MPI_COMM_WORLD);
     }
-
+    
+    MPI_Finalize();
     return 0;
 }

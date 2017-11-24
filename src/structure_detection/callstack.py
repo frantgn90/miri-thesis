@@ -58,6 +58,7 @@ class callstack(object):
         self.reduced=False
         self.calls=calls
         self.metrics = {}
+        self.burst_metrics = {}
         self.metrics[self.rank] = {
                 "mpi_duration":0,
                 "mpi_msg_size":0}
@@ -65,6 +66,10 @@ class callstack(object):
                 "burst_duration":0}
         self.in_program_order = False
         self.my_loop = None
+
+        self.dicts_to_merge = [
+                self.metrics,
+                self.burst_metrics]
 
         for call in calls:
             call.my_callstack = self
@@ -97,27 +102,29 @@ class callstack(object):
         self.repetitions[self.rank]+=1
         self.instants.extend(other.instants)
 
-        merged_metrics = {}
-        for key in self.metrics[self.rank]:
-            if "_merged" in key: continue
+        for self_dtomerge, other_dtomerge in \
+                zip(self.dicts_to_merge,other.dicts_to_merge):
+            merged_metrics = {}
+            for key in self_dtomerge[self.rank]:
+                if "_merged" in key: continue
 
-            mkey = key + "_merged"
-            if mkey in self.metrics[self.rank]:
-                self.metrics[self.rank][mkey].append(
-                        other.metrics[other.rank][key])
-            elif not mkey in merged_metrics:
-                merged_metrics.update({mkey:[self.metrics[self.rank][key]]})
-            else:
-                merged_metrics[mkey].append(other.metrics[self.rank][key])
+                mkey = key + "_merged"
+                if mkey in self_dtomerge[self.rank]:
+                    self_dtomerge[self.rank][mkey].append(
+                            other_dtomerge[other.rank][key])
+                elif not mkey in merged_metrics:
+                    merged_metrics.update({
+                        mkey:[self_dtomerge[self.rank][key]]})
+                else:
+                    merged_metrics[mkey].append(
+                            other_dtomerge[self.rank][key])
 
-        self.metrics[self.rank].update(merged_metrics)
-
-        #self.metrics[self.rank]["mpi_duration_merged"].append(
-        #        other.metrics[self.rank]["mpi_duration"])
+            self_dtomerge[self.rank].update(merged_metrics)
  
     def compact_with(self, other):
         self.compacted_ranks.append(other.rank)
         self.metrics[other.rank] = other.metrics[other.rank]
+        self.burst_metrics[other.rank] = other.burst_metrics[other.rank]
         self.repetitions[other.rank] = other.repetitions[other.rank]
 
     def calc_reduce_info(self):
@@ -125,50 +132,54 @@ class callstack(object):
         if self.repetitions[self.rank] == 1: return
 
         self.instants.sort()
-        self.instants_distances=self.__get_distances(self.instants)
-        self.instants_distances_median=numpy.median(self.instants_distances)
-        self.instants_distances_mean=numpy.mean(self.instants_distances)
+        self.instants_distances=self.__get_distances(
+                self.instants)
+        self.instants_distances_median=numpy.median(
+                self.instants_distances)
+        self.instants_distances_mean=numpy.mean(
+                self.instants_distances)
 
     def calc_metrics(self):
         assert self.repetitions[self.rank] > 1
+    
+        for dtomerge in self.dicts_to_merge:
+            for rank in dtomerge:
+                rank_calc_metrics={}
+                keys_to_remove = [] # For memory print purposes
+                for key,val in dtomerge[rank].iteritems():
+                    if not "merged" in key: continue
+     
+                    mean_key = key + "_mean"
+                    stdev_key = key + "_stdev"
+                    sum_key = key + "_sum"
+                    perc_key = key + "_percent"
 
-        for rank in self.metrics:
-            rank_calc_metrics={}
-            keys_to_remove = [] # For memory print purposes
-            for key,val in self.metrics[rank].iteritems():
-                if not "merged" in key: continue
- 
-                mean_key = key + "_mean"
-                stdev_key = key + "_stdev"
-                sum_key = key + "_sum"
-                perc_key = key + "_percent"
+                    rank_calc_metrics.update({
+                        mean_key: numpy.mean(val),
+                        stdev_key: numpy.std(val),
+                        sum_key: sum(val),
+                        perc_key: sum(val)/constants.TOTAL_TIME*100
+                    })
+                    keys_to_remove.append(key)
+                dtomerge[rank].update(rank_calc_metrics)
 
-                rank_calc_metrics.update({
-                    mean_key: numpy.mean(val),
-                    stdev_key: numpy.std(val),
-                    sum_key: sum(val),
-                    perc_key: sum(val)/constants.TOTAL_TIME*100
-                })
-                keys_to_remove.append(key)
-            self.metrics[rank].update(rank_calc_metrics)
+                for rk in keys_to_remove:
+                    del dtomerge[rank][rk]
 
-            for rk in keys_to_remove:
-                del self.metrics[rank][rk]
+            global_results = {}
+            for rank in dtomerge:
+                for key,val in dtomerge[rank].iteritems():
+                    gkey = "global_"+key
 
-        global_results = {}
-        for rank in self.metrics:
-            for key,val in self.metrics[rank].iteritems():
-                gkey = "global_"+key
+                    if not gkey in global_results:
+                        global_results.update({gkey:val})
+                    else:
+                        global_results[gkey] += val
 
-                if not gkey in global_results:
-                    global_results.update({gkey:val})
-                else:
-                    global_results[gkey] += val
-
-        mean_of = len(self.compacted_ranks)
-        global_results = map(lambda (k,v):(k,v/mean_of), 
-                global_results.iteritems())
-        self.metrics.update(global_results)
+            mean_of = len(self.compacted_ranks)
+            global_results = map(lambda (k,v):(k,v/mean_of), 
+                    global_results.iteritems())
+            dtomerge.update(global_results)
 
     def is_above_delta(self, delta, total_time):
         if self.repetitions[self.rank] == 1: return False
@@ -274,6 +285,7 @@ class callstack(object):
             result.condition_level = self.condition_level
             result.reduced = self.reduced
             result.metrics = self.metrics
+            result.burst_metrics = self.burst_metrics
             result.common_with_prev = self.common_with_prev
             result.my_loop = self.my_loop
 
@@ -299,6 +311,7 @@ class callstack(object):
             result.condition_level = self.condition_level
             result.reduced = self.reduced
             result.metrics = self.metrics
+            result.burst_metrics = self.burst_metrics
             result.common_with_prev = self.common_with_prev
             result.my_loop = self.my_loop
 
@@ -327,6 +340,7 @@ class callstack(object):
             result.condition_level = self.condition_level
             result.reduced = self.reduced
             result.metrics = self.metrics
+            result.burst_metrics = self.burst_metrics
             result.common_with_prev = self.common_with_prev
             result.my_loop = self.my_loop
 
