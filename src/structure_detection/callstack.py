@@ -225,9 +225,9 @@ class callstack(object):
         else:
             for call_i in range(min(len(self.calls), len(other.calls))):
                 if not self.calls[call_i] == other.calls[call_i]:
-                    if not self.calls[call_i].call == other.calls[call_i].call:
-                        logging.warn("Same code line jumps to more than one"\
-                                " target locations. Assuming arbitrary order.")
+                    #if not self.calls[call_i].call == other.calls[call_i].call:
+                    #    logging.warn("Same code line jumps to more than one"\
+                    #            " target locations. Assuming arbitrary order.")
                     return self.calls[call_i].line < other.calls[call_i].line
 
     def __gt__(self, other):

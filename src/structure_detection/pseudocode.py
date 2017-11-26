@@ -43,6 +43,9 @@ class pseudocode(object):
                 loop_obj.hide_contiguous_callstacks()
                 self.parse_loop(loop_obj, 0)
 
+
+        self.gui = self.gui_class(self.lines)
+
     def parse_loop(self, loop_obj, tabs):
         if not self.only_mpi:
             tabs += self.parse_callstack(loop_obj.common_callstack, tabs)
@@ -117,5 +120,4 @@ class pseudocode(object):
                 prev_ranks = item.get_all_ranks()
 
     def show(self):
-        self.gui = self.gui_class(self.lines)
         self.gui.show()

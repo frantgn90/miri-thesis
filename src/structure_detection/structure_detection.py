@@ -16,7 +16,7 @@ from utilities import *
 from flowgraph import flowgraph
 from pseudocode import pseudocode
 from cluster import merge_clusters
-
+from sdshell import sdshell
 import constants
 
 def main(argc, argv):
@@ -265,8 +265,9 @@ def main(argc, argv):
 
     ''' 5. Clustering '''
     logging.info("Performing clustering...")
-    clusters_pool=clustering(fcallstacks_pool, arguments.show_clustering, 
+    clusters_pool,plot_thread=clustering(fcallstacks_pool, arguments.show_clustering, 
             app_time, deltas, arguments.bottom_bound[0])
+
     for cluster in clusters_pool:
         cluster.run_loops_generation()
 
@@ -288,7 +289,7 @@ def main(argc, argv):
     logging.info("Done")
 
 
-    ''' 8. Reducing callstacks '''
+    ''' 7. Reducing callstacks '''
     logging.info("Postprocessing callstacks...")
     for cluster_obj in top_level_clusters:
         for loop_obj in cluster_obj.loops:
@@ -298,25 +299,19 @@ def main(argc, argv):
             loop_obj.compact_callstacks(callstacks_pool)
             loop_obj.group_into_conditional_rank_blocks()
             loop_obj.callstack_set_owner_loop()
-    logging.info("Done")
 
-    ''' 8.2 Removing callstacks that just appears one time '''
     callstacks_pool = filter(lambda x: x.repetitions[x.rank] > 1, 
             callstacks_pool)
+    logging.info("Done")
 
-    ''' 9. Derivating metrics '''
+    ''' 8. Derivating metrics '''
     logging.info("Derivating metrics")
     for callstack in callstacks_pool:
         callstack.calc_metrics()
     logging.info("Done")
 
 
-    ''' 10. Genearting flowgraph '''
-    #logging.info("Generating flowgraph...")
-    #fg = flowgraph(top_level_clusters[0]) # TOCHANGE -> top_level_clusters
-    #logging.info("Done")
-    #fg.show()
-
+    ''' 9. Generating pseudo-code '''
     for cs in callstacks_pool:
         last_line = cs.calls[0].line
         last_file = cs.calls[0].call_file
@@ -329,9 +324,7 @@ def main(argc, argv):
             auxf = c.call_file
             c.call_file = last_file
             last_file = auxf
- 
 
-    ''' 10. Generating pseudo-code '''
     logging.info("Generating pseudocode...")
     logging.debug("Top level clusters:")
     for cl in top_level_clusters:
@@ -350,21 +343,16 @@ def main(argc, argv):
 
     logging.info("Done...")
 
-    ''' 9. Show GUI '''
-    print
-    pc.show()
+    #''' 10. Show GUI '''
+    #print
+    #pc.show()
 
+    ''' 11. Start interactive shell '''
+    sds = sdshell()
+    sds.set_gui(pc.gui)
+    sds.get_clustering_thread(plot_thread)
+    sds.cmdloop()
 
-    #''' 10. Print some statistics '''
-    #final_stats =  "{0} clusters detected\n".format(len(clusters_pool))
-    #final_stats+=  "Grouped in {0} super-loops\n".format(len(deltas))
-    #for i, delta in zip(range(len(deltas)),deltas):
-    #    final_stats+=(" > Top level loop {0} = {1}%\n".format(i, delta*100)) 
-    #final_stats+=("Time in pseudocode: {0}%\n".format(sum(deltas)*100))
-    #
-    #print pretty_print(final_stats, "Final stats")
-
-    logging.info("All done")
     return 0
 
 if __name__ == "__main__":

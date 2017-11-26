@@ -208,11 +208,11 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
         clusters_pool[callstack_cluster_id].add_callstack(fcallstacks_pool[i])
 
     ''' 4. Show plots '''
-    if show_plot:
-        show_plot_thread=multiprocessing.Process(
-                target=show_clustering,
-                args=(data, fcallstacks_pool, labels, core_samples_mask, nclusters, 
-                    total_time, delta, bound))
-        show_plot_thread.start()
+    #if show_plot:
+    show_plot_thread=multiprocessing.Process(
+            target=show_clustering,
+            args=(data, fcallstacks_pool, labels, core_samples_mask, nclusters, 
+                total_time, delta, bound))
+    #show_plot_thread.start()
 
-    return clusters_pool
+    return clusters_pool, show_plot_thread
