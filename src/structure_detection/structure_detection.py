@@ -191,8 +191,10 @@ def main(argc, argv):
     numeric_level = getattr(logging, arguments.log_level[0].upper(), None)
 
     in_mpi_events = arguments.in_mpi_events
-    in_mpi_events.append("42000050")
-    in_mpi_events.append("42000059")
+    in_mpi_events.append("42000050") # instructions
+    in_mpi_events.append("42000059") # events
+    #in_mpi_events.append("50100001") # send size in global op
+    #in_mpi_events.append("50100002") # recv size in global op
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: {0}".format(loglevel))
@@ -217,7 +219,7 @@ def main(argc, argv):
             level=level, 
             image_filter=image_filter,
             metric_types=in_mpi_events,
-            burst_info=arguments.show_burst_info)
+            burst_info=True)
     app_time = get_app_time(trace)
     constants.TOTAL_TIME = app_time
     logging.debug("{0} ns total trace time.".format(app_time))            
@@ -338,8 +340,10 @@ def main(argc, argv):
     else:
         gui_class = console_gui
 
-    pc = pseudocode(top_level_clusters, nranks, 
-            arguments.only_mpi, gui_class, arguments.show_burst_info)
+    # Show burst info and only MPI are False by default
+    pc = pseudocode(top_level_clusters, nranks, False, gui_class, False)
+    pc.beautify()
+    pc.generate()
 
     logging.info("Done...")
 
@@ -349,7 +353,8 @@ def main(argc, argv):
 
     ''' 11. Start interactive shell '''
     sds = sdshell()
-    sds.set_gui(pc.gui)
+    sds.set_trace(trace)
+    sds.set_pseudocode(pc)
     sds.get_clustering_thread(plot_thread)
     sds.cmdloop()
 

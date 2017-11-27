@@ -36,13 +36,19 @@ class pseudocode(object):
 
         # Sort the clusters by program order
         clusters_set.sort(key=lambda x: x.get_first_line(), reverse=False)
+        self.clusters_set = clusters_set
 
-        for cluster in clusters_set:
+    def beautify(self):
+        for cluster in self.clusters_set:
             for loop_obj in cluster.loops:
                 loop_obj.extract_common_callstack_r()
                 loop_obj.hide_contiguous_callstacks()
-                self.parse_loop(loop_obj, 0)
 
+    def generate(self):
+        self.lines = []
+        for cluster in self.clusters_set:
+            for loop_obj in cluster.loops:
+                self.parse_loop(loop_obj, 0)
 
         self.gui = self.gui_class(self.lines)
 

@@ -16,6 +16,21 @@ class call(object):
         self.my_callstack = callstack
         self.call_file = call_file
         self.mpi_call = "MPI_" in call
+        self.mpi_call_coll = self.call in [
+                "MPI_Barrier",
+                "MPI_Bcast",
+                "MPI_Gather",
+                "MPI_Gatherv",
+                "MPI_Scatter",
+                "MPI_Scatterv",
+                "MPI_Allgather",
+                "MPI_Allgatherv",
+                "MPI_Alltoall",
+                "MPI_Alltoallv",
+                "MPI_Reduce",
+                "MPI_Allreduce",
+                "MPI_Reduce_scatter",
+                "MPI_Scan"]
 
         # This variable is needed for the console_gui
         # it defines if the name of this call should be printed

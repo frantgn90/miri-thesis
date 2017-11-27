@@ -11,6 +11,7 @@ else:
 
 
 TOTAL_TIME = 1
+TRACE = ""
 TRACE_NAME = ""
 CALLSTACK_SIZE=10
 
