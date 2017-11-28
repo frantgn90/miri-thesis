@@ -22,6 +22,8 @@ _inter_field_separator="#"
 ### PARAVER ###
 ###############
 
+PARAVER_MPI_CFG = "/home/jmartinez/BSC/software/paraver/cfgs/mpi/views/MPI_call.cfg"
+
 CALLER_EVENT_BASE ="3000000"
 CALLIN_EVENT_BASE ="3000010"
 MPICAL_EVENT_BASE ="7000000"

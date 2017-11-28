@@ -257,6 +257,12 @@ class cluster (object):
                 self.callstacks)
         return numpy.mean(medians)
 
+    def get_loop(self, loop_id):
+        for l in self.loops:
+            if l.get_str_id() == loop_id:
+                return l
+        return None
+
 #    def is_subloop(self, other):
 #        if len(self.loops) > 1:
 #            logging.warn("TODO: When there is more than one loop to" \

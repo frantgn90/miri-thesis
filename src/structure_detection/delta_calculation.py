@@ -130,8 +130,6 @@ def calcule_deltas_cplex(
             deltas.append(i)
         deltas.append(1)
 
-#        pbar = ProgressBar("Generating CPLEX input", npoints*len(deltas))
-
         points=[]
         for cs in fcallstacks_pool:
             points.append([cs.repetitions[cs.rank],cs.instants_distances_mean])
@@ -139,8 +137,7 @@ def calcule_deltas_cplex(
         big_m = 0
         distance_dp = []
 
-        #ncpus = multiprocessing.cpu_count()
-        pool = Pool()
+        pool = Pool(1)
 
         for delta in deltas:
             logging.debug("Calculing distances to delta {0}".format(delta))
@@ -208,7 +205,15 @@ def get_minimum_distance(arguments):
     a=2; b=-2*X; c=2*T*Y; d=-2*T**2
 
     x=Symbol("x",real=True)
+
+    #print "================"
+    #print "X={0} Y={1} T={2}".format(X,Y,T)
+    #print "a={0} b={1} c={2} d={3}".format(a,b,c,d)
     solutions = solve(a*x**4 + b*x**3 + c*x + d, x)
+    #print solutions
+    #print "================"
+    #if len(solutions) == 0:
+    #    exit(1)
 
     # Once we have de solutions we want to get the minimum distance
     min_distance = float("inf")
@@ -219,7 +224,7 @@ def get_minimum_distance(arguments):
         if distance < min_distance:
             min_distance = distance
             min_solution = [solution, T/solution]
-    
+
 #    return min_distance, min_solution
     return min_distance**2
 

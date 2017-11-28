@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
@@ -193,8 +193,8 @@ def main(argc, argv):
     in_mpi_events = arguments.in_mpi_events
     in_mpi_events.append("42000050") # instructions
     in_mpi_events.append("42000059") # events
-    #in_mpi_events.append("50100001") # send size in global op
-    #in_mpi_events.append("50100002") # recv size in global op
+    in_mpi_events.append("50100001") # send size in global op
+    in_mpi_events.append("50100002") # recv size in global op
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: {0}".format(loglevel))
@@ -355,7 +355,7 @@ def main(argc, argv):
     sds = sdshell()
     sds.set_trace(trace)
     sds.set_pseudocode(pc)
-    sds.get_clustering_thread(plot_thread)
+    sds.set_clustering_thread(plot_thread)
     sds.cmdloop()
 
     return 0

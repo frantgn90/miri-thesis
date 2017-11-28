@@ -56,9 +56,8 @@ class pseudocode(object):
         if not self.only_mpi:
             tabs += self.parse_callstack(loop_obj.common_callstack, tabs)
 
-        loop_id = str(loop_obj.cluster_id) + ":" + str(loop_obj._id)
         self.lines.append(
-                self.pseudo_for(loop_obj.iterations, loop_id, tabs))
+                self.pseudo_for(loop_obj.iterations, loop_obj.get_str_id(), tabs))
         #for crb in loop_obj.conditional_rank_block:
         for crb in loop_obj.callstack_list:
             self.parse_conditional_rank_block(

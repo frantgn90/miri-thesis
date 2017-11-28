@@ -8,9 +8,10 @@ import constants
 class ParaverInterface(object):
         
     def __init__(self, trace):
-        self.trace = trace
-        self.paraver_command = ["wxparaver", self.trace]
+        self.trace = os.path.abspath(trace)
+        self.paraver_command = ["wxparaver"]
         self.paraver_process = None
+        self.paraver_pid = 0
         self.silent_stdout = open(os.devnull, "w")
         self.sigfile = "{0}/paraload.sig".format(os.getenv("HOME"))
 
@@ -20,17 +21,11 @@ class ParaverInterface(object):
             os.remove(self.sigfile)
 
         with open(self.sigfile, "w") as f:
-            f.write("{0}\n{1}:{2}\n".format(cfg, from_time, to_time))
-
-    def send_signal(self):
-        print signal.SIGUSR1
-        #os.kill(self.paraver_pid, signal.SIGUSR1)
-        command = ["kill","-SIGUSR1","--",str(self.paraver_pid)]
-        print " ".join(command)
-        #subprocess.Popen(command)
+            f.write("{0}\n{1}:{2}\n{3}\n".format(cfg, from_time, to_time,
+                self.trace))
 
     def run_paraver(self):
-        if self.paraver_process is None:
+        if self.check_process() == False:
             pid_filename = tempfile.mkstemp()
             pid_file = open(pid_filename[1],"w")
 
@@ -42,7 +37,7 @@ class ParaverInterface(object):
                     stdout=pid_file,
                     stderr=self.silent_stdout)
     
-            self.paraver_process.wait()
+            #self.paraver_process.wait()
             pid_file.close()
  
             self.paraver_pid = ""
@@ -54,11 +49,26 @@ class ParaverInterface(object):
             self.paraver_pid = int(self.paraver_pid)
             print "Running paraver PID={0}".format(self.paraver_pid)
 
+    def close(self):
+        if self.check_process() == True:
+            os.kill(self.paraver_pid, signal.SIGKILL)
+
+    def check_process(self):
+        if self.paraver_pid == 0:
+            return False
+        else:
+            try:
+                os.kill(self.paraver_pid, 0)
+            except OSError:
+                return False
+            else:
+                return True
+
     def zoom(self, from_time, to_time, cfg):
         self.run_paraver()
         self.generate_sigfile(from_time, to_time, cfg)
-        self.send_signal()
-
+        time.sleep(0.5)
+        os.kill(self.paraver_pid, signal.SIGUSR1)
 
 
 class sdshell(cmd.Cmd):
@@ -77,25 +87,34 @@ class sdshell(cmd.Cmd):
     def set_pseudocode(self, pc):
         self.pc = pc
         
-    def get_clustering_thread(self, clustering_thread):
+    def set_clustering_thread(self, clustering_thread):
         self.clustering_thread = clustering_thread
 
     def do_paraver(self, args):
         args = parse(args)
-        option = args[0]
-        option_args = args[1:]
 
         if self.paraver_int is None:
             self.paraver_int = ParaverInterface(self.trace)
             self.paraver_int.run_paraver()
 
-        if option == "cut":
-            print "Not developed"
-        elif option == "show":
+        if len(args) == 0:
+            return False
+
+        option = args[0]
+        option_args = args[1:]
+
+        if option == "show":
             loop_id = option_args[0]
-            iteration = option_args[1]
-            self.paraver_int.zoom(100000,150000,
-                    "/home/jmartinez/BSC/software/paraver/cfgs/mpi/views/MPI_call.cfg")
+            iteration = int(option_args[1])
+
+            cluster_id = loop_id.split(".")[0]
+            loop_obj = self.pc.clusters_set[int(cluster_id)].get_loop(loop_id)
+            it_times = loop_obj.get_iteration(iteration)
+            if iteration is None:
+                return False
+
+            self.paraver_int.zoom(it_times[0], it_times[1],
+                    constants.PARAVER_MPI_CFG)
         else:
             print "{0} does not exist".format(option)
 
@@ -136,9 +155,16 @@ class sdshell(cmd.Cmd):
             pass
 
     def do_quit(self, args):
+        self.quit()
         return True
     def do_q(self, args):
+        self.quit()
         return True
+
+    def quit(self):
+        if not self.paraver_int is None:
+            self.paraver_int.close()
+
 
     def help_paraver(self):
         print "Paraver commands"

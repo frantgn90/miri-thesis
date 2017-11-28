@@ -143,7 +143,8 @@ class callstack_ordered_list(object):
     def get_callstack_from_pos(self, pos):
         item = self.callstack_list[pos]
         if isinstance(item, callstack_ordered_list):
-            return item.get_callstack_from_pos(0)
+            # WARNING: Could not work in all cases
+            return item.get_callstack_from_pos(pos)
         return item
 
 class conditional_rank_block(callstack_ordered_list):
@@ -616,12 +617,24 @@ class loop (callstack_ordered_list):
         self.callstack_list = [crb]
         #self.conditional_rank_block = crb.agrupate()
 
-    def get_iteration_times():
+    def get_iteration_times(self):
+        # TODO: What about if this loop ends with subloop
         first_callstack = self.get_first_callstack()
         last_callstack = self.get_last_callstack()
 
-        assert len(first_callstack.instants) == len(last_callstacks.instants)
-        return zip(first_callstack.instants, last_callstack.instants)
+        
+        fc_times = first_callstack.get_instants()
+        lc_times = last_callstack.get_end_instants()
+
+        assert len(fc_times) == len(lc_times)
+        return zip(fc_times, lc_times)
+
+    def get_iteration(self, nit):
+        its = self.get_iteration_times()
+
+        if nit >= len(its) or nit < 0:
+            return None
+        return its[nit]
 
     def callstack_set_owner_loop(self):
         #callstacks = self.get_flat_callstack_list()

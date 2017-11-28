@@ -63,6 +63,7 @@ class callstack(object):
         self.repetitions={}
         self.repetitions[self.rank]=1
         self.instants=[int(instant)] 
+        # TODO: Merge also different rank callstack instants
         self.instants_distances=[]
         self.instants_distances_mean=None
         self.instants_distances_median=None
@@ -99,6 +100,13 @@ class callstack(object):
 
         return cls(rank, instant, calls_obj)
 
+    def get_instants(self):
+        return self.instants
+
+    def get_end_instants(self):
+        return [sum(x) for x in zip(self.instants, 
+            self.metrics[self.rank]["mpi_duration_merged"])]
+
     def get_all_ranks(self):
         return set(self.compacted_ranks)
 
@@ -116,7 +124,7 @@ class callstack(object):
         assert self.get_signature() == other.get_signature()
         self.repetitions[self.rank]+=1
         self.instants.extend(other.instants)
-
+        
         for self_dtomerge, other_dtomerge in \
                 zip(self.dicts_to_merge,other.dicts_to_merge):
             merged_metrics = {}
@@ -129,7 +137,7 @@ class callstack(object):
                             other_dtomerge[other.rank][key])
                 elif not mkey in merged_metrics:
                     merged_metrics.update({
-                        mkey:[self_dtomerge[self.rank][key]]})
+                        mkey:[self_dtomerge[self.rank][key],other_dtomerge[other.rank][key]]})
                 else:
                     merged_metrics[mkey].append(
                             other_dtomerge[self.rank][key])
@@ -175,7 +183,8 @@ class callstack(object):
                         sum_key: sum(val),
                         perc_key: sum(val)/constants.TOTAL_TIME*100
                     })
-                    keys_to_remove.append(key)
+                    if key != "mpi_duration_merged":
+                        keys_to_remove.append(key)
                 dtomerge[rank].update(rank_calc_metrics)
 
                 for rk in keys_to_remove:
@@ -184,6 +193,8 @@ class callstack(object):
             global_results = {}
             for rank in dtomerge:
                 for key,val in dtomerge[rank].iteritems():
+                    if key == "mpi_duration_merged":
+                        continue
                     gkey = "global_"+key
 
                     if not gkey in global_results:
