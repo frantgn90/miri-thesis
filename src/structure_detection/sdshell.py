@@ -105,10 +105,23 @@ class sdshell(cmd.Cmd):
 
         if option == "show":
             loop_id = option_args[0]
-            iteration = int(option_args[1])
-
             cluster_id = loop_id.split(".")[0]
-            loop_obj = self.pc.clusters_set[int(cluster_id)].get_loop(loop_id)
+            iteration = int(option_args[1])
+            
+            cluster = None
+            for cl in self.pc.clusters_set:
+                if cl.cluster_id == int(cluster_id):
+                    cluster = cl
+
+            if cluster == None:
+                print "No cluster with id={0}".format(cluster_id)
+                return False
+
+            loop_obj = cluster.get_loop(loop_id)
+            if loop_obj == None:
+                print "No loop with id={0}".format(loop_id)
+                return False
+
             it_times = loop_obj.get_iteration(iteration)
             if iteration is None:
                 return False
@@ -118,41 +131,36 @@ class sdshell(cmd.Cmd):
         else:
             print "{0} does not exist".format(option)
 
-    def do_show(self, args):
+    def do_pseudocode(self, args):
         args = parse(args)
-        option = args[0]
-        option_args = args[1:]
+        if len(args) == 0: option = ["default"]
 
-        if option == "pseudocode":
-            if "only-mpi" in option_args:
+        gen = False
+        if self.pc.show_burst_info == True:
+            gen = True
+            self.pc.show_burst_info = False
+        if self.pc.only_mpi == True:
+            gen = True
+            self.pc.only_mpi = False
+
+        for option in args:
+            if option == "wo-cs":
                 if self.pc.only_mpi == False:
+                    gen = True
                     self.pc.only_mpi = True
-                    self.pc.generate()
-            elif "with-burst-info" in option_args:
-                gen = False
+            elif option == "w-burst-info":
                 if self.pc.show_burst_info == False:
                     gen = True
                     self.pc.show_burst_info = True
-                if self.pc.only_mpi == True:
-                    gen = True
-                    self.pc.only_mpi = False
-                if gen:
-                    self.pc.generate()
-            elif "default" in option_args:
-                gen = False
-                if self.pc.show_burst_info == True:
-                    gen = True
-                    self.pc.show_burst_info = False
-                elif self.pc.only_mpi == True:
-                    gen = True
-                    self.pc.only_mpi = False
-                if gen:
-                    self.pc.generate()
-            self.pc.gui.show()
-        elif option == "clustering":
-            self.clustering_thread.start()
-        elif option == "plot":
-            pass
+            elif option == "default":
+                break
+
+        if gen:
+            self.pc.generate()
+        self.pc.gui.show()
+
+    def do_clustering(self, args):
+        self.clustering_thread.start()
 
     def do_quit(self, args):
         self.quit()

@@ -456,7 +456,7 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                     buffer_comm_sizes[task_recv_id-1].update(
                             {physic_recv_time: [message_size]})
 
-            #pbar.show()
+            pbar.show()
 
 
     # TODO: Terminar de vaciar el events_buffer

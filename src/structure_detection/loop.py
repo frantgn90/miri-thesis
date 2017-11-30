@@ -141,11 +141,13 @@ class callstack_ordered_list(object):
         return self.get_callstack_from_pos(-1)
 
     def get_callstack_from_pos(self, pos):
-        item = self.callstack_list[pos]
-        if isinstance(item, callstack_ordered_list):
-            # WARNING: Could not work in all cases
-            return item.get_callstack_from_pos(pos)
-        return item
+        callstack_flat_list = self.get_flat_callstack_list()
+        return callstack_flat_list[pos]
+        #item = self.callstack_list[pos]
+        #if isinstance(item, callstack_ordered_list):
+        #    # WARNING: Could not work in all cases
+        #    return item.get_callstack_from_pos(pos)
+        #return item
 
 class conditional_rank_block(callstack_ordered_list):
     def __init__(self, ranks):
@@ -618,13 +620,22 @@ class loop (callstack_ordered_list):
         #self.conditional_rank_block = crb.agrupate()
 
     def get_iteration_times(self):
-        # TODO: What about if this loop ends with subloop
         first_callstack = self.get_first_callstack()
         last_callstack = self.get_last_callstack()
 
         
         fc_times = first_callstack.get_instants()
         lc_times = last_callstack.get_end_instants()
+
+        min_its = min(len(fc_times), len(lc_times))
+
+        if len(fc_times) > min_its:
+            part = int(len(fc_times)/min_its)
+            fc_times = fc_times[::part]
+
+        if len(lc_times) > min_its:
+            part = int(len(lc_times)/min_its)
+            lc_times = lc_times[::part]
 
         assert len(fc_times) == len(lc_times)
         return zip(fc_times, lc_times)

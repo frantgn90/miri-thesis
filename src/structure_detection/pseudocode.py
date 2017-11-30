@@ -83,6 +83,8 @@ class pseudocode(object):
                 my_tabs += 1
         else:
             if len(calls) > 0:
+                if self.show_burst_info:
+                    self.lines.append(self.pseudo_computation(calls[-1],tabs))
                 self.lines.append(self.pseudo_call(calls[-1],tabs))
 
         return my_tabs
