@@ -75,6 +75,8 @@ class callstack(object):
         self.calls=calls
         self.metrics = {}
         self.burst_metrics = {}
+        self.partner = set()
+        self.compacted_partner = []
         self.metrics[self.rank] = {
                 "mpi_duration":0,
                 "mpi_msg_size":0}
@@ -100,6 +102,10 @@ class callstack(object):
 
         return cls(rank, instant, calls_obj)
 
+    def set_partner(self, partner):
+        self.partner.update(partner)
+        self.compacted_partner.append((self.rank, self.partner))
+
     def get_instants(self):
         return self.instants
 
@@ -120,10 +126,13 @@ class callstack(object):
         return str(self.rank)+"#"+signature
 
     def merge(self, other):
+        ''' This merging is for merging different repetitions of the same callstack '''
+        ''' so same path and same rank '''
         assert self.reduced == False
         assert self.get_signature() == other.get_signature()
         self.repetitions[self.rank]+=1
         self.instants.extend(other.instants)
+        self.partner.update(other.partner)
         
         for self_dtomerge, other_dtomerge in \
                 zip(self.dicts_to_merge,other.dicts_to_merge):
@@ -137,7 +146,8 @@ class callstack(object):
                             other_dtomerge[other.rank][key])
                 elif not mkey in merged_metrics:
                     merged_metrics.update({
-                        mkey:[self_dtomerge[self.rank][key],other_dtomerge[other.rank][key]]})
+                        mkey:[self_dtomerge[self.rank][key],
+                            other_dtomerge[other.rank][key]]})
                 else:
                     merged_metrics[mkey].append(
                             other_dtomerge[self.rank][key])
@@ -145,10 +155,15 @@ class callstack(object):
             self_dtomerge[self.rank].update(merged_metrics)
  
     def compact_with(self, other):
+        ''' Diverge from previous call in the sense this merge procedure is for the '''
+        ''' same path but different ranks '''
         self.compacted_ranks.append(other.rank)
         self.metrics[other.rank] = other.metrics[other.rank]
         self.burst_metrics[other.rank] = other.burst_metrics[other.rank]
         self.repetitions[other.rank] = other.repetitions[other.rank]
+
+        new_partner_pair = (other.rank, other.partner)
+        self.compacted_partner.append(new_partner_pair)
 
     def calc_reduce_info(self):
         self.reduced=True
@@ -314,6 +329,8 @@ class callstack(object):
             result.burst_metrics = self.burst_metrics
             result.common_with_prev = self.common_with_prev
             result.my_loop = self.my_loop
+            result.partner = self.partner
+            result.compacted_partner = self.compacted_partner
 
         return result
 
@@ -340,6 +357,8 @@ class callstack(object):
             result.burst_metrics = self.burst_metrics
             result.common_with_prev = self.common_with_prev
             result.my_loop = self.my_loop
+            result.partner = self.partner
+            result.compacted_partner = self.compacted_partner
 
         return result
 
@@ -369,6 +388,8 @@ class callstack(object):
             result.burst_metrics = self.burst_metrics
             result.common_with_prev = self.common_with_prev
             result.my_loop = self.my_loop
+            result.partner = self.partner
+            result.compacted_partner = self.compacted_partner
 
         return result
 
