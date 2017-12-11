@@ -452,8 +452,11 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                 comm_size_pushed[task-1] = True
 
                 if physic_recv_time in buffer_comm[task_recv_id-1]:
-                    buffer_comm[task_recv_id-1][physic_recv_time][0]\
-                            +=message_size
+                    old_mss_sz = buffer_comm[task_recv_id-1][physic_recv_time]
+                    new_message_size = (old_mss_sz[0]+message_size, old_mss_sz[1])
+                    buffer_comm[task_recv_id-1][physic_recv_time] = new_message_size
+                    #buffer_comm[task_recv_id-1][physic_recv_time][0]\
+                    #        +=message_size
                 else:
                     buffer_comm[task_recv_id-1].update({physic_recv_time:
                         (message_size, [task-1])})

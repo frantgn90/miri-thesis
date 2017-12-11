@@ -195,6 +195,7 @@ def main(argc, argv):
     in_mpi_events.append("42000059") # events
     in_mpi_events.append("50100001") # send size in global op
     in_mpi_events.append("50100002") # recv size in global op
+    in_mpi_events.append("50100004") # communicator in global op
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: {0}".format(loglevel))
