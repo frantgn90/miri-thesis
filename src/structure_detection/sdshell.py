@@ -70,6 +70,15 @@ class ParaverInterface(object):
         time.sleep(0.5)
         os.kill(self.paraver_pid, signal.SIGUSR1)
 
+''' Commands definitions '''
+
+PARAVER_SHOW = "show"
+
+PSEUDOCODE_NO_CS = "wo-cs"
+PSEUDOCODE_SHOW_BURST = "w-burst-info"
+PSEUDOCODE_BURST_TH = "w-burst-threshold"
+PSEUDOCODE_DEFAULT = "default" 
+PSEUDOCODE_RANKS_FILTER = "ranks" 
 
 class sdshell(cmd.Cmd):
     intro  = '\n'
@@ -103,7 +112,7 @@ class sdshell(cmd.Cmd):
         option = args[0]
         option_args = args[1:]
 
-        if option == "show":
+        if option == PARAVER_SHOW:
             loop_id = option_args[0]
             cluster_id = loop_id.split(".")[0]
             iteration = int(option_args[1])
@@ -133,27 +142,42 @@ class sdshell(cmd.Cmd):
 
     def do_pseudocode(self, args):
         args = parse(args)
-        if len(args) == 0: option = ["default"]
-
         gen = False
-        if self.pc.show_burst_info == True:
-            gen = True
-            self.pc.show_burst_info = False
-        if self.pc.only_mpi == True:
-            gen = True
-            self.pc.only_mpi = False
+        if len(args) == 0: args = ["default"]
 
-        for option in args:
-            if option == "wo-cs":
-                if self.pc.only_mpi == False:
-                    gen = True
-                    self.pc.only_mpi = True
-            elif option == "w-burst-info":
-                if self.pc.show_burst_info == False:
-                    gen = True
-                    self.pc.show_burst_info = True
-            elif option == "default":
-                break
+        if PSEUDOCODE_NO_CS in args:
+            if self.pc.only_mpi == False:
+                gen = True
+                self.pc.only_mpi = True
+        if PSEUDOCODE_SHOW_BURST in args:
+            if self.pc.show_burst_info == False:
+                gen = True
+                self.pc.show_burst_info = True
+        if PSEUDOCODE_BURST_TH in args:
+            burst_threshold = float(args[args.index(PSEUDOCODE_BURST_TH)+1])
+            if self.pc.burst_threshold != burst_threshold:
+                gen = True
+                self.pc.burst_threshold = burst_threshold
+        if PSEUDOCODE_DEFAULT in args:
+            if PSEUDOCODE_NO_CS in args or PSEUDOCODE_SHOW_BURST in args:
+                print "default should go alone"
+                return False
+
+            if self.pc.show_burst_info == True:
+                gen = True
+                self.pc.show_burst_info = False
+            if self.pc.only_mpi == True:
+                gen = True
+                self.pc.only_mpi = False
+        if PSEUDOCODE_RANKS_FILTER in args:
+            ranks = map(int,args[args.index(PSEUDOCODE_RANKS_FILTER)+1].split(","))
+            if self.pc.show_ranks != ranks:
+                gen = True
+                self.pc.show_ranks = set(ranks)
+        else:
+            if self.pc.show_ranks != self.pc.all_ranks:
+                gen = True
+                self.pc.show_ranks = self.pc.all_ranks
 
         if gen:
             self.pc.generate()

@@ -31,8 +31,10 @@ class pseudocode(object):
 
         self.lines = []
         self.all_ranks = set(range(nranks))
+        self.show_ranks = self.all_ranks
         self.only_mpi = only_mpi
         self.show_burst_info = show_burst_info
+        self.burst_threshold = 0 # All burst
 
         # Sort the clusters by program order
         clusters_set.sort(key=lambda x: x.get_first_line(), reverse=False)
@@ -58,7 +60,7 @@ class pseudocode(object):
 
         self.lines.append(
                 self.pseudo_for(loop_obj.iterations, loop_obj.get_str_id(), tabs))
-        #for crb in loop_obj.conditional_rank_block:
+
         for crb in loop_obj.callstack_list:
             self.parse_conditional_rank_block(
                     crb,
@@ -66,35 +68,15 @@ class pseudocode(object):
                     tabs+1)
         self.lines.append(self.pseudo_for_end(loop_obj.iterations, tabs))
 
-    def parse_callstack(self, callstack_obj, tabs):
-        if callstack_obj is None:
-            return 0
-
-        calls=callstack_obj.calls
-        my_tabs=0
-
-        if not self.only_mpi:
-            for call in calls:
-                if not call.print_call is False:
-                    if call.mpi_call and self.show_burst_info:
-                        self.lines.append(
-                                self.pseudo_computation(call,tabs+my_tabs))
-                    self.lines.append(self.pseudo_call(call, tabs+my_tabs))
-                my_tabs += 1
-        else:
-            if len(calls) > 0:
-                if self.show_burst_info:
-                    self.lines.append(self.pseudo_computation(calls[-1],tabs))
-                self.lines.append(self.pseudo_call(calls[-1],tabs))
-
-        return my_tabs
-
-    def parse_conditional_rank_block(self, 
-            conditional_rank_block_obj, 
+    def parse_conditional_rank_block(self, conditional_rank_block_obj, 
             prev_ranks,
             tabs):
 
         item = conditional_rank_block_obj
+
+        intersection = item.get_all_ranks().intersection(self.show_ranks)
+        if len(intersection) == 0:
+            return
 
         # Print the common callstack
         if not self.only_mpi:
@@ -105,10 +87,11 @@ class pseudocode(object):
         # Print the conditional
         condition_tabs=0
 
-        if item.get_all_ranks() != self.all_ranks:
-            self.lines.append(self.pseudo_condition(
-                item.ranks, False, False, tabs+condition_tabs))
-            condition_tabs += 1
+        if len(intersection) < len(self.show_ranks):
+            if item.get_all_ranks() != self.all_ranks:
+                self.lines.append(self.pseudo_condition(
+                    intersection, False, False, tabs+condition_tabs))
+                condition_tabs += 1
 
         # Print whatever we have under the conditional
         for item in conditional_rank_block_obj.callstack_list:
@@ -125,6 +108,33 @@ class pseudocode(object):
                 tabs_c = 0
                 self.parse_callstack(item, tabs+tabs_c+condition_tabs)
                 prev_ranks = item.get_all_ranks()
+
+    def parse_callstack(self, callstack_obj, tabs):
+        if callstack_obj is None:
+            return 0
+
+        calls=callstack_obj.calls
+        my_tabs=0
+
+        if not self.only_mpi:
+            for call in calls:
+                if not call.print_call is False:
+                    if call.mpi_call and self.show_burst_info:
+                        burst = self.pseudo_computation(call,tabs+my_tabs, self.show_ranks)
+                        if burst.burst_duration >= self.burst_threshold:
+                            self.lines.append(burst)
+                    self.lines.append(self.pseudo_call(call, tabs+my_tabs, self.show_ranks))
+                my_tabs += 1
+        else:
+            if len(calls) > 0:
+                if self.show_burst_info:
+                    burst = self.pseudo_computation(calls[-1],tabs)
+                    if burst.burst_duration >= self.burst_threshold:
+                        self.lines.append(burst)
+                self.lines.append(self.pseudo_call(calls[-1],tabs, self.show_ranks))
+
+        return my_tabs
+
 
     def show(self):
         self.gui.show()
