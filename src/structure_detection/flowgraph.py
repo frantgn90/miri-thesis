@@ -109,9 +109,9 @@ class flowgraph(object):
                 subloop_graphs.append(subloop_graph)
 
                 for n in subloop_graph:
-                    print n
+                    print(n)
 
-                print len(subloop_graph)
+                print(len(subloop_graph))
                 exit(0)
 
             else:

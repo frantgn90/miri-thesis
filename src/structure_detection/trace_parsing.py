@@ -230,7 +230,7 @@ def parse_events(events,image_filter, time, task, mpi_durations, burst_durations
         filtered_calls=[]; filtered_files=[]
         filtered_lines=[]; filtered_levels=[]
 
-        tmp_call_stack=filter(None,tmp_call_stack)
+        tmp_call_stack=list(filter(None,tmp_call_stack))
         for i in range(0, ncalls):
             if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
                 filtered_calls.append(tmp_call_stack[i])
@@ -245,8 +245,8 @@ def parse_events(events,image_filter, time, task, mpi_durations, burst_durations
                 filtered_calls = [mpi_call_to_add] + filtered_calls
                 filtered_files = [constants.MPI_LIB_FILE] + filtered_files
                 filtered_lines = ["0"] + filtered_lines 
-                filtered_levels= ["0"] + map(lambda x: str(int(x)+1),
-                        filtered_levels)
+                filtered_levels= ["0"] + list(map(lambda x: str(int(x)+1),
+                        filtered_levels))
    
             # Needed for alignement
             filtered_calls.reverse()
@@ -537,7 +537,7 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
     mpi_metrics = {}
     burst_metrics = {}
  
-    for key, val in metrics.iteritems():
+    for key, val in metrics.items():
         if not key == "42000050" and not key == "42000059":
             mpi_metrics.update({key:val})
             continue
@@ -563,9 +563,9 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
             new_callstack.metrics[rank]["mpi_msg_size"]=comm_sizes_series[rank][cs_i+1]
             new_callstack.set_partner(comm_partner_series[rank][cs_i+1])
 
-            for tmetric, values in mpi_metrics.iteritems():
+            for tmetric, values in mpi_metrics.items():
                 new_callstack.metrics[rank].update({tmetric:int(values[rank][cs_i+1])})
-            for tmetric, values in burst_metrics.iteritems():
+            for tmetric, values in burst_metrics.items():
                 new_callstack.burst_metrics[rank].update({tmetric:int(values[rank][cs_i+1])})
 
             try:

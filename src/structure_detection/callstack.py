@@ -184,7 +184,7 @@ class callstack(object):
             for rank in dtomerge:
                 rank_calc_metrics={}
                 keys_to_remove = [] # For memory print purposes
-                for key,val in dtomerge[rank].iteritems():
+                for key,val in dtomerge[rank].items():
                     if not "merged" in key: continue
      
                     mean_key = key + "_mean"
@@ -207,7 +207,7 @@ class callstack(object):
 
             global_results = {}
             for rank in dtomerge:
-                for key,val in dtomerge[rank].iteritems():
+                for key,val in dtomerge[rank].items():
                     if key == "mpi_duration_merged":
                         continue
                     gkey = "global_"+key
@@ -218,8 +218,7 @@ class callstack(object):
                         global_results[gkey] += val
 
             mean_of = len(self.compacted_ranks)
-            global_results = map(lambda (k,v):(k,v/mean_of), 
-                    global_results.iteritems())
+            global_results = list(map(lambda it: (it[0],(it[1]/mean_of)), global_results.items()))
             dtomerge.update(global_results)
 
     def is_above_delta(self, delta, total_time):

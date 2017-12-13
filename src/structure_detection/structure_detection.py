@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
@@ -238,9 +238,9 @@ def main(argc, argv):
 
     ''' 3. Filtering below delta '''
     logging.info("Filtering callstacks...")
-    fcallstacks_pool=filter(
+    fcallstacks_pool=list(filter(
             lambda x: x.is_above_delta(app_time, arguments.bottom_bound[0]),
-            callstacks_pool)
+            callstacks_pool))
     logging.debug("Reduced from {0} to {1}".format(
         len(callstacks_pool), len(fcallstacks_pool)))
     logging.info("Done")
@@ -303,8 +303,8 @@ def main(argc, argv):
             loop_obj.group_into_conditional_rank_blocks()
             loop_obj.callstack_set_owner_loop()
 
-    callstacks_pool = filter(lambda x: x.repetitions[x.rank] > 1, 
-            callstacks_pool)
+    callstacks_pool = list(filter(lambda x: x.repetitions[x.rank] > 1, 
+            callstacks_pool))
     logging.info("Done")
 
     ''' 8. Derivating metrics '''
@@ -347,10 +347,6 @@ def main(argc, argv):
     pc.generate()
 
     logging.info("Done...")
-
-    #''' 10. Show GUI '''
-    #print
-    #pc.show()
 
     ''' 11. Start interactive shell '''
     sds = sdshell()

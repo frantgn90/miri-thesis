@@ -44,15 +44,15 @@ def pretty_print(content, title):
     else: 
         offs=1
 
-    result += "+"+"-"*(side-offs) + "[ " + title + " ]" + "-"*(side) + "+\n"
-    result += "|"+" "*(WIDTH-2)+"|\n"
+    result += "+"+"-"*int(side-offs) + "[ " + title + " ]" + "-"*int(side) + "+\n"
+    result += "|"+" "*int(WIDTH-2)+"|\n"
     content = content.split("\n")
 
     for line in content:
-        pline = "|  " + line + " "*(WIDTH-4-len(line))+"|"
+        pline = "|  " + line + " "*int(WIDTH-4-len(line))+"|"
         result += pline+"\n"
 
-    result += "+"+"-"*(WIDTH-2)+"+\n"
+    result += "+"+"-"*int(WIDTH-2)+"+\n"
     return result
 
 def print_iterations(iterations):
@@ -111,15 +111,15 @@ class ProgressBar(object):
             print("{0} [{1}>{2}] {3}%  {4}/{5}"
                     .format(
                         self.msg,
-                        "="*(pbar_syms), 
-                        " "*pbar_spac, 
+                        "="*int(pbar_syms),
+                        " "*int(pbar_spac), 
                         str(percent), 
                         str(self.progression),
                         str(self.total)), end=endc)
 
 #            print("{0} [{1}>{2}] {3}%".format(
 #                self.msg,
-#                "="*(pbar_syms), 
+#                "="*(int(pbar_syms)), 
 #                " "*pbar_spac, 
 #                str(percent)), end=endc)
             

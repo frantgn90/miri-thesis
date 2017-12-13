@@ -132,7 +132,7 @@ class tmatrix(object):
             col+=1
 
         # Remove last empty cols
-        minzeros=sys.maxint
+        minzeros=sys.maxsize
         for row in mat:
             zeros=0
             for i in range(-1,-len(row)+1, -1):

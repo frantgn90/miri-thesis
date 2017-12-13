@@ -47,7 +47,7 @@ class ParaverInterface(object):
                 pid_file.close()
 
             self.paraver_pid = int(self.paraver_pid)
-            print "Running paraver PID={0}".format(self.paraver_pid)
+            print("Running paraver PID={0}".format(self.paraver_pid))
 
     def close(self):
         if self.check_process() == True:
@@ -123,12 +123,12 @@ class sdshell(cmd.Cmd):
                     cluster = cl
 
             if cluster == None:
-                print "No cluster with id={0}".format(cluster_id)
+                print("No cluster with id={0}".format(cluster_id))
                 return False
 
             loop_obj = cluster.get_loop(loop_id)
             if loop_obj == None:
-                print "No loop with id={0}".format(loop_id)
+                print("No loop with id={0}".format(loop_id))
                 return False
 
             it_times = loop_obj.get_iteration(iteration)
@@ -138,7 +138,7 @@ class sdshell(cmd.Cmd):
             self.paraver_int.zoom(it_times[0], it_times[1],
                     constants.PARAVER_MPI_CFG)
         else:
-            print "{0} does not exist".format(option)
+            print("{0} does not exist".format(option))
 
     def do_pseudocode(self, args):
         args = parse(args)
@@ -160,7 +160,7 @@ class sdshell(cmd.Cmd):
                 self.pc.burst_threshold = burst_threshold
         if PSEUDOCODE_DEFAULT in args:
             if PSEUDOCODE_NO_CS in args or PSEUDOCODE_SHOW_BURST in args:
-                print "default should go alone"
+                print("default should go alone")
                 return False
 
             if self.pc.show_burst_info == True:
@@ -199,10 +199,10 @@ class sdshell(cmd.Cmd):
 
 
     def help_paraver(self):
-        print "Paraver commands"
+        print("Paraver commands")
 
     def help_quit(self):
-        print "Just finnish program"
+        print("Just finnish program")
     
 def parse(arg):
     'Convert a series of zero or more numbers to an argument tuple'

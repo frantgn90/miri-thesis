@@ -100,7 +100,7 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
                 for cs in cdist:
                     if cs.repetitions[cs.rank] == xd and cs.instants_distances_mean == yd:
                         points_info += str(cs)+"\n"
-            print pretty_print(points_info, "Points info")
+            print(pretty_print(points_info, "Points info"))
 
     unique_labels = set(labels)
     #colors = cm.Spectral(np.linspace(0, 1, len(unique_labels)))

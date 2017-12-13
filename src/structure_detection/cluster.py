@@ -50,7 +50,7 @@ class cluster (object):
         ranks_subloops=[]
         loops_id = 0
         for rank in ranks:
-            callstacks = filter(lambda x: x.rank == rank, self.callstacks)
+            callstacks = list(filter(lambda x: x.rank == rank, self.callstacks))
             aliasing_detector=tmatrix.from_callstacks_obj(callstacks)
 
             if aliasing_detector.aliased():
@@ -252,9 +252,8 @@ class cluster (object):
         return numpy.mean(medians)
     
     def get_interarrival_mean(self):
-        medians = map(
-                lambda x: x.get_instants_dist_mean(), 
-                self.callstacks)
+        medians = list(map(lambda x: x.get_instants_dist_mean(), 
+                self.callstacks))
         return numpy.mean(medians)
 
     def get_loop(self, loop_id):
@@ -297,14 +296,12 @@ def merge_clusters(clusters_pool):
     logging.debug("Classifying clusters by delta.")
 
     cluster_by_delta = {}
-    def ___cluster_classification(x):
-        delta = x.delta
+    for cluster in clusters_pool:
+        delta = cluster.delta
         if delta in cluster_by_delta: 
-            cluster_by_delta[delta].append(x)
+            cluster_by_delta[delta].append(cluster)
         else: 
-            cluster_by_delta[delta]=[x]
-
-    map(___cluster_classification, clusters_pool)
+            cluster_by_delta[delta]=[cluster]
 
     for k,v in cluster_by_delta.items():
         logging.debug("Sorting clusters ({0}) with delta={1}".format(len(v), k))
@@ -341,9 +338,9 @@ def merge_clusters(clusters_pool):
                     logging.debug("CLUSTER {0} PARTIALLY PUSHED to {1}".format(
                         clusters[i].cluster_id, clusters[j].cluster_id))
 
-        cluster_by_delta[delta] = filter(
+        cluster_by_delta[delta] = list(filter(
                 lambda x: not x.cluster_id in cluster_to_remove, 
-                cluster_by_delta[delta])
+                cluster_by_delta[delta]))
         clusters = cluster_by_delta[delta]
         logging.debug("Reverse merge for data conditions DONE")
 
