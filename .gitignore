@@ -1,6 +1,9 @@
 # Latex compilation files
 *.aux
 *.log
+*.bbl
+*.blg
+*.toc
 
 # Trace files
 *.prv
