@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{graphicx}
+\usepackage[pdf]{pstricks}
 
 %Options: Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
 %\usepackage[Sonny]{fncychap}
@@ -82,7 +83,7 @@ multicore revolution. Was specially important because until then, programmers we
 agnostics, just feel their programs went faster but now, programs have to be 
 architecture aware. With this last revolution a new effort for hide machine stuff
 from programmers arise and end up with programming models like OpenMP
-\cite{openmpwww}, OpenACC\cite{openaccwww} or OmpSs\cite{ompsswww}. A relatively
+\cite{openmp_new}, OpenACC\cite{openacc_new} or OmpSs\cite{ompss_new}. A relatively
 recent example is shown is this paper \cite{Alvarez:2015:CPT:2872887.2750411}
 where they are trying to automatically use the fast scraptchpad memories by
 means of compilers procedures and extra hardware support instead
@@ -109,13 +110,16 @@ tools. High accurate and detailed information can be obtained, but it needs
 more resources in terms of cpu, disk and analyst effort because more data implies 
 more complexity. This demand of resources becomes worst since the capacity in 
 terms of parallelism is increasing, so the number of tasks to monitor makes 
-tracing by one hand hardly scalable and by the other hand tricky to analyze. 
+tracing by one hand hardly scalable and by the other hand tricky to analyze
+because the huge quantity of data and because the increasing response times
+during the interactive exploration of analysis results. 
 
 Researchers are currently facing this two drawbacks. There are currently several
 specialists driving research in the scalability field, they are trying to reduce 
 the overhead of tracing in terms of time and trace sizes by mean of several 
 techniques like machine learning, data-mining and so on like in 
-\cite{llort2015intelligent}. About analysis field, the complexity of the analysis 
+\cite{llort2015intelligent} or by on-line compression like in
+\cite{noeth2009scalatrace}. About analysis field, the complexity of the analysis 
 can be overcome by adding intelligence to performance analysis tools, last 
 trend is to provide an automatic smart layer that automate an important part 
 of the analysis and help the analyzers in their work. Some examples of this 
@@ -147,42 +151,73 @@ High performance computers becomes more complex every generation. The number of
 processors is increasing dramatically, e.g. the current number one on the Top500
  list\footnote{Top500 is the list of the top 500 most powerful high performance 
 computers in the world. It is updated two times per year.} is the Sunway TaihuLight 
-with 10,649,600 cores\cite{top5002017}. Analyze application with this quantity 
+with 10,649,600 cores\cite{top500_2017} and the trend is even increment this
+numbers because the exa-scale era. Analyze application with this quantity 
 of processes with fine-grain detail becomes a really tough task when not
 impossible because of the huge amount of information. The typical tools like 
-visualizers are not enough. The researchers demands tools that ease the process 
-of performance analysis therefore the main motivation of this work is to ease 
+visualizers are not enough. One of the major challenges is to
+identify and present the hot spot. The researchers demands tools that ease the 
+process of performance analysis therefore the main motivation of this work is to ease 
 this analysis by means of reducing execution traces to the minimal and meaningful 
 expression.
-
-% Maybe in other section. Talk about SPMD and Burst Syncrhonized
 
 We can say that HPC applications shares a common idiosyncrasy between them. 
 Mathematic solvers needs to iterate again and again until the result converge and 
 simulation software are used to be programed to evolve over timesteps. So in 
-general, HPC applications consists on a big outer loop\footnote{This same expression 
-has been used in other related works} that is being executed again and again the
-same code but with evolving data. It means that the whole huge trace could be 
-reduced to a minimum pseudo-code expression that represents just one iteration 
+general, HPC applications consists on a big outer loop that is being executed 
+again and again the same code but with evolving data, i.e. SPMD\footnote{Single
+Program Multiple Data} programs. Additionally this kind of workloads are used
+to be burst syncrhonous, i.e. all ranks are executing computation and
+communication phases in a syncrhonous manner. For these so regular executions a
+relatively simple representation of the whole execution could be extracted, i.e.
+the trace could be reduced to a minimum pseudo-code expression
 with aggregated data for the whole loop so its somehow folding all the iterations
-space into just one. This pseudo-code express indeed the actual internal 
-structure of the application.
+space. This pseudo-code expresses indeed the actual internal structure of the 
+application.
 
 There are previous works (discussed widely on section \ref{related_work})  that 
 tries to represent the internal structure of an application but they are used to
- use directed graphs or just callstack trees. In this thesis the proposal is to 
-generate a pseudo-code with loop and conditional structures that can represent w
-ith more or less accuracy the source code. The motivation to use pseudo-code is 
-to get insights about the internal structure of the application that can ease th
-e task of correlate performance metrics to source code.
+use directed graphs like in \cite{aguilar2016event} or just callstack trees like
+in \cite{saviankou2015cube}. The drawback of represent the application structure
+just with directed graphs is that it is a so simplified view, in the referenced
+case it is impossible to pinpoint a given loop (directed graph cycle) to the
+actual code because the lack of callstack information. In case of the
+referenced approach that uses callstacks tree, the lack of information becomes
+from the fact that there is no representation for loops (although you have fuzzy
+clues if you see the number of calls). In this thesis the proposal is to 
+generate a pseudo-code with loop and conditional structures that can represent
+be easily pinpointed to source code and additionally show aggregated metrics
+that will allow the analyzer to detect the interesting parts to analyze in next
+steps. So it can be understood as a sort of mix of the two approaches references
+above.
+
+Summarizing, the main motivation is to speedup the analysis process. In section
+\ref{s:pt_evironment} the current analysis flow approach and how it can be
+improved by using the tool proposed in this paper.
 
 \section{Previous and related work}\label{related_work}
 
-Blah Blah Blah
+Previous work on structure detection
+\begin{itemize}
+  \item Cube
+  \item Temporal directed flow graphs MPI
+  \item Clustering
+  \item Scalatrace (?)
+  \item CCCG
+\end{itemize}
 
-\section{Performance analysis tools environment}
+\section{Performance analysis tools environment and workflow}\label{s:pt_evironment}
 
-Blah Blah Blah
+\begin{figure}
+  \caption{Current performance analysis workflow}
+  \label{currentAnalysisFlow}
+  \centering
+    \includegraphics[width=250px]{current_analysis_flow.eps}
+\end{figure}
+
+
+Talk about the BSC performance tools environment and introduce the analysis flow
+with and without this proposed tool.
 
 % NOTES
 % .- Remember to demonstrate the interarrival time of different calls in the sam
