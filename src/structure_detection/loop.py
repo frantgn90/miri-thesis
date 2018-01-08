@@ -403,27 +403,33 @@ class loop (callstack_ordered_list):
             other.iterations /= self.iterations
             merged_subloop = self.callstack_list + [other]
 
-        def __sort_loops_and_cs(a, b):
-            result = False
+        #def __sort_loops_and_cs(a, b):
+        #    result = False
 
+        #    if type(a) == loop:
+        #        a_to_compare = a.get_first_callstack()
+        #    else:
+        #        a_to_compare = a
+
+        #    if type(b) == loop:
+        #        b_to_compare = b.get_first_callstack()
+        #    else:
+        #        b_to_compare = b
+
+        #    if a_to_compare < b_to_compare:
+        #        result = -1
+        #    else:
+        #        result = 1
+
+        #    return result
+
+        def __sort_loops_and_cs(a):
             if type(a) == loop:
-                a_to_compare = a.get_first_callstack()
+                return a.get_first_callstack()
             else:
-                a_to_compare = a
+                return a
 
-            if type(b) == loop:
-                b_to_compare = b.get_first_callstack()
-            else:
-                b_to_compare = b
-
-            if a_to_compare < b_to_compare:
-                result = -1
-            else:
-                result = 1
-
-            return result
-
-        merged_subloop.sort(__sort_loops_and_cs)
+        merged_subloop.sort(key=__sort_loops_and_cs)
         self.callstack_list = merged_subloop
 
         for toc in self.callstack_list:
@@ -522,8 +528,8 @@ class loop (callstack_ordered_list):
 
         assert not its_bounds is None and not sub_times is None
 
-        its_bounds = filter(lambda x: x != 0, its_bounds)
-        sub_times = filter(lambda x: x != 0, sub_times)
+        its_bounds = list(filter(lambda x: x != 0, its_bounds))
+        sub_times = list(filter(lambda x: x != 0, sub_times))
 
         if sub_times[0] < its_bounds[0]:
             its_bounds = [0] + its_bounds

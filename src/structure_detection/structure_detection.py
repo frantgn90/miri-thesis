@@ -252,17 +252,21 @@ def main(argc, argv):
 
     ''' 4. Callstacks to delta mapping '''
     logging.info("Callstacks delta classification...")
-    if not arguments.use_cplex:
-        logging.debug("Calculating delta by mean of heuristics.")
-        assert False, "use --cplex"
-    else:
-        logging.debug("Calculating delta by mean of CPLEX.")
-        deltas = calcule_deltas_cplex(fcallstacks_pool,app_time,
-                arguments.bottom_bound[0],
-                arguments.delta_accuracy[0],
-                arguments.cplex_input[0])
+#    if not arguments.use_cplex:
+#        logging.debug("Calculating delta by mean of heuristics.")
+#        assert False, "use --cplex"
+#    else:
+#        logging.debug("Calculating delta by mean of CPLEX.")
+#        deltas = calcule_deltas_cplex(fcallstacks_pool,app_time,
+#                arguments.bottom_bound[0],
+#                arguments.delta_accuracy[0],
+#                arguments.cplex_input[0])
+#
+#        logging.debug("{0} super-loops detected".format(len(deltas)))
 
-        logging.debug("{0} super-loops detected".format(len(deltas)))
+    deltas = calcule_deltas_clustering(fcallstacks_pool, app_time)
+    logging.info("{0} deltas detected: {1}"
+            .format(len(deltas), ",".join(deltas)))
     logging.info("Done")
 
 

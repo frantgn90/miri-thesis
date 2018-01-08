@@ -68,6 +68,8 @@ class callstack(object):
         self.instants_distances_mean=None
         self.instants_distances_median=None
         self.delta=None
+        self.private_delta=None
+        self.delta_cluster=None
         self.cluster_id=None
         self.compacted_ranks=[rank]
         self.condition_level = None
@@ -228,6 +230,9 @@ class callstack(object):
                 self.instants_distances_mean, 
                 delta)
         return cost > 0
+
+    def set_private_delta(self, total_time):
+        self.private_delta = (self.repetitions[self.rank]*self.instants_distances_mean)/total_time
 
     def get_instants_dist_median(self):
         return numpy.median(self.instants_distances)

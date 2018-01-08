@@ -166,9 +166,9 @@ class cluster (object):
                 # (for the moment is enough for MG)
 
         # Removing inverselly merged loops
-        self.loops = filter(
+        self.loops = list(filter(
             lambda x: not x.get_str_id() in loops_to_remove,
-            self.loops)
+            self.loops))
 
         if len(self.loops) == original_nloops:
             return 0 # No one loop pushed
@@ -178,6 +178,7 @@ class cluster (object):
             return 2 # Some loops pushed
 
     def merge(self, other):
+
         assert len(self.loops) > 0
         assert len(other.loops) > 0
 
@@ -232,9 +233,9 @@ class cluster (object):
                         other_loop_id, self_loop_id))
 
         # Removing inverselly merged loops
-        self.loops = filter(
+        self.loops = list(filter(
             lambda x: not x.get_str_id() in loops_to_remove,
-            self.loops)
+            self.loops))
 
         if merged > 0 and merged < len(other.loops):
             logging.warning("Some loops have not been merged.")

@@ -225,17 +225,20 @@ class tmatrix(object):
     # TODO: Think about complex cases with conditionals...
 
     def __look_for_superloop(self, subm):
-        def __sort_subm(a,b):
-            if a[0][0] > b[0][0]:
-                return 1
-            else:
-                return -1
+        #def __sort_subm(a,b):
+        #    if a[0][0] > b[0][0]:
+        #        return 1
+        #    else:
+        #        return -1
+
+        def __sort_subm(a):
+            return a[0][0]
 
         def __map_subm(a):
             return (a[0][1]-a[0][0]+1, a[1][0])
 
-        ssubm = sorted(subm, __sort_subm)
-        ssubm = map(__map_subm, ssubm)
+        ssubm = sorted(subm, key=__sort_subm)
+        ssubm = list(map(__map_subm, ssubm))
 
         # Looking for the minimum expression
         split_by = 1

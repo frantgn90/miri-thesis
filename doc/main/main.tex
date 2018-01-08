@@ -197,7 +197,32 @@ improved by using the tool proposed in this paper.
 
 \section{Previous and related work}\label{related_work}
 
-Previous work on structure detection
+The problem of scalability is not faced for the first time in this paper but
+there is a previous work in what this thesis is rely and is supported on. 
+
+In \cite{noeth2009scalatrace} they are concerning about the scalability of the
+tracing part. Even if they are centered on the logging (or tracing) part their
+work is really useful for this thesis purposes. They claim reductions of about a
+thousand in terms of trace size just by detecting the structure of the
+application, e.g. If the same thing is repeated 100 times, just saving it once
+and tagging with the number of times it is executed should be enough. They
+propose to use RSD (Regular Section Descriptors) to express MPI events nested
+inside a loop and a sequence analysis algorithm loosely based on the SIGMA
+scheme for memory analysis for detect the repetitive patterns. Their compression
+is done in two phases. The first one is an intra-node compression, where the
+repetitive patterns arise and the second one is inter-node merge, where all
+single-node compressions are merged forming the whole application trace.
+They introduce interesting concepts as calling sequence identification used for
+unambiguously identify different MPI calls that lie on different code positions, 
+and recursion folding signatures for dealing with recursion. Also they claim
+that even if their main target is to compress traces, Scalatrace also can be
+used for analyze the application structure by doing a little demo showing how it
+can detect the most outer loop iterations or timesteps. One of the main
+drawbacks of this approach is that the complexity of both intra-node and
+inter-node compression can be of $O(n^2)$.
+
+In \cite{casas2007automatic} \dots
+
 \begin{itemize}
   \item Cube
   \item Temporal directed flow graphs MPI

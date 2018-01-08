@@ -20,6 +20,9 @@ import constants
 from cplex_interface import CplexInterface
 from utilities import ProgressBar
 
+
+from sklearn.cluster import DBSCAN
+
 _upper_bound=1
 _init_delta=0.5
 
@@ -107,6 +110,37 @@ def get_near_points(data, total_time,  delta, epsilon):
     mean_square_distances = sum_square_distances/len(points)
     return points, mean_square_distances
 
+def calcule_deltas_clustering(callstacks, total_time):
+    data = []
+    for cs in callstacks:
+        cs.set_private_delta(total_time)
+        data.append(cs.private_delta)
+
+    X=numpy.array(data).reshape(-1,1)
+    db = DBSCAN(eps=0.2, min_samples=1).fit(X)
+    core_samples_mask = numpy.zeros_like(db.labels_, dtype=bool)
+    core_samples_mask[db.core_sample_indices_] = True
+    labels=db.labels_
+
+
+    ndeltas = len(set(labels)) - (1 if -1 in labels else 0)
+    unique_labels = list(set(labels))
+    grouped_deltas = dict.fromkeys(unique_labels)
+
+    for d,cs in zip(labels, callstacks):
+        cs.delta_cluster = d
+        if grouped_deltas[d] is None:
+            grouped_deltas[d] = [cs.private_delta]
+        else:
+            grouped_deltas[d].append(cs.private_delta)
+
+    for k in grouped_deltas:
+        grouped_deltas[k] = round(numpy.mean(grouped_deltas[k]),2)
+
+    for cs in callstacks:
+        cs.delta = grouped_deltas[cs.delta_cluster]
+
+    return grouped_deltas.keys()
 
 def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):
     assert False, "Hoy no... mañana!, Execute with --cplex"
