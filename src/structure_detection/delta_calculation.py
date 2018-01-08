@@ -140,7 +140,7 @@ def calcule_deltas_clustering(callstacks, total_time):
     for cs in callstacks:
         cs.delta = grouped_deltas[cs.delta_cluster]
 
-    return grouped_deltas.keys()
+    return list(grouped_deltas.values())
 
 def calcule_deltas_heuristic(data, total_time, bottom_bound, epsilon):
     assert False, "Hoy no... mañana!, Execute with --cplex"

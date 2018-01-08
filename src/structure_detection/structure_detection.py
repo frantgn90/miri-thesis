@@ -266,7 +266,7 @@ def main(argc, argv):
 
     deltas = calcule_deltas_clustering(fcallstacks_pool, app_time)
     logging.info("{0} deltas detected: {1}"
-            .format(len(deltas), ",".join(deltas)))
+            .format(len(deltas), deltas))
     logging.info("Done")
 
 

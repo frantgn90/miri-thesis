@@ -221,7 +221,33 @@ can detect the most outer loop iterations or timesteps. One of the main
 drawbacks of this approach is that the complexity of both intra-node and
 inter-node compression can be of $O(n^2)$.
 
-In \cite{casas2007automatic} \dots
+Moving on, in \cite{casas2007automatic} they propose, similarly to this paper proposal, to automatically extract the internal structure of an MPI application from a
+Paraver tracefile and provide to analyst just representative phases. 
+They rely onsignal analysis for this propose. 
+Their analysis consists on two main phases:
+The first is to clean-up the trace by identify the perturbed regions.
+Perturbed regions are those parts of the trace that has been perturbed nor by
+the application nor by architecture but by external factors such that unknown
+system activity or tracing package. Their clean-up phase is centered on remove
+noise from tracing package, i.e. flushes to disk. By building up a signal based
+on flushing events and transform it by Closing morphological filter they end up
+with this perturbed phases. The second phase is the identification of the
+phases. It is done by means of autocorrelation and periodicity analysis of a
+signal. This signal is build up from any metric like instantaneous FLOPs but the
+use number of MPI point to point calls being executed. Once the period is
+successfully detected the same process is done recursivelly on one of the
+periods. This allows to have a hierarchical structure. Finally the output is
+basically information about the different phases like number of iteration and
+timing plus some representative cuts of the original trace. It differs on this
+thesis approach basically on the fact that they extract the structure by
+behavioral analysis instead of actual callstacks analysis. The main drawback is
+this method is not concerning about noise from the actual application so same
+phase on code can be detected as different phases, also if there is a lot of
+perturbation at level of e.g. cache, depending on what metric is being used, no
+structure could be detected. 
+
+Similarly with the previous approach but applying different techniques, in this
+publication \cite{gonzalez2013application} \dots
 
 \begin{itemize}
   \item Cube
