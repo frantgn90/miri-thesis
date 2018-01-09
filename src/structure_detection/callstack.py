@@ -94,6 +94,12 @@ class callstack(object):
         for call in calls:
             call.my_callstack = self
 
+        signature=""
+        for call in self.calls:
+            signature += call.get_signature()
+        self.signature = str(self.rank)+"#"+signature
+
+
     @classmethod
     def from_trace(cls, rank, instant, lines, calls, files):
         assert len(lines)==len(calls), "#lines and #calls must be equal."
@@ -122,10 +128,11 @@ class callstack(object):
         return self.calls[level].line
 
     def get_signature(self):
-        signature=""
-        for call in self.calls:
-            signature += call.get_signature()
-        return str(self.rank)+"#"+signature
+        #signature=""
+        #for call in self.calls:
+        #    signature += call.get_signature()
+        #return str(self.rank)+"#"+signature
+        return self.signature
 
     def merge(self, other):
         ''' This merging is for merging different repetitions of the same callstack '''

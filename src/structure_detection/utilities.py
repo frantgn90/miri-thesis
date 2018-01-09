@@ -77,8 +77,8 @@ class ProgressBar(object):
         self.total = total
         self.progression = 0
         self.bar_size=30
-        self.msg_size=15
-        self.update_every_percent=5
+        self.msg_size=30
+        self.update_every=50
         self.count = 0
         self.msg = msg
 
@@ -86,17 +86,15 @@ class ProgressBar(object):
             self.msg = self.msg[:self.msg_size-4]+"... "
         else:
             self.msg = self.msg + " "*(self.msg_size-len(self.msg))
-
         self.show()
-
 
     def progress_by(self, by):
         self.progression += by
+        self.show()
 
     def show(self):
         self.count += 1
-        if self.count >= self.update_every_percent/100*self.total \
-            or self.progression == self.total\
+        if self.count >= self.update_every or self.progression == self.total\
             or self.progression == 0:
 
             percent = (self.progression*100)/self.total
@@ -108,19 +106,11 @@ class ProgressBar(object):
             else:
                 endc="\r"
 
-            print("{0} [{1}>{2}] {3}%  {4}/{5}"
-                    .format(
-                        self.msg,
-                        "="*int(pbar_syms),
-                        " "*int(pbar_spac), 
-                        str(percent), 
-                        str(self.progression),
-                        str(self.total)), end=endc)
-
-#            print("{0} [{1}>{2}] {3}%".format(
-#                self.msg,
-#                "="*(int(pbar_syms)), 
-#                " "*pbar_spac, 
-#                str(percent)), end=endc)
-            
+            print("{0} [{1}>{2}] {3}%  {4}/{5}".format(
+                self.msg,
+                "="*int(pbar_syms),
+                " "*int(pbar_spac), 
+                str(round(percent,2)), 
+                str(self.progression),
+                str(self.total)), end=endc)
             self.count = 0

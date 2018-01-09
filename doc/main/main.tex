@@ -1,4 +1,4 @@
-\documentclass[12pt]{report}
+\documentclass[10pt]{report}
 
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -6,7 +6,7 @@
 \usepackage[pdf]{pstricks}
 
 %Options: Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
-%\usepackage[Sonny]{fncychap}
+\usepackage[Sonny]{fncychap}
 \usepackage{amsmath}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 \usepackage{hyperref}
@@ -29,25 +29,26 @@
 
 \chapter{Introduction}
 A typical configuration for high performance machines are clusters. It means a t
-eam of individual processors or multiprocessors (and lately more specific hardwa
-re like GPUs) working together, interconnected by a super-fast network. The fund
-amental idea behind these big machines is getting speedup by mean of partitionin
-g the problem and parallelize the execution. So all processors (or a subset) in 
-the cluster will be dealing with different parts of the same problem and communi
-cating between them in order to end up with a solution. For example imagine we h
-ave a weather forecast software, in order to speedup the forecast we can partiti
-on the surface of the earth and hold every portion to one individual processor. 
-The communication will be needed because the weather will also depend on surroun
-dings, so every partition will need also information of other partitions results.
+eam of individual processors or multiprocessors (and lately more specific 
+hardware like GPUs) working together, interconnected by a super-fast network. 
+The fundamental idea behind these big machines is getting speedup by mean of
+partitioning the problem and parallelize the execution. So all processors (or a 
+subset) inthe cluster will be dealing with different parts of the same problem 
+and communicating between them in order to end up with a solution. For example 
+imagine we have a weather forecast software, in order to speedup the forecast 
+we can partition the surface of the earth and hold every portion to one individual
+processor. The communication will be needed because the weather will also depend 
+on surroundings, so every partition will need also information of other partitions 
+results.
 
 In Computer Science the discipline in charge to drive research in this field is 
 the High Performance Computing, i.e. HPC. HPC has been increasing in importance 
-and nowadays can be said it is the third support of science with theory and math
-ematics. The science that can be done thanks to this big machines goes from eart
-hquake predictions to the analysis of the DNA of a carcinogenic cell, from weath
-er forecast to material physics simulation. HPC research is not just limited to 
-the hardware layer but drive research in all layers in the Transformation Hierar
-chy\cite{transformationHierarchy} in figure \ref{transformationHierarchyImg}.
+and nowadays can be said it is the third support of science with theory and 
+mathematics. The science that can be done thanks to this big machines goes from 
+earthquake predictions to the analysis of the DNA of a carcinogenic cell, from
+weather forecast to material physics simulation. HPC research is not just limited
+to the hardware layer but drive research in all layers in the Transformation 
+Hierarchy\cite{transformationHierarchy} in figure \ref{transformationHierarchyImg}.
 
 \begin{figure}
   \caption{Levels of transformation}
@@ -197,8 +198,90 @@ improved by using the tool proposed in this paper.
 
 \section{Previous and related work}\label{related_work}
 
-The problem of scalability is not faced for the first time in this paper but
-there is a previous work in what this thesis is rely and is supported on. 
+The problem of the analysis scalability is not faced for the first time in 
+this paper but there is a previous work in what this thesis is rely and is 
+supported on. Several tools are actually being used in order to ease the analyst
+work. Talking about structure analysis we can split previous works into two main
+subsets. By one hand we have the behavioral structure that want to expose the
+different phases on an execution in terms of performance and by the other hand
+the syntactic structure that provide information about the actual program
+structure such as profiling.
+
+\subsection{Behavioral structure}
+
+If we consider the same bunch of code will behave, in general, in the same
+manner it can be assumed that there is a powerful correlation between the
+behavior and the code. By this way it can be said a behavioral analysis is a
+side-channel analysis because indirectly the internal syntactic structure can be
+betrayed. This consideration could be true in some cases but not in general. The 
+main goal of the different approaches presented in this section is not
+to present a syntactic but a behavioral structure. The motivation is that when
+analyst deals with syntactic structure, time variations of the same functions is
+hidden. This situation can appears for example when calling same function with
+different parameters. For the analyst point of view could be more interesting to
+have this information unfolded. Take into account that this same property can
+end up identifying different parts of the code as the same phase.
+
+Even if the goal of the approaches explained below does not match perfectly with
+goal of this thesis, they provide a really useful insights as a related work.
+
+In \cite{casas2007automatic} they propose, similarly to this paper, 
+automatically extract the internal structure of an MPI application from a
+Paraver tracefile and provide to analyst just representative phases. 
+They rely on signal analysis for this propose. 
+Their analysis consists on two main phases:
+The first is to clean-up the trace by identify the perturbed regions.
+Perturbed regions are those parts of the trace that has been perturbed nor by
+the application nor by architecture but by external factors such that unknown
+system activity or tracing package. Their clean-up phase is centered on remove
+noise from tracing package, i.e. flush to disk. By building up a signal based
+on flushing events and transform it by Closing morphological filter they end up
+with this perturbed phases. The second phase is the identification of the
+phases. It is done by means of autocorrelation and periodicity analysis of a
+signal. This signal is build up from any metric like instantaneous FLOPs but the
+use number of MPI point to point calls being executed. Once the period is
+successfully detected the same process is done recursively on one of the
+periods. This allows to have a hierarchical structure. Finally the output is
+basically information about the different phases like number of iteration and
+timing plus some representative cuts of the original trace. It differs on this
+thesis approach basically on the fact that they extract the structure by
+behavioral analysis instead of actual callstacks analysis. The main drawback is
+this method is not concerning about noise from the actual application so same
+phase on code can be detected as different phases, also if there is a lot of
+perturbation at level of e.g. cache, depending on what metric is being used, no
+structure could be detected. 
+
+Similarly with the previous approach, in 
+\cite{gonzalez2013application} is proposed to apply clustering techniques in
+order to identify the different execution phases. Different parts of the
+execution are considered as the same phase depending on the behavior,
+so an analysis using some hardware metrics is
+performed. The first phase is about reducing the complexity of the clustering by
+filtering the less relevant computation burst, i.e. little bursts according
+with a given threshold. In order to reduce the dimensionality the proposal is to
+use two different dimension sets: The first one is Completed Instructions
+against IPC\footnote{Instructions per cycle}. This configuration provides a
+performance view. The second is Completed instructions against L1 and L2 cache
+misses. This combination reflects the impact of the architecture on the
+application structure. 
+
+\subsection{Syntactic structure}
+
+The main interest on having the syntactic structure of an application is to be
+aware about not just what but where. This is important in the process of who to
+blame in code and provides insights of the actual application that with just
+behavioral structure can not be presented like for example where do we have
+loops and how many iterations performs.
+
+Profile tools are used to present behaviour information attached to a 
+syntactic structure. Although this is a scalable
+solution for performance monitoring, they are used to discard temporal order so
+structures like loops are just exposed indirectly by the number of calls metric.
+Additionally some sort of bottlenecks like late-sender problems are difficult to
+detect without time order information. These following approaches presents the
+information in a way that are in the midway between profilers and tracers. In
+general starts from a huge trace and by means of summarizing and aggregating
+data tries to present the minimum and meaningful information to the analyst.
 
 In \cite{noeth2009scalatrace} they are concerning about the scalability of the
 tracing part. Even if they are centered on the logging (or tracing) part their
@@ -221,40 +304,15 @@ can detect the most outer loop iterations or timesteps. One of the main
 drawbacks of this approach is that the complexity of both intra-node and
 inter-node compression can be of $O(n^2)$.
 
-Moving on, in \cite{casas2007automatic} they propose, similarly to this paper proposal, to automatically extract the internal structure of an MPI application from a
-Paraver tracefile and provide to analyst just representative phases. 
-They rely onsignal analysis for this propose. 
-Their analysis consists on two main phases:
-The first is to clean-up the trace by identify the perturbed regions.
-Perturbed regions are those parts of the trace that has been perturbed nor by
-the application nor by architecture but by external factors such that unknown
-system activity or tracing package. Their clean-up phase is centered on remove
-noise from tracing package, i.e. flushes to disk. By building up a signal based
-on flushing events and transform it by Closing morphological filter they end up
-with this perturbed phases. The second phase is the identification of the
-phases. It is done by means of autocorrelation and periodicity analysis of a
-signal. This signal is build up from any metric like instantaneous FLOPs but the
-use number of MPI point to point calls being executed. Once the period is
-successfully detected the same process is done recursivelly on one of the
-periods. This allows to have a hierarchical structure. Finally the output is
-basically information about the different phases like number of iteration and
-timing plus some representative cuts of the original trace. It differs on this
-thesis approach basically on the fact that they extract the structure by
-behavioral analysis instead of actual callstacks analysis. The main drawback is
-this method is not concerning about noise from the actual application so same
-phase on code can be detected as different phases, also if there is a lot of
-perturbation at level of e.g. cache, depending on what metric is being used, no
-structure could be detected. 
+In \cite{aguilar2016event} \dots
 
-Similarly with the previous approach but applying different techniques, in this
-publication \cite{gonzalez2013application} \dots
+In \cite{saviankou2015cube} \dots
 
 \begin{itemize}
   \item Cube
   \item Temporal directed flow graphs MPI
-  \item Clustering
-  \item Scalatrace (?)
   \item CCCG
+  \item Selecting points of interest in traces using patterns of events
 \end{itemize}
 
 \section{Performance analysis tools environment and workflow}\label{s:pt_evironment}
@@ -266,9 +324,16 @@ publication \cite{gonzalez2013application} \dots
     \includegraphics[width=250px]{current_analysis_flow.eps}
 \end{figure}
 
-
 Talk about the BSC performance tools environment and introduce the analysis flow
 with and without this proposed tool.
+
+This is the mission of the parallel performance analysis. In an application-centric
+approach, the performance analysis is a cyclic process consisting of observing 
+the behaviour of the application so as to hypothesize the possible problems that 
+affect its performance and finally translate these hypotheses to improvements in
+the application re-starting the cycle to validate them. Obviously, the less number 
+of iterations of this cycle the less time wasted and also the less money spent.
+
 
 % NOTES
 % .- Remember to demonstrate the interarrival time of different calls in the sam
@@ -278,3 +343,5 @@ with and without this proposed tool.
 \bibliography{bibliography}
 \bibliographystyle{apalike}
 \end{document}
+
+[^1]: ootno

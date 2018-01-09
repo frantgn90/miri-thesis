@@ -311,7 +311,7 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
 
     file_size = os.stat(trace).st_size
     pbar = ProgressBar("Parsing trace", file_size)
-    
+
     with open(trace) as tr:
         header = tr.readline()
         appd = get_app_description(header)
@@ -352,20 +352,19 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
             if not v["image"] in imgs and v["line"] != "0":
                 imgs.append(v["image"])
 
-        logging.info("Images detected during the execution")
+        logging.info("Images detected during the execution.")
 
         for im in imgs:
             if im in image_filter or image_filter == ["ALL"]: 
-                line = "  {0}".format(im)
+                line = "-  {0}".format(im)
             else: 
-                line = "  {0} (filtered)".format(im)
+                line = "-  {0} (filtered)".format(im)
             logging.info(line)
 
         
         #####################
         ### Parsing trace ###
         #####################
-
         callstack_series=[]
         timestamp_series=[]
         lines_series=[]
@@ -420,7 +419,8 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                 
                 fcalls, flines, ffiles = parse_events(events, image_filter, time,
                         task, mpi_durations, burst_durations, metrics, 
-                        comm_sizes_series, comm_partner_series, buffer_comm, timestamp_series)
+                        comm_sizes_series, comm_partner_series, buffer_comm, 
+                        timestamp_series)
 
                 if not fcalls is None:
                     callstack_series[task-1].append(fcalls)
@@ -461,14 +461,14 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                     buffer_comm[task_recv_id-1].update({physic_recv_time:
                         (message_size, [task-1])})
 
-            pbar.show()
 
 
     # TODO: Terminar de vaciar el events_buffer
     for k,v in events_buffer.items():
         fcalls, flines, ffiles = parse_events(v["events"], image_filter,
-                time, task, mpi_durations, burst_durations, metrics, comm_sizes_series, 
-                comm_partner_series, buffer_comm, timestamp_series)
+                time, task, mpi_durations, burst_durations, metrics, 
+                comm_sizes_series, comm_partner_series, buffer_comm, 
+                timestamp_series)
         if not fcalls is None:
             callstack_series[task-1].append(fcalls)
             timestamp_series[task-1].append(v["time"])
@@ -479,7 +479,6 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
     # low level MPI call.
 
     csbar = ProgressBar("Reordering information", len(callstack_series))
-    csbar.show()
 
     for rank_index in range(len(callstack_series)):
         for i_stack in range(len(callstack_series[rank_index])):
@@ -506,7 +505,6 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
             lines_series[rank_index][i_stack] = new_stack_line
             files_series[rank_index][i_stack] = new_stack_file
         csbar.progress_by(1)
-        csbar.show()
 
 
 #    logging.info("Starting alignement of callstacks")
@@ -528,12 +526,10 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
 #    logging.info("Done")
  
     callstacks_pool=[]
-    
-    cpbar = ProgressBar("Generating callstacks pool", len(callstack_series))
-    cpbar.show()
+    cpbar = ProgressBar("Generating callstacks pool", 
+            len(callstack_series)*len(callstack_series[0]))
 
     # Remember Paraver uses next Event Value for show HWC.
-    
     mpi_metrics = {}
     burst_metrics = {}
  
@@ -574,8 +570,7 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
             except Exception:
                 callstacks_pool.append(new_callstack)
 
-        cpbar.progress_by(1)
-        cpbar.show()
+            cpbar.progress_by(1)
 
     # Sanity check
     #

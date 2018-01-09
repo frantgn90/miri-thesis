@@ -210,17 +210,31 @@ def main(argc, argv):
     ''''''''''''''''''''''''''
     ''' Workflow starting  '''
     ''''''''''''''''''''''''''
+    # Assuming every task just have one thread
+
+    constants.TRACE_NAME = trace[trace.rfind("/")+1:]
+
+    #import cProfile, io, pstats
+    #pr = cProfile.Profile()
 
     ''' 1. Parsing trace '''
     logging.info("Parsing trace...")
-    # Assuming every task just have one thread
-    constants.TRACE_NAME = trace[trace.rfind("/")+1:]
+    #pr.enable()
     callstacks_pool, nranks=get_callstacks(
             trace=trace, 
             level=level, 
             image_filter=image_filter,
             metric_types=in_mpi_events,
             burst_info=True)
+    #pr.disable()
+    #pr.dump_stats("parsingTrace.profile")
+    #s = io.StringIO()
+    #sortby = 'tottime'
+    #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    #ps.print_stats()
+    #print(s.getvalue())
+    #exit(0)
+
     app_time = get_app_time(trace)
     constants.TOTAL_TIME = app_time
     logging.debug("{0} ns total trace time.".format(app_time))            
