@@ -554,15 +554,21 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                     lines_series[rank][cs_i], 
                     callstack_series[rank][cs_i],
                     files_series[rank][cs_i])
-            new_callstack.metrics[rank]["mpi_duration"]=mpi_durations[rank][cs_i+1]
-            new_callstack.burst_metrics[rank]["burst_duration"]=burst_durations[rank][cs_i+1]
-            new_callstack.metrics[rank]["mpi_msg_size"]=comm_sizes_series[rank][cs_i+1]
+
+            new_callstack.metrics[rank]["mpi_duration"]=\
+                mpi_durations[rank][cs_i+1]
+            new_callstack.burst_metrics[rank]["burst_duration"]=\
+                burst_durations[rank][cs_i+1]
+            new_callstack.metrics[rank]["mpi_msg_size"]=\
+                comm_sizes_series[rank][cs_i+1]
             new_callstack.set_partner(comm_partner_series[rank][cs_i+1])
 
             for tmetric, values in mpi_metrics.items():
-                new_callstack.metrics[rank].update({tmetric:int(values[rank][cs_i+1])})
+                new_callstack.metrics[rank].update(
+                        {tmetric:int(values[rank][cs_i+1])})
             for tmetric, values in burst_metrics.items():
-                new_callstack.burst_metrics[rank].update({tmetric:int(values[rank][cs_i+1])})
+                new_callstack.burst_metrics[rank].update(
+                        {tmetric:int(values[rank][cs_i+1])})
 
             try:
                 repeated_idx = callstacks_pool.index(new_callstack)

@@ -267,13 +267,17 @@ application structure.
 
 \subsection{Syntactic structure}
 
+Syntactic structure is centered on providing the actual program code structure so
+it needs to use some debug information about symbols and about the position of
+the instruction in code is being executed and monitoring, i.e. the callstack.
+
 The main interest on having the syntactic structure of an application is to be
 aware about not just what but where. This is important in the process of who to
 blame in code and provides insights of the actual application that with just
 behavioral structure can not be presented like for example where do we have
 loops and how many iterations performs.
 
-Profile tools are used to present behaviour information attached to a 
+Profile tools are used to present behavior information attached to a 
 syntactic structure. Although this is a scalable
 solution for performance monitoring, they are used to discard temporal order so
 structures like loops are just exposed indirectly by the number of calls metric.
@@ -304,25 +308,72 @@ can detect the most outer loop iterations or timesteps. One of the main
 drawbacks of this approach is that the complexity of both intra-node and
 inter-node compression can be of $O(n^2)$.
 
-In \cite{aguilar2016event} \dots
+In the same line as the previous work, Compressed Complete Call Graphs (cCCG) are 
+presented by \cite{knupfer2005construction}. It is about finding repetitive 
+patterns for loosely or lossless compression but instead of at tracing time, 
+over an already traced huge trace. 
+This compression will allow to analyst to analyze whole huge traces 
+interactively, difficult business when dealing with this amounts of information. 
+CCG is basically a graph of function calls of a program so the main structure is
+defined by the function call hierarchy while additional information are appended
+usually as leaf nodes. The construction phase is quite simple. The trace is
+traversed in a sequential manner, every time a function enter event is detected,
+new node is generated and append to the current active node. The
+other way around when exit function event is read, the current active node is
+finalized and all information concerning to this node is presented e.g.
+duration. Additionally, while constructing, the graph is compressed. The basic 
+idea is to replace $n$ repeated sub-trees that are equal or similar with a 
+reference to a single instance saving $n-1$ remaining copies. For similar is
+understood that when comparing nodes not all properties must be equal for
+example is not needed some scalar values like duration match perfectly (some
+configured deviation is acceptable) but properties like function id must. They
+claim main compression ration about 200 can be achieved with this approach.
+Additionally this compression technique does not need to uncompress anything, the
+user (or any analysis algorithm) just can traverse the graph and gather
+information.
 
-In \cite{saviankou2015cube} \dots
+This approach improves profiling in the sense that same function with same call
+path and different time behaviour is exposed to analyst but still presents a lack 
+of information on the order of the execution of the different graph paths.In
+\cite{aguilar2016event} they present the Event Flow Graphs (EFG) as an intent of
+provide temporal order between events. In this case they are centered on
+syntactic structure but just focused on MPI operations. EFG are
+weighted directed graphs where every node is an MPI call and edges the
+transitions between them, so the program code blocks executed between them.
+Graph nodes can contain aggregate information like call duration or message size
+and edges can be attached with information about CPU burst like performance
+metrics like IPC additionally to the number of times the edge is traversed.
+Now let's imagine we have a loop where there are three MPI calls $A$, $B$ and
+$C$ and $B$ and $C$ are mutual exclusively executed so if we have 10 
+iterations we have $A*10$, $B*5$ and $C*5$. In order to reconstruct the execution
+we need information about in what iterations B and C have been executed.
+So additionally they present temporal-EFG that introduce more
+information for these cases where the execution order can not be reconstructed
+with the previous EFG. They claim this technique can be used for trace
+compression, application structure detection and visual performance analysis.
+Following with application structure detection, what is where this thesis is
+focused on, they use algorithms for cycle detection over the t-EFG (DFS-based)
+and once cycles are detected the graph is transformed to a hierarchical tree
+where loops and subloops are showed up. Statistics about loops can be gathered
+like number of iterations, total time in loops and so on.
 
-\begin{itemize}
-  \item Cube
-  \item Temporal directed flow graphs MPI
-  \item CCCG
-  \item Selecting points of interest in traces using patterns of events
-\end{itemize}
+% Look if a possible drawback is different MPI in call are coalesced in same MPI
+% call node
+
+%In \cite{saviankou2015cube} \dots
+
+% TODO
+%- Cube
+%- Selecting points of interest in traces using patterns of events
 
 \section{Performance analysis tools environment and workflow}\label{s:pt_evironment}
 
-\begin{figure}
-  \caption{Current performance analysis workflow}
-  \label{currentAnalysisFlow}
-  \centering
-    \includegraphics[width=250px]{current_analysis_flow.eps}
-\end{figure}
+%\begin{figure}
+%  \caption{Current performance analysis workflow}
+%  \label{currentAnalysisFlow}
+%  \centering
+%    \includegraphics[width=250px]{current_analysis_flow.eps}
+%\end{figure}
 
 Talk about the BSC performance tools environment and introduce the analysis flow
 with and without this proposed tool.
@@ -344,4 +395,3 @@ of iterations of this cycle the less time wasted and also the less money spent.
 \bibliographystyle{apalike}
 \end{document}
 
-[^1]: ootno
