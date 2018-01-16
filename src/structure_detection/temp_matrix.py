@@ -42,7 +42,7 @@ class tmatrix(object):
         subm_map = self.__submatrix(self._matrix)
 
         calls_partitions=[]
-
+        print (subm_map)
         for sh_rows, sh_cols in subm_map.items():
             part=[]
             for i in range(sh_rows[1]-sh_rows[0]+1): part.append([])
@@ -168,40 +168,59 @@ class tmatrix(object):
 
             min_v=float("inf")
             min_h=float("inf")
+            
+#            for i in range(len(self._matrix)):
+#                for j in range(len(self._matrix[0])):
+#                    already_explored=False
+#                    # Already explored i
+#                    for sm in subm:
+#                        if i >= sm[1][0] and i <= sm[1][1] and \
+#                           j >= sm[0][0] and j <= sm[0][1]:
+#                            already_explored=True
+#                            break
+#
+#                    if not already_explored and self._matrix[i][j] != 0:
+#                        # Void cell
+#                        v=h=0
+#
+#                        # Horitzontal min
+#                        for ii in range(i, len(self._matrix)):
+#                            if self._matrix[ii][j] == 0: break
+#                            for jj in range(j, len(self._matrix[0])):
+#                                if self._matrix[ii][jj] != 0:
+#                                    h+=1
+#                                else: break
+#                            if h < min_h: min_h=h
+#
+#                        # Vertical min
+#                        for jj in range(j,len(self._matrix[0])):
+#                            if self._matrix[i][jj] == 0: break;
+#                            for ii in range(i, len(self._matrix)):
+#                                if self._matrix[ii][jj] != 0:
+#                                    v+=1
+#                                else: break
+#                            if v < min_v: min_v=v
+#
+#                        subm.append([(j,j+min_h-1),(i,i+min_v-1)])
 
-            for i in range(len(self._matrix)):
-                for j in range(len(self._matrix[0])):
-                    already_explored=False
-                    # Already explored i
-                    for sm in subm:
-                        if i >= sm[1][0] and i <= sm[1][1] and \
-                           j >= sm[0][0] and j <= sm[0][1]:
-                            already_explored=True
-                            break
+            i = 0
+            maxii = 0
+            while i < len(self._matrix):
+                j = 0
+                while j < len(self._matrix[i]):
+                    if self._matrix[i][j] == 0: j+=1; continue
+                    ii = i
+                    while ii < len(self._matrix) and self._matrix[ii][j] != 0:
+                        ii += 1
+                    if ii > maxii: maxii = ii 
 
-                    if not already_explored and self._matrix[i][j] != 0:
-                        # Void cell
-                        v=h=0
+                    jj = j
+                    while jj < len(self._matrix[i]) and self._matrix[i][jj] != 0:
+                        jj += 1
 
-                        # Horitzontal min
-                        for ii in range(i, len(self._matrix)):
-                            if self._matrix[ii][j] == 0: break
-                            for jj in range(j, len(self._matrix[0])):
-                                if self._matrix[ii][jj] != 0:
-                                    h+=1
-                                else: break
-                            if h < min_h: min_h=h
-
-                        # Vertical min
-                        for jj in range(j,len(self._matrix[0])):
-                            if self._matrix[i][jj] == 0: break;
-                            for ii in range(i, len(self._matrix)):
-                                if self._matrix[ii][jj] != 0:
-                                    v+=1
-                                else: break
-                            if v < min_v: min_v=v
-
-                        subm.append([(j,j+min_h-1),(i,i+min_v-1)])
+                    subm.append([(j,jj-1),(i,ii-1)])
+                    j = jj
+                i = maxii
 
             self.__look_for_superloop(subm)
 

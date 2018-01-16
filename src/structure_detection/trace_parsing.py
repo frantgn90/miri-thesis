@@ -165,17 +165,17 @@ def parse_events(events,image_filter, time, task, mpi_durations, burst_durations
     for event_i in range(0, len(events), 2):
         event_key = events[event_i]
         event_value = events[event_i+1]
-        
+        call_deph = int(event_key[-2:])-1
+       
         if not MPICAL_EVENT.match(event_key) is None:
+
             ncalls_m+=1
-            tmp_call_stack[int(event_key[-1])-1]=\
-                    CALL_NAMES[event_value]["name"] # "letter"
+            tmp_call_stack[call_deph]=CALL_NAMES[event_value]["name"] # "letter"
         elif not MPILIN_EVENT.match(event_key) is None:
             nimags_m+=1
-            tmp_image_stack[int(event_key[-1])-1]=\
-                IMAGES[event_value]["image"]
-            tmp_line_stack[int(event_key[-1])-1]=IMAGES[event_value]["line"]
-            tmp_file_stack[int(event_key[-1])-1]=IMAGES[event_value]["file"]
+            tmp_image_stack[call_deph]=IMAGES[event_value]["image"]
+            tmp_line_stack[call_deph]=IMAGES[event_value]["line"]
+            tmp_file_stack[call_deph]=IMAGES[event_value]["file"]
         elif not MPI_EVENT.match(event_key) is None:
             if event_value == "0":
                 assert in_mpi_comm[task-1]
@@ -227,37 +227,66 @@ def parse_events(events,image_filter, time, task, mpi_durations, burst_durations
     nimags=nimags_s+nimags_m
 
     if ncalls > 0:
-        filtered_calls=[]; filtered_files=[]
-        filtered_lines=[]; filtered_levels=[]
 
-        tmp_call_stack=list(filter(None,tmp_call_stack))
-        for i in range(0, ncalls):
-            if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
-                filtered_calls.append(tmp_call_stack[i])
-                filtered_files.append(tmp_file_stack[i])
-                filtered_lines.append(tmp_line_stack[i])
-                filtered_levels.append(str(i))
+        assert not mpi_call_to_add is None
+        tmp_call_stack = [mpi_call_to_add] + tmp_call_stack
+        tmp_file_stack = [constants.MPI_LIB_FILE] + tmp_line_stack
+        tmp_line_stack = ["0"] + tmp_line_stack
 
-        if len(filtered_calls) > 0:
-            sampled = "S" if ncalls_s > 0 else "M"
-            if sampled == "M":
-                assert mpi_call_to_add != None
-                filtered_calls = [mpi_call_to_add] + filtered_calls
-                filtered_files = [constants.MPI_LIB_FILE] + filtered_files
-                filtered_lines = ["0"] + filtered_lines 
-                filtered_levels= ["0"] + list(map(lambda x: str(int(x)+1),
-                        filtered_levels))
-   
-            # Needed for alignement
-            filtered_calls.reverse()
-            filtered_files.reverse()
-            filtered_lines.reverse()
-            filtered_levels.reverse()
-            
-            # Store the values
-            return filtered_calls, filtered_lines, filtered_files
+        tmp_call_stack.reverse()
+        tmp_line_stack.reverse()
+        tmp_file_stack.reverse()
+
+        mains = ["main", "MAIN__"]
+        main_index = tmp_call_stack.index(mains[0]) \
+                if mains[0] in tmp_call_stack else -1
+        if main_index == -1:
+            main_index = tmp_call_stack.index(mains[1]) \
+                    if mains[1] in tmp_call_stack else -1
+        if main_index == -1:
+            logging.warn("No main in {0} : {1}", str(time),str(tmp_call_stack))
+            exit(0)
+            return None, None, None
+
+        return tmp_call_stack[main_index:],\
+                tmp_line_stack[main_index:],\
+                tmp_file_stack[main_index:]
+
     else:
         return None, None, None
+
+    #if ncalls > 0:
+    #    filtered_calls=[]; filtered_files=[]
+    #    filtered_lines=[]; filtered_levels=[]
+
+    #    tmp_call_stack=list(filter(None,tmp_call_stack))
+    #    for i in range(0, ncalls):
+    #        if tmp_image_stack[i] in image_filter or image_filter == ["ALL"]:
+    #            filtered_calls.append(tmp_call_stack[i])
+    #            filtered_files.append(tmp_file_stack[i])
+    #            filtered_lines.append(tmp_line_stack[i])
+    #            filtered_levels.append(str(i))
+
+    #    if len(filtered_calls) > 0:
+    #        sampled = "S" if ncalls_s > 0 else "M"
+    #        if sampled == "M":
+    #            assert mpi_call_to_add != None
+    #            filtered_calls = [mpi_call_to_add] + filtered_calls
+    #            filtered_files = [constants.MPI_LIB_FILE] + filtered_files
+    #            filtered_lines = ["0"] + filtered_lines 
+    #            filtered_levels= ["0"] + list(map(lambda x: str(int(x)+1),
+    #                    filtered_levels))
+   
+    #        # Needed for alignement
+    #        filtered_calls.reverse()
+    #        filtered_files.reverse()
+    #        filtered_lines.reverse()
+    #        filtered_levels.reverse()
+    #        
+    #        # Store the values
+    #        return filtered_calls, filtered_lines, filtered_files
+    #else:
+    #    return None, None, None
             
         
 
@@ -293,19 +322,19 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
     global CALLER_EVENT, CALLIN_EVENT, MPICAL_EVENT, MPILIN_EVENT, MPI_EVENT
 
     if level == "0":
-        CALLER_EVENT=re.compile(constants.CALLER_EVENT_BASE + ".")
-        CALLIN_EVENT=re.compile(constants.CALLIN_EVENT_BASE + ".")
-        MPICAL_EVENT=re.compile(constants.MPICAL_EVENT_BASE + ".")
-        MPILIN_EVENT=re.compile(constants.MPILIN_EVENT_BASE + ".")
-        OMPCAL_EVENT=re.compile(constants.OMPCAL_EVENT_BASE + ".")
-        OMPLIN_EVENT=re.compile(constants.OMPLIN_EVENT_BASE + ".")
+        CALLER_EVENT=re.compile(constants.CALLER_EVENT_BASE + "*")
+        CALLIN_EVENT=re.compile(constants.CALLIN_EVENT_BASE + "*")
+        MPICAL_EVENT=re.compile(constants.MPICAL_EVENT_BASE + "*")
+        MPILIN_EVENT=re.compile(constants.MPILIN_EVENT_BASE + "*")
+        #OMPCAL_EVENT=re.compile(constants.OMPCAL_EVENT_BASE + "*")
+        #OMPLIN_EVENT=re.compile(constants.OMPLIN_EVENT_BASE + "*")
     else:
         CALLER_EVENT=re.compile(constants.CALLER_EVENT_BASE + str(level))
         CALLIN_EVENT=re.compile(constants.CALLIN_EVENT_BASE + str(level))
         MPICAL_EVENT=re.compile(constants.MPICAL_EVENT_BASE + str(level))
         MPILIN_EVENT=re.compile(constants.MPILIN_EVENT_BASE + str(level))
-        OMPCAL_EVENT=re.compile(constants.OMPCAL_EVENT_BASE + str(level))
-        OMPLIN_EVENT=re.compile(constants.OMPLIN_EVENT_BASE + str(level))
+        #OMPCAL_EVENT=re.compile(constants.OMPCAL_EVENT_BASE + str(level))
+        #OMPLIN_EVENT=re.compile(constants.OMPLIN_EVENT_BASE + str(level))
 
     MPI_EVENT=re.compile(constants.MPI_EVENT_BASE + ".")
 
@@ -475,60 +504,6 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
             lines_series[task-1].append(flines)
             files_series[task-1].append(ffiles)
 
-    # If this aplication is using mpl, then consider it as the very
-    # low level MPI call.
-
-    csbar = ProgressBar("Reordering information", len(callstack_series))
-
-    for rank_index in range(len(callstack_series)):
-        for i_stack in range(len(callstack_series[rank_index])):
-            new_stack_call=[]
-            new_stack_line=[]
-            new_stack_file=[]
-
-            main = False
-            for i_call in range(len(callstack_series[rank_index][i_stack])):
-                if callstack_series[rank_index][i_stack][i_call] == "main" \
-                        or callstack_series[rank_index][i_stack][i_call] == "MAIN__":
-                    main = True
-                if not main:
-                    continue
-
-                new_stack_call.append(
-                        callstack_series[rank_index][i_stack][i_call])
-                new_stack_line.append(
-                        lines_series[rank_index][i_stack][i_call])
-                new_stack_file.append(
-                        files_series[rank_index][i_stack][i_call])
-
-            callstack_series[rank_index][i_stack] = new_stack_call
-            lines_series[rank_index][i_stack] = new_stack_line
-            files_series[rank_index][i_stack] = new_stack_file
-        csbar.progress_by(1)
-
-
-#    logging.info("Starting alignement of callstacks")
-#
-#    for rank_index in range(len(callstack_series)):
-#        logging.debug("#{0} Aligning step 1".format(rank_index))
-#        ignored_index = perform_alignement_st1(
-#                        callstack_series[rank_index],
-#                        lines_series[rank_index]) 
-#
-#        logging.debug("#{0} Aligning step 2".format(rank_index))
-#        cs_discarded, cs_aligned =perform_alignement_st2(
-#                        callstack_series[rank_index],
-#                        lines_series[rank_index],
-#                        ignored_index)
-#
-#        logging.debug("#{0} Aligning done: {1} discarded, {2} aligned"\
-#                .format(rank_index,cs_discarded, cs_aligned))
-#    logging.info("Done")
- 
-    callstacks_pool=[]
-    cpbar = ProgressBar("Generating callstacks pool", 
-            len(callstack_series)*len(callstack_series[0]))
-
     # Remember Paraver uses next Event Value for show HWC.
     mpi_metrics = {}
     burst_metrics = {}
@@ -547,6 +522,11 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
         mpi_metrics.update({key:mpi_vals})
         burst_metrics.update({key:burst_vals})
 
+    total_new_cs = sum(list(map(lambda x: len(x), callstack_series)))
+    cpbar = ProgressBar("Reducing callstacks", total_new_cs)
+
+    hashmap={} # Empty hash-map
+
     for rank in range(len(callstack_series)):
         for cs_i in range(len(callstack_series[rank])):
             new_callstack = callstack.from_trace(rank,
@@ -554,6 +534,16 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                     lines_series[rank][cs_i], 
                     callstack_series[rank][cs_i],
                     files_series[rank][cs_i])
+
+            if new_callstack is None:
+                logging.warn("Callstack can not be build up")
+                print(rank)
+                print(timestamp_series[rank][cs_i+1])
+                print(lines_series[rank][cs_i])
+                print(callstack_series[rank][cs_i])
+                print(files_series[rank][cs_i])
+                exit(0)
+                continue
 
             new_callstack.metrics[rank]["mpi_duration"]=\
                 mpi_durations[rank][cs_i+1]
@@ -570,18 +560,25 @@ def get_callstacks(trace, level, image_filter, metric_types, burst_info):
                 new_callstack.burst_metrics[rank].update(
                         {tmetric:int(values[rank][cs_i+1])})
 
-            try:
-                repeated_idx = callstacks_pool.index(new_callstack)
-                callstacks_pool[repeated_idx].merge(new_callstack)
-            except Exception:
-                callstacks_pool.append(new_callstack)
+
+            new_cs_hash = hash(new_callstack.get_signature())
+            if new_cs_hash in hashmap:
+                for cs in hashmap[new_cs_hash]:
+                    if cs == new_callstack:
+                        cs.merge(new_callstack)
+            else:
+                hashmap.update({new_cs_hash:[new_callstack]})
 
             cpbar.progress_by(1)
 
-    # Sanity check
-    #
+    callstacks_pool=[]
+    for k,v in hashmap.items():
+        callstacks_pool.extend(v)
 
+    # Sanity check
     for cs in callstacks_pool:
-        assert cs[-1].mpi_call == True
+        if not cs[-1].mpi_call is True:
+            print(cs)
+            assert False
 
     return callstacks_pool, total_threads

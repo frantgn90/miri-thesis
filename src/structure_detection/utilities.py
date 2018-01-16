@@ -78,9 +78,10 @@ class ProgressBar(object):
         self.progression = 0
         self.bar_size=30
         self.msg_size=30
-        self.update_every=50
+        self.update_every=2
         self.count = 0
         self.msg = msg
+        self.last_percent = 0
 
         if len(self.msg) > self.msg_size:
             self.msg = self.msg[:self.msg_size-4]+"... "
@@ -93,11 +94,12 @@ class ProgressBar(object):
         self.show()
 
     def show(self):
-        self.count += 1
-        if self.count >= self.update_every or self.progression == self.total\
+        percent = (self.progression*100)/self.total
+        if percent - self.last_percent < self.update_every \
+            or self.progression == self.total\
             or self.progression == 0:
 
-            percent = (self.progression*100)/self.total
+            self.last_percent = percent
             pbar_syms = (self.progression*self.bar_size)/self.total
             pbar_spac = self.bar_size-pbar_syms
 

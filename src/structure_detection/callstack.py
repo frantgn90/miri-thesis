@@ -95,14 +95,22 @@ class callstack(object):
             call.my_callstack = self
 
         signature=""
+        shash=0
+        cnt=len(self.calls)+1
         for call in self.calls:
-            signature += call.get_signature()
+            call_signature = call.get_signature()
+            signature += call_signature
+            shash += hash(call_signature)*10**cnt
+            cnt -= 1
+        
+        self.signature_hash = shash
         self.signature = str(self.rank)+"#"+signature
-
 
     @classmethod
     def from_trace(cls, rank, instant, lines, calls, files):
         assert len(lines)==len(calls), "#lines and #calls must be equal."
+        if len(lines) == 0:
+            return None
 
         calls_obj = []
         for i in range(0, len(lines)):
@@ -116,6 +124,9 @@ class callstack(object):
 
     def get_instants(self):
         return self.instants
+
+    def get_hash(self):
+        return self.signature_hash
 
     def get_end_instants(self):
         return [sum(x) for x in zip(self.instants, 

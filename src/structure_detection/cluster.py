@@ -52,7 +52,6 @@ class cluster (object):
         for rank in ranks:
             callstacks = list(filter(lambda x: x.rank == rank, self.callstacks))
             aliasing_detector=tmatrix.from_callstacks_obj(callstacks)
-
             if aliasing_detector.aliased():
                 callstack_parts = aliasing_detector.get_subloops()
                 subloops = []
@@ -67,6 +66,7 @@ class cluster (object):
                 new_loop.cluster_id = self.cluster_id
                 ranks_loops.append(new_loop)
                 loops_id += 1
+            
 
         if len(ranks_loops) > 0:
             self.loops.append(self.__ranks_level_merge(ranks_loops))

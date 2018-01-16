@@ -16,6 +16,25 @@ from utilities import is_sublist
 
 _cs_per_thread=100
 
+# This code were in trace_parsing file
+#logging.info("Starting alignement of callstacks")
+#for rank_index in range(len(callstack_series)):
+#    logging.debug("#{0} Aligning step 1".format(rank_index))
+#    ignored_index = perform_alignement_st1(
+#                    callstack_series[rank_index],
+#                    lines_series[rank_index]) 
+
+#    logging.debug("#{0} Aligning step 2".format(rank_index))
+#    cs_discarded, cs_aligned =perform_alignement_st2(
+#                    callstack_series[rank_index],
+#                    lines_series[rank_index],
+#                    ignored_index)
+
+#    logging.debug("#{0} Aligning done: {1} discarded, {2} aligned"\
+#            .format(rank_index,cs_discarded, cs_aligned))
+#logging.info("Done")
+
+
 def get_callstack(csfile):
     vs=[]
     count=0

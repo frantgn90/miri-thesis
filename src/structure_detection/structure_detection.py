@@ -168,11 +168,17 @@ def main(argc, argv):
             help="Whether you want to display the output in an enriched"\
                     " html format")
 
-    parser.add_argument("--in-program-order",
+    parser.add_argument("--in-time-order",
             action="store_true",
-            help="Whether you want pseudocode callstacks in program order"\
-                    " or in dynamic order",
-            dest="in_program_order")
+            help="Whether you want pseudocode callstacks in time order"\
+                    " or in program order",
+            dest="in_time_order")
+
+   #parser.add_argument("--in-program-order",
+   #         action="store_true",
+   #         help="Whether you want pseudocode callstacks in program order"\
+   #                 " or in dynamic order",
+   #         dest="in_program_order")
 
     parser.add_argument("--burst-info",
             action="store_true",
@@ -214,27 +220,18 @@ def main(argc, argv):
 
     constants.TRACE_NAME = trace[trace.rfind("/")+1:]
 
-    #import cProfile, io, pstats
-    #pr = cProfile.Profile()
+    import cProfile, io, pstats
+    pr = cProfile.Profile()
 
     ''' 1. Parsing trace '''
     logging.info("Parsing trace...")
-    #pr.enable()
     callstacks_pool, nranks=get_callstacks(
             trace=trace, 
             level=level, 
             image_filter=image_filter,
             metric_types=in_mpi_events,
             burst_info=True)
-    #pr.disable()
-    #pr.dump_stats("parsingTrace.profile")
-    #s = io.StringIO()
-    #sortby = 'tottime'
-    #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    #ps.print_stats()
-    #print(s.getvalue())
-    #exit(0)
-
+    
     app_time = get_app_time(trace)
     constants.TOTAL_TIME = app_time
     logging.debug("{0} ns total trace time.".format(app_time))            
@@ -245,7 +242,7 @@ def main(argc, argv):
     ribar.show()
 
     for callstack in callstacks_pool:
-        callstack.in_program_order = arguments.in_program_order
+        callstack.in_program_order = not arguments.in_time_order
         callstack.calc_reduce_info()
         ribar.progress_by(1)
         ribar.show()
@@ -263,6 +260,16 @@ def main(argc, argv):
         logging.info("All callsacks has been filtered.")
         exit(0)
 
+    ''' TO REMOVE '''
+#    for cs in fcallstacks_pool:
+#        res = ""
+#        for c in cs.calls:
+#            if c.line > 0:
+#                res += str(c.line)+","
+#        print(res[:-1])
+#
+#    exit(0)
+            
 
     ''' 4. Callstacks to delta mapping '''
     logging.info("Callstacks delta classification...")
@@ -285,12 +292,20 @@ def main(argc, argv):
 
 
     ''' 5. Clustering '''
+    #pr.enable()
     logging.info("Performing clustering...")
     clusters_pool,plot_thread=clustering(fcallstacks_pool, arguments.show_clustering, 
             app_time, deltas, arguments.bottom_bound[0])
 
     for cluster in clusters_pool:
         cluster.run_loops_generation()
+
+    #pr.disable()
+    ##pr.dump_stats("parsingTrace.profile")
+    #s = io.StringIO()
+    #ps = pstats.Stats(pr, stream=s).sort_stats("tottime")
+    #ps.print_stats()
+    #print(s.getvalue())
 
     logging.debug("{0} clusters detected".format(len(clusters_pool)))
 
@@ -308,7 +323,6 @@ def main(argc, argv):
     logging.info("Merging clusters...")
     top_level_clusters = merge_clusters(clusters_pool)
     logging.info("Done")
-
 
     ''' 7. Reducing callstacks '''
     logging.info("Postprocessing callstacks...")

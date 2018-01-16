@@ -1,4 +1,4 @@
-\documentclass[10pt]{report}
+\documentclass[12pt]{report}
 
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -13,6 +13,7 @@
 \usepackage[a4paper,top=3cm,bottom=3cm,left=3cm,right=3cm]{geometry}
 
 \graphicspath{ {imgs/} }
+%\usepackage{natbib}
 
 \title{
   {\Huge Inferring program structure from an execution trace}
@@ -357,14 +358,38 @@ and once cycles are detected the graph is transformed to a hierarchical tree
 where loops and subloops are showed up. Statistics about loops can be gathered
 like number of iterations, total time in loops and so on.
 
-% Look if a possible drawback is different MPI in call are coalesced in same MPI
-% call node
+Even if they use code position information for building up they EFG (as it can
+be seen in previous publication \cite{aguilar2014mpi}) they are not pushing it
+to analyst so it is not clear how they are relating EFG with source code for the
+analysis.
 
-%In \cite{saviankou2015cube} \dots
+In \cite{trahay2015selecting} they present an approach for select points of
+interest automatically, understanding as points of interest these iterations that
+behave different from the majority. The first phase is a post-mortem analysis of
+a given trace. This analysis is about finding patterns of events that are
+repeated, i.e. folding loops that has been unfolded during the
+tracing\footnote{Unfolding in the sense that tracing process represent loops as
+a sequence of a repeated set of events.}. Their algorithm is about finding short
+repeated sequences of events and try to expand the pattern. After detect the
+intern structure of an application, the distribution of durations of the
+different iterations of the detected loops is an arbitrary construction, so they
+is this construction in order to filter all iterations that behave similar and
+expose to analyst these iterations that are outliers assuming these ones are the
+most interesting ones.
 
-% TODO
-%- Cube
-%- Selecting points of interest in traces using patterns of events
+Unlike other works, this last work is not presenting any visualization of the
+structure to the user. Also they are not relying on the idea of signature in
+terms of all the call path for comparing events but instead they define two 
+events to be equal if they enter or leave same function and have exactly the
+same properties. Imagine that we have two processes, the first one is sending a
+vector of size $N$ in chuncks of $m$ having $N\:mod\: m \neq 0$. One of the messages
+will be different on size but is exactly the same send in terms of position in
+code. The proposed algorithm will detect two different patterns here. The
+problem is worst when dealing with more unstable algorithms.
+
+Next approach is about “profilization” of traces.
+In \cite{saviankou2015cube} 
+\dots
 
 \section{Performance analysis tools environment and workflow}\label{s:pt_evironment}
 

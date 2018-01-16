@@ -457,22 +457,25 @@ class loop (callstack_ordered_list):
         #    return self.callstack_list[0].calls[0].line
 
     def get_first_callstack_po(self):
-        callstacks_copy = copy.deepcopy(self.get_flat_callstack_list())
+        # Assume always in program order
+        return self.get_flat_callstack_list()[0]
+        #callstacks_copy = copy.deepcopy(self.get_flat_callstack_list())
 
-        for cs in callstacks_copy:
-            cs.in_program_order = True
+        #for cs in callstacks_copy:
+        #    cs.in_program_order = True
 
-        callstacks_copy.sort()
-        return callstacks_copy[0]
+        #callstacks_copy.sort()
+        #return callstacks_copy[0]
 
     def get_last_callstack_po(self):
-        callstacks_copy = copy.deepcopy(self.get_flat_callstack_list())
+        return self.get_flat_callstack_list()[-1]
+        #callstacks_copy = copy.deepcopy(self.get_flat_callstack_list())
 
-        for cs in callstacks_copy:
-            cs.in_program_order = True
+        #for cs in callstacks_copy:
+        #    cs.in_program_order = True
 
-        callstacks_copy.sort()
-        return callstacks_copy[-1]
+        #callstacks_copy.sort()
+        #return callstacks_copy[-1]
 
     def get_first_callstack_instants(self):
         instants = None
