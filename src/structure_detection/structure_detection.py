@@ -18,6 +18,7 @@ from pseudocode import pseudocode
 from cluster import merge_clusters
 from sdshell import sdshell
 import constants
+from profiler import profiler
 
 def main(argc, argv):
     parser = argparse.ArgumentParser(
@@ -34,27 +35,6 @@ def main(argc, argv):
             help="The Paraver trace to be analyzed.",
             metavar="PRVTRACE",
             dest="prv_trace")
-
-    parser.add_argument("--call-level",
-            action="store",
-            nargs=1,
-            type=str,
-            required=False,
-            default="0",
-            help="Until which callstack level the analyzer will look at.",
-            metavar="CALLLEVEL",
-            dest="call_level")
-
-    parser.add_argument("--image-filter",
-            action="store",
-            nargs="?",
-            type=str,
-            required=False,
-            default=["ALL"],
-            help="The callstack for these images will be taken into account"\
-                    " by the analyzer.",
-            metavar="IMAGES",
-            dest="image_filter")
 
     parser.add_argument("--random-iterations",
             action="store",
@@ -142,17 +122,6 @@ def main(argc, argv):
                     "whole callstack",
             dest="only_mpi")
 
-    #parser.add_argument("--output",
-    #        action="store",
-    #        nargs=1,
-    #        type=str,
-    #        required=False,
-    #        default=[None],
-    #        help="Whether you want the output into a file, indicate the file"\
-    #                " whit this flag",
-    #        metavar="OUTFILE",
-    #        dest="output_filename")
-
     parser.add_argument("--in-mpi-metric",
             action="store",
             nargs='+',
@@ -174,12 +143,6 @@ def main(argc, argv):
                     " or in program order",
             dest="in_time_order")
 
-   #parser.add_argument("--in-program-order",
-   #         action="store_true",
-   #         help="Whether you want pseudocode callstacks in program order"\
-   #                 " or in dynamic order",
-   #         dest="in_program_order")
-
     parser.add_argument("--burst-info",
             action="store_true",
             help="Whether you want burst info be showed or not",
@@ -190,8 +153,6 @@ def main(argc, argv):
     arguments = parser.parse_args(args=argv[1:])
 
     trace = arguments.prv_trace[0]
-    level = arguments.call_level[0]
-    image_filter = arguments.image_filter
     ri = arguments.nrandits
     tmp_files_dir = arguments.tmp_files[0]
     numeric_level = getattr(logging, arguments.log_level[0].upper(), None)
@@ -213,119 +174,93 @@ def main(argc, argv):
     FORMAT="[%(levelname)s] (%(filename)s:%(lineno)s) %(message)s"
     logging.basicConfig(level=numeric_level, format=FORMAT)
 
-    ''''''''''''''''''''''''''
-    ''' Workflow starting  '''
-    ''''''''''''''''''''''''''
-    # Assuming every task just have one thread
-
+    ''' Workflow -----------------------------------------------------------'''
     constants.TRACE_NAME = trace[trace.rfind("/")+1:]
+    wfprof = profiler({
+        1:"Trace parsing and cs reduce",
+        2:"Intra-rank reduction",
+        3:"Filter (below {0})".format(arguments.bottom_bound[0]),
+        4:"Phase recognition",
+        5:"Clustering",
+        6:"Clusters merging",
+        7:"Inter-rank reduction",
+        8:"Statistics generation",
+        9:"Pseudocode generation"
+    })
 
-    import cProfile, io, pstats
-    pr = cProfile.Profile()
+    ''' 1. Parsing trace -------------------------------------------------- '''
+    logging.info("Parsing trace..."); 
+    wfprof.step_init(1)
+    callstacks_pool, nranks=get_callstacks(trace, in_mpi_events, True)
+    constants.TOTAL_TIME = get_app_time(trace)
+    wfprof.step_fini(1)
+    logging.debug("{0} ns total trace time.".format(constants.TOTAL_TIME))
 
-    ''' 1. Parsing trace '''
-    logging.info("Parsing trace...")
-    callstacks_pool, nranks=get_callstacks(
-            trace=trace, 
-            level=level, 
-            image_filter=image_filter,
-            metric_types=in_mpi_events,
-            burst_info=True)
-    
-    app_time = get_app_time(trace)
-    constants.TOTAL_TIME = app_time
-    logging.debug("{0} ns total trace time.".format(app_time))            
-
-    ''' 2. Getting callstack metrics '''
-    logging.info("Reducing information...")
+    ''' 2. Intra-rank reduction --------------------------------------- '''
+    logging.info("Intra-rank reduction...")
+    wfprof.step_init(2)
     ribar = ProgressBar("Updating points", len(callstacks_pool))
-    ribar.show()
 
     for callstack in callstacks_pool:
         callstack.in_program_order = not arguments.in_time_order
         callstack.calc_reduce_info()
         ribar.progress_by(1)
-        ribar.show()
+    wfprof.step_fini(2)
 
-    ''' 3. Filtering below delta '''
+    ''' 3. Filtering below delta ------------------------------------------ '''
     logging.info("Filtering callstacks...")
+    wfprof.step_init(3)
     fcallstacks_pool=list(filter(
-            lambda x: x.is_above_delta(app_time, arguments.bottom_bound[0]),
+            lambda x: x.is_above_delta(constants.TOTAL_TIME, 
+                arguments.bottom_bound[0]),
             callstacks_pool))
     logging.debug("Reduced from {0} to {1}".format(
         len(callstacks_pool), len(fcallstacks_pool)))
+    wfprof.step_fini(3)
     logging.info("Done")
 
     if len(fcallstacks_pool) == 0:
         logging.info("All callsacks has been filtered.")
         exit(0)
 
-    ''' TO REMOVE '''
-#    for cs in fcallstacks_pool:
-#        res = ""
-#        for c in cs.calls:
-#            if c.line > 0:
-#                res += str(c.line)+","
-#        print(res[:-1])
-#
-#    exit(0)
-            
-
-    ''' 4. Callstacks to delta mapping '''
+    ''' 4. Phases recognition ----- --------------------------------------- '''
     logging.info("Callstacks delta classification...")
-#    if not arguments.use_cplex:
-#        logging.debug("Calculating delta by mean of heuristics.")
-#        assert False, "use --cplex"
-#    else:
-#        logging.debug("Calculating delta by mean of CPLEX.")
-#        deltas = calcule_deltas_cplex(fcallstacks_pool,app_time,
-#                arguments.bottom_bound[0],
-#                arguments.delta_accuracy[0],
-#                arguments.cplex_input[0])
-#
-#        logging.debug("{0} super-loops detected".format(len(deltas)))
-
-    deltas = calcule_deltas_clustering(fcallstacks_pool, app_time)
-    logging.info("{0} deltas detected: {1}"
-            .format(len(deltas), deltas))
+    wfprof.step_init(4)
+    deltas = calcule_deltas_clustering(fcallstacks_pool, constants.TOTAL_TIME)
+    logging.info("{0} deltas detected: {1}".format(len(deltas), deltas))
+    wfprof.step_fini(4)
     logging.info("Done")
 
-
-    ''' 5. Clustering '''
-    #pr.enable()
+    ''' 5. Clustering ----------------------------------------------------- '''
     logging.info("Performing clustering...")
-    clusters_pool,plot_thread=clustering(fcallstacks_pool, arguments.show_clustering, 
-            app_time, deltas, arguments.bottom_bound[0])
+    wfprof.step_init(5)
+    clusters_pool,plot_thread=clustering(fcallstacks_pool, 
+            arguments.show_clustering, 
+            constants.TOTAL_TIME, deltas, arguments.bottom_bound[0])
 
     for cluster in clusters_pool:
         cluster.run_loops_generation()
-
-    #pr.disable()
-    ##pr.dump_stats("parsingTrace.profile")
-    #s = io.StringIO()
-    #ps = pstats.Stats(pr, stream=s).sort_stats("tottime")
-    #ps.print_stats()
-    #print(s.getvalue())
-
     logging.debug("{0} clusters detected".format(len(clusters_pool)))
+    wfprof.step_fini(5)
 
     for cl in clusters_pool:
-        logging.debug("Cluster {0} have {1} loops".format(
-            cl.cluster_id,
+        logging.debug("Cluster {0} have {1} loops".format(cl.cluster_id,
             len(cl.loops)))
         for l in cl.loops:
-            logging.debug(" -- {0}:{1} {2} iterations".format(
-                    cl.cluster_id, l._id, l.original_iterations))
+            logging.debug(" -- {0}:{1} {2} iterations".format(cl.cluster_id, 
+                l._id, l.original_iterations))
     logging.info("Done")
 
-
-    ''' 6. Merging clusters '''
+    ''' 6. Merging clusters ----------------------------------------------- '''
     logging.info("Merging clusters...")
+    wfprof.step_init(6)
     top_level_clusters = merge_clusters(clusters_pool)
+    wfprof.step_fini(6)
     logging.info("Done")
 
-    ''' 7. Reducing callstacks '''
+    ''' 7. Inter-node reduction ------------------------------------------- '''
     logging.info("Postprocessing callstacks...")
+    wfprof.step_init(7)
     for cluster_obj in top_level_clusters:
         for loop_obj in cluster_obj.loops:
             logging.debug("-- Postprocessing loop {0}:{1}".format(
@@ -337,16 +272,20 @@ def main(argc, argv):
 
     callstacks_pool = list(filter(lambda x: x.repetitions[x.rank] > 1, 
             callstacks_pool))
+
+    wfprof.step_fini(7)
     logging.info("Done")
 
-    ''' 8. Derivating metrics '''
+    ''' 8. Derivating metrics --------------------------------------------- '''
     logging.info("Derivating metrics")
+    wfprof.step_init(8)
     for callstack in callstacks_pool:
         callstack.calc_metrics()
+    wfprof.step_fini(8)
     logging.info("Done")
 
-
-    ''' 9. Generating pseudo-code '''
+    ''' 9. Generating pseudo-code ----------------------------------------- '''
+    wfprof.step_init(9)
     for cs in callstacks_pool:
         last_line = cs.calls[0].line
         last_file = cs.calls[0].call_file
@@ -378,9 +317,12 @@ def main(argc, argv):
     pc.beautify()
     pc.generate()
 
+    wfprof.step_fini(9)
     logging.info("Done...")
 
-    ''' 11. Start interactive shell '''
+    wfprof.show_statistics()
+
+    ''' 11. Start interactive shell --------------------------------------- '''
     sds = sdshell()
     sds.set_trace(trace)
     sds.set_pseudocode(pc)

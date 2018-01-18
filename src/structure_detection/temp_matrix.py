@@ -42,7 +42,6 @@ class tmatrix(object):
         subm_map = self.__submatrix(self._matrix)
 
         calls_partitions=[]
-        print (subm_map)
         for sh_rows, sh_cols in subm_map.items():
             part=[]
             for i in range(sh_rows[1]-sh_rows[0]+1): part.append([])
