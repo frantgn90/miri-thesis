@@ -84,7 +84,7 @@ class callstack(object):
                 "mpi_msg_size":0}
         self.burst_metrics[self.rank] = {
                 "burst_duration":0}
-        self.in_program_order = False
+        self.in_program_order = True
         self.my_loop = None
 
         self.dicts_to_merge = [
@@ -159,6 +159,9 @@ class callstack(object):
             merged_metrics = {}
             for key in self_dtomerge[self.rank]:
                 if "_merged" in key: continue
+                # Some HWC could be present in one MPI call but not
+                # in other. 
+                if not key in other_dtomerge[other.rank]: continue
 
                 mkey = key + "_merged"
                 if mkey in self_dtomerge[self.rank]:
@@ -203,10 +206,10 @@ class callstack(object):
         for dtomerge in self.dicts_to_merge:
             for rank in dtomerge:
                 rank_calc_metrics={}
-                keys_to_remove = [] # For memory print purposes
+                keys_to_remove = [] # For memory footprint purposes
                 for key,val in dtomerge[rank].items():
                     if not "merged" in key: continue
-     
+
                     mean_key = key + "_mean"
                     stdev_key = key + "_stdev"
                     sum_key = key + "_sum"

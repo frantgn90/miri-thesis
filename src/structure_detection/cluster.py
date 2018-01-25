@@ -51,21 +51,21 @@ class cluster (object):
         loops_id = 0
         for rank in ranks:
             callstacks = list(filter(lambda x: x.rank == rank, self.callstacks))
-            aliasing_detector=tmatrix.from_callstacks_obj(callstacks)
-            if aliasing_detector.aliased():
-                callstack_parts = aliasing_detector.get_subloops()
-                subloops = []
-                for x in callstack_parts:
-                    new_loop = loop(callstacks=x,id=loops_id)
-                    new_loop.cluster_id = self.cluster_id
-                    subloops.append(new_loop)
-                    loops_id += 1
-                ranks_subloops.append(subloops)
-            else:
-                new_loop = loop(callstacks=callstacks, id=loops_id)
-                new_loop.cluster_id = self.cluster_id
-                ranks_loops.append(new_loop)
-                loops_id += 1
+            #aliasing_detector=tmatrix.from_callstacks_obj(callstacks)
+            #if aliasing_detector.aliased():
+            #    callstack_parts = aliasing_detector.get_subloops()
+            #    subloops = []
+            #    for x in callstack_parts:
+            #        new_loop = loop(callstacks=x,id=loops_id)
+            #        new_loop.cluster_id = self.cluster_id
+            #        subloops.append(new_loop)
+            #        loops_id += 1
+            #    ranks_subloops.append(subloops)
+            #else:
+            new_loop = loop(callstacks=callstacks, id=loops_id)
+            new_loop.cluster_id = self.cluster_id
+            ranks_loops.append(new_loop)
+            loops_id += 1
             
 
         if len(ranks_loops) > 0:

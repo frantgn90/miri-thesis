@@ -76,8 +76,8 @@ class ProgressBar(object):
     def __init__(self, msg, total):
         self.total = total
         self.progression = 0
-        self.bar_size=30
-        self.msg_size=30
+        self.bar_size=20
+        self.msg_size=20
         self.update_every=2
         self.count = 0
         self.msg = msg

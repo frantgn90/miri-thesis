@@ -357,7 +357,12 @@ class loop (callstack_ordered_list):
         return res
 
     def push_datacondition_callsacks(self, other):
-        assert self != other
+        #assert self != other
+        #assert self.original_iterations != other.original_iterations
+
+        if self.original_iterations == other.original_iterations:
+            return 0
+
 
         '''
         Data condition callstacks are these callstacks that should be owned by
@@ -555,22 +560,6 @@ class loop (callstack_ordered_list):
                 return False
 
         return True
-
-
-        #last_j = 0
-        #is_subloop = False
-        #
-        #for i in range(len(its_bounds))[0::2]:
-        #    if i+1 >= len(its_bounds): break
-        #    lower_bound = its_bounds[i]
-        #    upper_bound = its_bounds[i+1]
-        #
-        #    for j in range(last_j, len(sub_times)):
-        #        if sub_times[j] >= lower_bound and sub_times[j] <= upper_bound:
-        #            is_subloop = True
-        #            break
-        #
-        #return is_subloop;
 
     def compact_callstacks(self, callstacks_pool):
         i = 0

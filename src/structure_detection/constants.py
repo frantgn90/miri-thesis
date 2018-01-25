@@ -53,7 +53,7 @@ _y_axis           ="time_mean"
 _z_axis           ="delta"
 
 #_eps              =0.03
-_eps              =0.05
+_eps              =0.2
 _min_samples      =1
 
 ###############
