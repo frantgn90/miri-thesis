@@ -184,13 +184,12 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
     ''' 1. Preparing data '''
     data=[]
     for cs in fcallstacks_pool:
-        data.append([cs.repetitions[cs.rank], cs.instants_distances_mean])
-            #cs.burst_metrics[cs.rank]["burst_duration"]])
+        data.append([cs.repetitions[cs.rank], cs.instants_distances_mean,
+            cs.burst_metrics[cs.rank]["42000050"]/cs.burst_metrics[cs.rank]["42000059"]])
 
     normdata=normalize_data(data)
 
-    #plot_data(normdata)
-    #exit(0)
+    plot_data(normdata)
     
     ''' 2. Perform clustering '''
     db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(normdata)
@@ -216,6 +215,6 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
             target=show_clustering,
             args=(data, fcallstacks_pool, labels, core_samples_mask, nclusters, 
                 total_time, delta, bound))
-    show_plot_thread.start()
+    #show_plot_thread.start()
 
     return clusters_pool, show_plot_thread
