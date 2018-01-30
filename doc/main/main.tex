@@ -1,5 +1,5 @@
 %\documentclass[12pt]{report}
-\documentclass[a4paper,10pt,twoside]{book}
+\documentclass[a4paper,11pt,twoside]{book}
 \usepackage[DIV=14,BCOR=2mm,headinclude=true,footinclude=false]{typearea}
 
 \makeatletter
@@ -11,21 +11,22 @@
 \fi
 \makeatother
 
+%Options: Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
+%\usepackage[a4paper,top=3cm,bottom=3cm,left=3.5cm,right=3.5cm]{geometry}
+\usepackage[Lenny]{fncychap}
+\usepackage{xcolor}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{graphicx}
 \usepackage[pdf]{pstricks}
-%Options: Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
-%\usepackage[Sonny]{fncychap}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 \usepackage{hyperref}
-%\usepackage[a4paper,top=3cm,bottom=3cm,left=3.5cm,right=3.5cm]{geometry}
 \usepackage{pseudocode}
+\usepackage{lettrine}
 
 \graphicspath{ {imgs/} }
-%\usepackage{natbib}
 
 \title{
   {\Huge Inferring program structure from an execution trace}
