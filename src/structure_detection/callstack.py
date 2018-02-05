@@ -193,16 +193,10 @@ class callstack(object):
         if self.repetitions[self.rank] == 1: return
 
         self.instants.sort()
-        self.instants_distances=self.__get_distances(
-                self.instants)
-        self.instants_distances_median=numpy.median(
-                self.instants_distances)
-        self.instants_distances_mean=numpy.mean(
-                self.instants_distances)
+        self.instants_distances=self.__get_distances(self.instants)
+        self.instants_distances_median=numpy.median(self.instants_distances)
+        self.instants_distances_mean=numpy.mean(self.instants_distances)
 
-    def calc_metrics(self):
-        assert self.repetitions[self.rank] > 1
-    
         for dtomerge in self.dicts_to_merge:
             for rank in dtomerge:
                 rank_calc_metrics={}
@@ -228,6 +222,11 @@ class callstack(object):
                 for rk in keys_to_remove:
                     del dtomerge[rank][rk]
 
+
+    def calc_metrics(self):
+        assert self.repetitions[self.rank] > 1
+    
+        for dtomerge in self.dicts_to_merge:
             global_results = {}
             for rank in dtomerge:
                 for key,val in dtomerge[rank].items():
@@ -425,12 +424,23 @@ class callstack(object):
         return len(self.calls)
          
     def __str__(self):
-        val = "R:{0} IT:{1} -".format(
+        if self.instants_distances_mean is None:
+            iit_mean = None
+        else:
+            iit_mean = round(self.instants_distances_mean,2)
+
+        if self.instants_distances_median is None:
+            iit_median = None
+        else:
+            iit_median = round(self.instants_distances_median,2)
+
+        val = "[R {0}][IT {1}][IIT {2}|{3}]\n".format(
                 self.compacted_ranks, 
                 self.repetitions[self.rank],
-                self.condition_level)
+                iit_mean,
+                iit_median)
         for call in self.calls:
-            val += ">{0}({1})".format(call.call, call.line)
+            val += "{0}({1}) ".format(call.call, call.line)
         return val
 
     def __delitem__(self, index):

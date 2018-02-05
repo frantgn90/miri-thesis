@@ -52,7 +52,7 @@ class cluster (object):
         for rank in ranks:
             callstacks = list(filter(lambda x: x.rank == rank, self.callstacks))
             # Trying to remove aliasing by a new clustering dimension...
-
+            # On that case, just code after the "else" is needed
             #aliasing_detector=tmatrix.from_callstacks_obj(callstacks)
             #if aliasing_detector.aliased():
             #    callstack_parts = aliasing_detector.get_subloops()

@@ -203,7 +203,7 @@ def main(argc, argv):
     ''' 3. Filtering below delta ------------------------------------------ '''
     logging.info("Filtering callstacks below {0}.".format(bottom_bound))
     wfprof.step_init(2)
-    for rank in range(traceobj.get_ntasks()):
+    for rank in traceobj.get_taskids():
         callstacks_pool[rank]=dict(filter(lambda x: x[1].is_above_delta(
             traceobj.total_time, 
             bottom_bound), callstacks_pool[rank].items()))
@@ -215,9 +215,13 @@ def main(argc, argv):
         logging.info("All callsacks has been filtered.")
         exit(0)
 
+    # Take into account just the parsed ranks (in case partial files are used)
+    plane_cs_pool = []
+    for rank in traceobj.get_taskids():
+        plane_cs_pool.extend(list(callstacks_pool[0].values()))
 
-    # Just for testing. Take into account just rank 0
-    callstacks_pool = list(callstacks_pool[0].values())
+    # Just for historical naming...
+    callstacks_pool = plane_cs_pool
 
 
     ''' 4. Phases recognition ----- --------------------------------------- '''
@@ -231,6 +235,7 @@ def main(argc, argv):
     ''' 5. Clustering ----------------------------------------------------- '''
     logging.info("Performing clustering...")
     wfprof.step_init(4)
+
     clusters_pool,plot_thread=clustering(callstacks_pool, 
             arguments.show_clustering, 
             constants.TOTAL_TIME, deltas, arguments.bottom_bound[0])
@@ -299,7 +304,8 @@ def main(argc, argv):
     logging.info("Generating pseudocode...")
     logging.debug("Top level clusters:")
     for cl in top_level_clusters:
-        logging.debug("-- CLUSTER {0}".format(cl.cluster_id))
+        logging.debug("-- Cluster {0} ({1} loops)".format(cl.cluster_id, 
+            cl.nloops))
 
     from console_gui import console_gui
     from html_gui import html_gui
@@ -310,7 +316,8 @@ def main(argc, argv):
         gui_class = console_gui
 
     # Show burst info and only MPI are False by default
-    pc = pseudocode(top_level_clusters, traceobj.get_ntasks(), False, gui_class, False)
+    pc = pseudocode(top_level_clusters, traceobj.get_taskids(), 
+            False, gui_class, False)
     pc.beautify()
     pc.generate()
 

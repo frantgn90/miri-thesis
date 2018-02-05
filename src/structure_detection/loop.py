@@ -19,6 +19,7 @@ class callstack_ordered_list(object):
             self.callstack_list = []
         else:
             self.callstack_list = callstacks
+        self.callstack_list.sort()
 
     def add_callstack(self, callstack):
         assert not callstack in self.callstack_list
@@ -53,7 +54,7 @@ class callstack_ordered_list(object):
         if isinstance(common_callstack, callstack_ordered_list):
             common_callstack = common_callstack.common_callstack
 
-        for item in self.callstack_list:
+        for item in self.callstack_list[1:]:
             if isinstance(item, callstack_ordered_list):
                 assert not item.common_callstack is None
                 common_callstack &= item.common_callstack
@@ -70,6 +71,7 @@ class callstack_ordered_list(object):
                 item.remove_calls_from_callstacks(callstack)
             else:
                 self.callstack_list[i] = item - callstack
+            
 
     def set_common_callstack(self, callstack):
         """ could be done completely in parallel """

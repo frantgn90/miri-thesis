@@ -52,9 +52,12 @@ _x_axis           ="times"
 _y_axis           ="time_mean"
 _z_axis           ="delta"
 
-#_eps              =0.03
-_eps              =0.2
-_min_samples      =1
+_eps =0.02
+_min_samples = 2
+
+#_eps              =0.2
+#_min_samples      =1
+
 
 ###############
 #### LOOPS ####

@@ -218,7 +218,7 @@ class trace(object):
             self.row_file = self.basename.replace(".prv",".row")
             self.splittrace = False
         else:
-            self.prv_files = glob.glob(basename+".prv.0")
+            self.prv_files = glob.glob(basename+".prv")
             self.comm_file = glob.glob(basename+".prv.comm")[0]
             self.info_file = glob.glob(basename+".info")[0]
             self.pcf_file = glob.glob(basename+".pcf")[0]
@@ -248,7 +248,10 @@ class trace(object):
         assert nprocesses != 0
 
         if nprocesses == 1:
-            traces = self.prv_files + [self.comm_file]
+            if self.splittrace:
+                traces = self.prv_files + [self.comm_file]
+            else:
+                traces = self.prv_files
             res = self._parse_sequential(traces)
             for rank in range(self.get_ntasks()):
                 for cs in res[rank].values():
@@ -298,11 +301,11 @@ class trace(object):
                                 assert mpi_opened[rec.task_id-1]
                                 
                                 cs = callstack_last[rec.task_id-1]
-                                cs.metrics[rec.task_id]["mpi_duration"] = rec.time - cs.instants[0]
+                                cs.metrics[rec.task_id-1]["mpi_duration"] = rec.time - cs.instants[0]
                                 if rec.time in comm_hashmap[rec.task_id-1]:
                                     comm = comm_hashmap[rec.task_id-1][rec.time]
                                     cs.partner.append(comm.task_send_id)
-                                    cs.metrics[rec.task_id]["mpi_msg_size"] = comm.size
+                                    cs.metrics[rec.task_id-1]["mpi_msg_size"] = comm.size
     
                                 # Intra-rank merge
                                 if not cs.get_signature() in callstack_pool[rec.task_id-1]:
@@ -328,25 +331,25 @@ class trace(object):
                                 calls.append((0,rec.events["MPI"][0].call_name,"libmpi", None))
 
                                 calls = map(lambda x: call(x[0],x[1],x[2],x[3]), calls)
-                                cs = callstack(rec.task_id, rec.time, list(calls))
+                                cs = callstack(rec.task_id-1, rec.time, list(calls))
 
-                                cs.burst_metrics[rec.task_id].update({x.type:x.value 
+                                cs.burst_metrics[rec.task_id-1].update({x.type:x.value 
                                     for x in burst_last[rec.task_id-1].events["HWC"]})
-                                cs.burst_metrics[rec.task_id]["burst_duration"] = \
+                                cs.burst_metrics[rec.task_id-1]["burst_duration"] = \
                                     rec.time - burst_last[rec.task_id-1].time
 
                                 # Send communication
                                 if rec.time in comm_hashmap[rec.task_id-1]:
                                     comm = comm_hashmap[rec.task_id-1][rec.time]
                                     cs.partner.append(comm.task_recv_id)
-                                    cs.metrics[rec.task_id]["mpi_msg_size"] = comm.size
+                                    cs.metrics[rec.task_id-1]["mpi_msg_size"] = comm.size
 
                                 callstack_last[rec.task_id-1] = cs
                                 mpi_opened[rec.task_id-1] = True
 
                         if len(rec.events["HWC"]) > 0:
                             if mpi_opened[rec.task_id-1]: # MPI call HWC
-                                callstack_last[rec.task_id-1].metrics[rec.task_id]\
+                                callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                                         .update({x.type:x.value for x in rec.events["HWC"]})
                             else : # Burst HWC
                                 burst_last[rec.task_id-1] = rec
@@ -355,7 +358,7 @@ class trace(object):
                             assert mpi_opened[rec.task_id-1]
                             assert callstack_last[rec.task_id-1][-1].mpi_call_coll
 
-                            callstack_last[rec.task_id-1].metrics[rec.task_id]\
+                            callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                                     .update({x.type:x.value for x in rec.events["GLOP"]})
 
         return callstack_pool[:self.get_ntasks()]
@@ -384,6 +387,11 @@ class trace(object):
                 logging.warn("Less files than tasks.")
                 return len(self.prv_files)
         return self.tasks
+    
+    def get_taskids(self):
+        if self.splittrace:
+            return list(map(lambda x: int(x.split(".")[-1]), self.prv_files))
+        return range(self.tasks)
         
 
  

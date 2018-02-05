@@ -1,7 +1,8 @@
 \chapter{Introduction}
 
-\lettrine{A}{typical} configuration for high performance machines are clusters. It means a t
-eam of individual processors or multiprocessors (and lately more specific 
+\lettrine{A}{typical} configuration for high performance machines are clusters.
+It means a team of individual processors or multiprocessors 
+(and lately more specific 
 hardware like GPUs) working together, interconnected by a super-fast network. 
 The fundamental idea behind these big machines is getting speedup by mean of
 partitioning the problem and parallelize the execution. So all processors (or a 
@@ -207,21 +208,28 @@ traces has been unrooled and presents its dynamic aspect. So we can define loops
 as a subsequences of instructions that are repeated several times. The work of
 identifying loops in traces is about identifying these repetitive subsequences.
 
-Sequential pattern mining can be defined as: “Given a set of data sequences, the
+Sequential pattern mining can be defined as: \textit{``Given a set of data sequences, the
 problem is to discover subsequences that are frequent, that is, the percentage of
-data sequences containing them exceeds a user-specified minimum support.”. Note 
+data sequences containing them exceeds a user-specified minimum support.''}. Note 
 this definition fits pretty well with our objective of loops recognition in traces 
-so sequential pattern mining is the natural choice. 
+so sequential pattern mining is the natural choice. Furthermore there is another
+definition that fits even better for our problem. It is, refering to patterns to
+analyze in a temporal sequences:\textit{``\ldots a collection of events that
+occur relatively close to each other in a given partial order, and \ldots
+frequent episodes as a recurrent combination of events''}.
 
 Sequential pattern mining is a technique applied on a wide range of problems
 like for example predicting systems failure by analyzing a sequence of logs,
 characterize suspicious behaviour in users by analyzing the sequence of commands
 entered, for automatically determine “best practices” by analyzing the sequences
 of actions of an expert, etc so the evolution on this area has been quietly
-ad-hoc to every problem. On this section pattern mining is introduced and two
+ad-hoc to every problem. On this section pattern mining is introduced and three
 main classes of algorithms are explained always from an abstracted point of
 view, i.e. without entering into details for specific implementations. This
-explanations were taken from \cite{mooney2013sequential}.
+explanations were taken from \cite{mooney2013sequential}. Even if the temporal
+sequences algorithms described in section \ref{ss:temporal_sequences} seems to
+be the better choice for structure detection, it has been considered to explain
+briefly the other types.
 
 \subsection{Formal notation}
 
@@ -261,11 +269,9 @@ of items but ordered.
 
 \subsection{Apriori-based algorithms}
 
-Names used to be so descriptive and therefore can explain quite a lot about the
-reality of the entity. Apriori meaning (by oxford dictonary) is {\it “using facts or
-principles that are known to be true in order to decide what the probable
-effects or results of something will be [\dots]”}. This first clue drives to the
-actual algorithm purpose that is to discover intra-transaction associations used
+Mining frequent itemsets is the core of later analysis like mining association
+rules, correlations, sequential patterns and so on. Apriori first proposal was
+about discover intra-transaction associations used
 in database mining, also called knowledge discovery.
 Being $I=\{i_{1}, i_{2}, \dots,i_{m}\}$ a set of literals called items and T a
 transaction $T \subseteq I$ is said T contains X if $X \subseteq T$. Further, an
@@ -349,7 +355,7 @@ p.item_{k-1} < q.item_{k-1}\\
 \end{pseudocode}
 
 
-\begin{pseudocode}{Apriori Candidate Generator 2}{L_{k-1}-itemsets}
+\begin{pseudocode}{Apriori Candidate Generator 2}{L_{k-1}-itemsets, C_{k}}
 \label{pc:apriori_candidate_generator2}
     \FORALL itemsets \quad c \in C_{k} \DO
     \BEGIN
@@ -361,19 +367,146 @@ p.item_{k-1} < q.item_{k-1}\\
     \END
 \end{pseudocode}
 
+Names used to be so descriptive and therefore can explain quite a lot about the
+reality of the entity. Apriori meaning (by oxford dictonary) is {\it “using facts or
+principles that are known to be true in order to decide what the probable
+effects or results of something will be [\dots]”}. In this case, the name comes
+from the generation-and-test technique. A priori, all candidates formed by
+(k-1)-itemsets combinations are k-itemsets but it have to be tested.
 
 \subsection{Projection-based pattern growth algorithms}
 
-Candidates generation presents to be critical for apriori algorithms and even
+Candidates generation presents to be critical for apriori algorithms and even if
 optimizations in the prune process has been introduced, the generated candidates
 follows an exponential grow. For example for detect a maximal sequence of 100
 elements, $2^{100} \approx 10^{30}$ candidates will be generated. The next
-problem is that for ever pass, data needs to be revisited to check out whether 
+problem is that for every step, data needs to be revisited to check out whether 
 new candidates are large itemsets or not. 
 
-Pattern growth paradigm is presented in \cite{han2000mining} and remove
-completelly the need of candidates generation by applying the ideas that are
-exposed following.
+Pattern growth paradigm presented in \cite{han2000mining1} remove
+completelly the necesity of candidates generation. They achieve improvements on
+performance for about one order of magnitude respect Apriori-like algorithms
+explained on previous section by adding two key concepts. 
+\begin{enumerate*}[label=(\roman*)]
+  \item frequent pattern tree or FP-tree for short
+  \item and FP-tree based pattern mining called FP-growth.
+\end{enumerate*}
+Following this two concepts are explained in more detail.
+
+\subsubsection{Frequent pattern tree}
+
+The following observations can be used for introduce FP-trees and have been used
+for its construction. This structure dramatically decrease the size of data to be 
+scanned but maintains all the need information for the mining.
+
+\begin{enumerate}[label=\roman*)]
+  \item One important rule learned from apriori approach is that frequent
+    k+1-itemsets only can be done from frequent k-itemsets. This observacion
+    leads to the idea of just taking into account frequent 1-itemsets given a
+    minimum support.
+  \item These discovered frequent intemsets could be stored in some compact
+    structure, avoiding repeatedly scanning the DB.
+  \item Continuing with the idea of compacting importante data, it can be said
+    that identical frequent itemsets from different transactions can be merged
+    into one with information about number of occurrences.
+  \item And for these partially identical frequent itemsets, shared prefixes can
+    be merged as well.
+\end{enumerate}
+
+For improve understandability lets drive a construction of an FP-tree following an
+example. Imagine we have a database with several transactions like the depicted
+in figure \ref{fig:fp_tree_db} (left hand side column). The process ends up with
+Fp-tree in figure \ref{fig:fp_tree_constructed}. Lets see how it happens. 
+
+First scan of database derives a list of frequent items, i.e. these 1-itemsets 
+above the minimum support value (3 for this example) that is $\langle
+(f:4),(c:4),(a:3),(b:3),(m:3),(p:3) \rangle$. Note the frequent items in every
+transaction are on right hand side column in figure \ref{fig:fp_tree_db}. The
+frequent itemsets here are not sorted by appearance in transaction but by
+frequence. This sorting will allows more compression on FP-tree construction.
+
+The second scan is done over these frequent 1-itemsets and drives the
+FP-tree construction. First transaction leads to the construction of the first
+branch (left hand side). Next transaction shares the three first items, so
+it can be partially merged with first branch. The merge process is just about
+update the counters and make the new relations. Same process for all
+transactions.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=250px]{fp_tree_db}
+  \caption{A transaction database as running example}
+  \label{fig:fp_tree_db}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=200px]{fp_tree_constructed}
+  \caption{The FP-tree}
+  \label{fig:fp_tree_constructed}
+\end{figure}
+
+Additionally to the pure tree construction, header table structure is done for
+ease the task of traverse all possible frequent patterns that contains a given
+item. 
+
+\subsubsection{Mining FP-trees}
+
+After prepare data, FP-growth algorithm is the responsible to find out the
+frequent patterns by analyzing the FP-tree. The mining starts with 1-itemset
+analysis. Thanks to the header table all paths for a given item $a_{i}$ can be get
+easily. Once all paths where the given item is involved on are retrieved a new 
+subtree is build up. Remember that in this process all items below minimum support 
+are pruned. Unlike before now only these retrieved items are taken into account 
+for the counting. This new structure is named $a_{i}$ conditional pattern base,
+i.e. the sub-pattern base under the condition of $a_{i}$ existence. Next step is
+to call mining function recursively having on every recursive call a large
+conditional pattern base, so it is growing. It can be better understood by means
+of an example. Lets follow the previous one.
+
+Starting from the bottom of the header table, lets mine FP-tree fora $p$ item. Two
+paths arise: $\langle f:4,c:3,a:3,m:2,p:2 \rangle$ and $\langle c:1, b:1, p:1
+\rangle$ (being the number after ``:'' the occurrences). Note that even if $f$
+appears 4 times, only 2 of them appears with $p$, so the path becomes $\langle 
+f:2,c:2,a:2,m:2,p:2 \rangle$. Similarly with second path. Moving on, the
+construction of the $p$ conditional pattern base is done by counting and pruning
+these items below minumum support, so the only branch for the new FP-tree is
+$(c:3)$. Hence only one frequent pattern is derived, i.e. $(cp:3)$. From now to
+the end, $p$ does not need to be taken into account any more, this is because
+all possible patterns containing $p$ has been already analyzed. Similarly we can proceed analyzing paths containing $m$ item. Two paths arise: 
+$\langle f:2,c:2,a:2,m:2 \rangle$ and $\langle f:1,c:1,a:1,b:1,m:1 \rangle$. The
+new conditional FP-tree just contains the path $\langle f:3,c:3,a:3 \rangle$.
+For show how the pattern is growing, lets see in a deph-first way what
+recursive calls are done:
+\begin{enumerate*}[label=(\roman*)]
+  \item mine($\langle f:3,c:3,a:3 \rangle \text{\textbar} m$)
+  \item mine($\langle f:3,c:3 \rangle \text{\textbar} am$)
+  \item mine($\langle f:3 \rangle \text{\textbar} cam$)
+\end{enumerate*}
+The frequent pattern derived from this analysis is $(fcam:3)$.
+
+\subsection{Temporal sequences}\label{ss:temporal_sequences}
+
+In this section will be shown the basis of these algorithms that concers about
+the periodicity of a certain patterns over the time. These are obviusly the
+algorithms that best fits to the needs for trace structure detection. First
+developed framework for datasets considered to be episodic was presented by
+\cite{mannila1995discovering}.
+
+Two previous approaches were concerning about the analysis of arbirary ordered
+sequences of data, however, this approach considers order as an inherent
+characteristic of the sequential structure. This main difference leads to a
+different approach of sequential pattern mining and introduce new ideas like
+sliding windows. Nevertheless some important components are shared among them like:
+\begin{enumerate*}[label=(\roman*)]
+  \item Frequency threshold, that is defined as the minimum number of times a
+    sequence have to appear. It is analogous to minimum support of apriori and
+    pattern-growth algorihtms.
+  \item Relies on generate-and-test paradigm to discover frequent sequences. It
+    is same approach like apriori-like algorithms.
+  \item Finnaly also takes profit from the principle of: all subepisodes are at
+    least as frequent as the superepisode, for candidates generation.
+\end{enumerate*}
 
 \subsection{Use in structure detection and discussion}
 
@@ -382,6 +515,7 @@ semantic structure detection. Reference to state of the art for that. Discuss
 how both types of algorithms can be used for this purpose and also and more
 important discuss the complexity of those algorithms. Maybe just an introduction
 of a real discussion because it should be done on methodology chapter.
+
 
 \section{Clustering techniques}
 

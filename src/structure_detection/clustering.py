@@ -122,17 +122,19 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
 
         lab,=ax.plot(xy[:, 0], xy[:, 1], marker='x', 
                 markerfacecolor=col,markeredgecolor=col, markersize=10, 
-                label="Cluster {0}".format(k),picker=5)
+                label="Cluster {0}".format(k),picker=5, linestyle='')
 
         plt_labels.append(lab)
         
-        lab,=ax.plot(nxy[:, 0], nxy[:, 1], 'o', markerfacecolor=col,
-                markeredgecolor=col, markersize=10, marker='o', linestyle='')
+        lab,=ax.plot(nxy[:, 0], nxy[:, 1], marker='x', 
+                markerfacecolor=col, markeredgecolor=col, markersize=5,
+                linestyle='')
     
     ''' Show delta functions '''   
     periods = X[:, 1]
     periods.sort()
 
+    # DELTAS
     inter_arrival = np.array(range(int(min(periods)),int(max(periods)),
                 int((max(periods)-min(periods))/50)))
 
@@ -141,6 +143,7 @@ def show_clustering(data, cdist, labels, core_samples_mask, n_clusters_,
                 color=col, linestyle="--", label="delta={0}".format(delta))
         plt_labels.append(lab)
 
+    # BOUNDARIES
     #occurrences = X[:, 0]
     #occurrences.sort()
     #
@@ -184,12 +187,10 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
     ''' 1. Preparing data '''
     data=[]
     for cs in fcallstacks_pool:
-        data.append([cs.repetitions[cs.rank], cs.instants_distances_mean,
-            cs.burst_metrics[cs.rank]["42000050"]/cs.burst_metrics[cs.rank]["42000059"]])
+        data.append([cs.repetitions[cs.rank], cs.instants_distances_mean])
 
     normdata=normalize_data(data)
-
-    plot_data(normdata)
+    #plot_data(normdata)
     
     ''' 2. Perform clustering '''
     db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(normdata)
@@ -207,6 +208,9 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
     for i in range(0,len(labels)):
         callstack_cluster_id=labels[i]
         fcallstacks_pool[i].cluster_id=callstack_cluster_id
+        if fcallstacks_pool[i].cluster_id == -1: # Owned by no cluster
+            continue
+
         clusters_pool[callstack_cluster_id].add_callstack(fcallstacks_pool[i])
 
     ''' 4. Show plots '''

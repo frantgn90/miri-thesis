@@ -19,7 +19,7 @@ class condition(object):
         self.is_complement = len(set1.intersection(set2)) == 0
 
 class pseudocode(object):
-    def __init__(self, clusters_set, nranks, only_mpi, gui_class, 
+    def __init__(self, clusters_set, ranks, only_mpi, gui_class, 
             show_burst_info):
         self.gui_class = gui_class
         self.pseudo_line = gui_class.get_pseudo_line()
@@ -30,7 +30,8 @@ class pseudocode(object):
         self.pseudo_computation = gui_class.get_pseudo_computation()
 
         self.lines = []
-        self.all_ranks = set(range(nranks))
+        self.nranks = len(ranks)
+        self.all_ranks = ranks
         self.show_ranks = self.all_ranks
         self.only_mpi = only_mpi
         self.show_burst_info = show_burst_info
@@ -51,7 +52,6 @@ class pseudocode(object):
         for cluster in self.clusters_set:
             for loop_obj in cluster.loops:
                 self.parse_loop(loop_obj, 0)
-
         self.gui = self.gui_class(self.lines)
 
     def parse_loop(self, loop_obj, tabs):
@@ -120,10 +120,12 @@ class pseudocode(object):
             for call in calls:
                 if not call.print_call is False:
                     if call.mpi_call and self.show_burst_info:
-                        burst = self.pseudo_computation(call,tabs+my_tabs, self.show_ranks)
+                        burst = self.pseudo_computation(call,tabs+my_tabs, 
+                                self.show_ranks)
                         if burst.burst_duration >= self.burst_threshold:
                             self.lines.append(burst)
-                    self.lines.append(self.pseudo_call(call, tabs+my_tabs, self.show_ranks))
+                    self.lines.append(self.pseudo_call(call, tabs+my_tabs, 
+                        self.show_ranks))
                 my_tabs += 1
         else:
             if len(calls) > 0:
