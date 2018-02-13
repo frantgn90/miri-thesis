@@ -1,0 +1,7 @@
+// Configure files used to caracterize loops
+// They should be 3D histograms where the 3rd dimension is
+// loop-id
+
+/home/jmartinez/BSC/master/git/cfgs/3D_loop_counter.cfg
+/home/jmartinez/BSC/master/git/cfgs/3D_loop_period.cfg
+/home/jmartinez/BSC/master/git/cfgs/3D_loop_instr_mean_by_iteration.cfg

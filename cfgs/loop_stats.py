@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
@@ -37,10 +37,48 @@ import os
 import logging
 import numpy
 import csv
+import matplotlib.pyplot as plt
+import random
+import math
 
-CFG_COUNTER = "/home/jmartinez/BSC/master/git/cfgs/3D_loop_counter.cfg"
-CFG_IT_PROFILE = "/home/jmartinez/BSC/master/git/cfgs/3D_loop_profile.cfg"
-CFG_PERIOD = "/home/jmartinez/BSC/master/git/cfgs/3D_loop_period.cfg"
+colors = ['b','g','r','c','m','y','k']
+
+def plot(results,nloops):
+    # For the moment just one result
+
+    ncols = 3
+    nrows = math.ceil(len(results)/float(ncols))
+
+    fig = plt.figure()
+    subplots = []
+    for i in range(len(results)):
+        subplots.append(fig.add_subplot(ncols*100+nrows*10+i+1))
+
+    for ki,key in enumerate(results):
+        result = results[key]
+
+        keys = sorted(result)
+        values = []
+        for k in keys:
+            values.append(result[k])
+
+        tickspos = []
+        for i in range(nloops):
+            ri = list(range(i,len(result),nloops))
+            bi = values[i*nloops:(i*nloops)+nloops]
+            tickspos.extend(ri)
+
+            subplots[ki].bar(ri, bi, width = 0.9, color = colors[i], 
+                    label="Loop {0}".format(i), align='center', linewidth=0)
+
+        subplots[ki].legend()
+        subplots[ki].set_title(key)
+
+        #ticks = list(map(lambda x: x.split("_")[-1],keys))
+        #subplots[i].xticks(tickspos, ticks, rotation=90)
+        #subplots[i].subplots_adjust(bottom= 0.2, top = 0.90)
+
+    plt.show()
 
 def histogram_parser(hfile):
 
@@ -48,10 +86,11 @@ def histogram_parser(hfile):
 
     planes_files = []
     planes_ids = []
+    logging.debug("Processing file:{0}".format(hfile.name))
     for line in hfile:
         if line == "": continue
-        if "value" in line:
-            planes_ids.append(line.replace("\n", ""))
+        if "---" in line: # Little modification on paramedir.
+            planes_ids.append(line[3:].replace("\n", ""))
             planes_files.append(tempfile.NamedTemporaryFile(mode="r+",
                     prefix="paramedir_plane_{0}_".format(planes_ids[-1])))
             continue
@@ -61,7 +100,7 @@ def histogram_parser(hfile):
     for ff in planes_files:
         ff.seek(0,0)
 
-    logging.info("Planes tempfiles={0}".format(
+    logging.debug("Planes tempfiles={0}".format(
         list(map(lambda x:x.name,planes_files))))
     parsed_planes = list(map(
         lambda x: csv.reader(x, delimiter="\t"),
@@ -85,50 +124,82 @@ def histogram_parser(hfile):
             rowvalues = row[1:-1]
             rownumbers = list(map(lambda x: float(x), rowvalues))
             loops_info[lid].update({rowname+"_mean":numpy.mean(rownumbers)})
-
+    
     return loops_info
 
 def main(argc, argv):
     trace = argv[1]
     trace = os.path.abspath(trace)
 
-    counter_out = tempfile.NamedTemporaryFile(mode="r", prefix="paramedir_c")
-    profile_out = tempfile.NamedTemporaryFile(mode="r", prefix="paramedir_p")
-    period_out = tempfile.NamedTemporaryFile(mode="r", prefix="paramedir_p")
+    cfgs_in = argv[2]
+    cfgs_in = os.path.abspath(cfgs_in)
 
-    logging.basicConfig(level=1)
-    logging.info("Counter out={0}".format(counter_out.name))
-    logging.info("Profile out={0}".format(profile_out.name))
+    CFGS = []
+    with open(cfgs_in) as cfgs_fd:
+        for line in cfgs_fd:
+            line = line.replace("\n","")
+            if line[:2] == "//": continue 
+            if len(line) == 0 : continue 
+            CFGS.append(line)
 
-    command = ["paramedir", trace, 
-            CFG_COUNTER,    counter_out.name, 
-            CFG_IT_PROFILE, profile_out.name,
-            CFG_PERIOD,     period_out.name]
+    #Level      Numeric value
+    #------------------------
+    #CRITICAL  |  50
+    #ERROR     |  40
+    #WARNING   |  30
+    #INFO      |  20
+    #DEBUG     |  10
+    #NOTSET    |  0
+
+    logging.basicConfig(level=20)
+    command = ["paramedir", trace]
+    
+    temporal_outfiles = []
+    for cfg in CFGS:
+        short_name = cfg.split("/")[-1]
+        temporal_outfiles.append((short_name, tempfile.NamedTemporaryFile(mode="r", 
+            prefix="paramedir_temp_out")))
+        logging.debug("[{0}]Temporal out={1}".format(short_name, 
+            temporal_outfiles[-1][1].name))
+
+        command.extend([cfg,temporal_outfiles[-1][1].name])
+
     child = subprocess.Popen(command)
     return_code = child.wait()
 
-    logging.info("Return code={0}".format(return_code))
+    logging.debug("Return code={0}".format(return_code))
 
-    counter_res = histogram_parser(counter_out)
-    profile_res = histogram_parser(profile_out)
-    period_res = histogram_parser(period_out)
+    histograms = []
+    for outfile in temporal_outfiles:
+        histograms.append(histogram_parser(outfile[1]))
+        histograms[-1].update({"cfg_name":outfile[0]})
 
-    assert len(counter_res) == len(profile_res)
-    assert len(counter_res) == len(period_res)
 
-    # Different planes are different loops
-    nloops = len(counter_res)
-    logging.info("N.Loops={0}".format(nloops))
+    # All cfgs must be 3D where 3th dimension is the loop-id, so
+    # same number of planes for all histograms.
+    nloops = len(histograms[0])-1
+    logging.info("N.Loops={0}".format(nloops)) # "cfg_name" must not be counted
 
-    for loop_info in counter_res:
-        print ("{0}={1}".format(loop_info,
-            counter_res[loop_info]["Total_mean"]))
-    for loop_info in period_res:
-        print ("{0}={1}".format(loop_info,
-            round(period_res[loop_info]["Total_mean"],2)))
+    result = {}
+    for histogram in histograms:
+        assert len(histogram) == nloops+1
+        cfg_name = histogram["cfg_name"]
+        result.update({cfg_name:{}})
 
-    counter_out.close()
-    profile_out.close()
+        for plane in histogram:
+            if plane == "cfg_name":continue
+            planename = plane.replace(" ","_")
+            result[cfg_name].update(
+                {planename+"_total":round(histogram[plane]["Total_mean"],2)})
+            result[cfg_name].update(
+                {planename+"_average":round(histogram[plane]["Average_mean"],2)})
+            result[cfg_name].update(
+                {planename+"_stdev":round(histogram[plane]["Stdev_mean"],2)})
+
+    for outfile in temporal_outfiles:
+        outfile[1].close()
+    
+    plot (result,nloops)
     logging.info("Bye!")
 
 
