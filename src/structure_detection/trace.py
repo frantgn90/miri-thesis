@@ -82,7 +82,11 @@ class event(record):
                 "700000": {"name":"CALL", "class":call_event, 
                     "re":re.compile("700000*")},
                 "800000": {"name":"LINE", "class":line_event, 
-                    "re":re.compile("800000*")}
+                    "re":re.compile("800000*")},
+                "900000": {"name":"LOOP", "class":loop_event,
+                    "re":re.compile("990000*")},
+                "910000": {"name":"ITER", "class":iter_event,
+                    "re":re.compile("991000*")}
         }
 
         self.events = {x["name"]:[] for x in self.events_supported.values()}
@@ -100,6 +104,21 @@ class event(record):
         for val in self.events_supported.values():
             if val["re"].match(event_type):
                  self.events[val["name"]].append(val["class"](event_line, self.pcf))
+
+class loop_event(event):
+    def __init__(self, line, pcf):
+        super(loop_event, self).__init__(line, pcf)
+        self.type = self.fields[6]
+        self.nested_level = int(self.type)-99000000
+        self.loopid = self.fields[7]
+
+class iter_event(event):
+    def __init__(self, line, pcf):
+        super(iter_event, self).__init__(line, pcf)
+        self.type = self.fields[6]
+        self.nested_level = int(self.type)-99100000
+        self.iterid = self.fields[7]
+        pass
 
 class glop_event(event):
     def __init__(self, line, pcf):
@@ -360,6 +379,9 @@ class trace(object):
 
                             callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                                     .update({x.type:x.value for x in rec.events["GLOP"]})
+                        #if len(rec.events["LOOP"]) > 0:
+                        #    for l in rec.events["LOOP"]:
+                        #        print (l.loopid)
 
         return callstack_pool[:self.get_ntasks()]
 

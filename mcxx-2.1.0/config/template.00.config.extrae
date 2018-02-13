@@ -7,7 +7,6 @@ preprocessor_options = -E -I@EXTRAE_INCLUDE@ -include extrae.h
 compiler_name = @GCC@
 compiler_options =
 linker_name = @GCC@
-#linker_options = -L@EXTRAE_LIB@ -lmpitrace
 linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lseqtrace
 compiler_phase = libloop_visitor
 

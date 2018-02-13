@@ -28,6 +28,7 @@
 #define TL_LOOP_VISITOR_HPP
 
 #include "tl-compilerphase.hpp"
+#include "tl-pragmasupport.hpp"
 
 namespace TL
 {
@@ -36,12 +37,16 @@ namespace TL
     class VisitorLoopPhase : public TL::CompilerPhase
     {
         private:
+            std::string _instrument_all_loops_str;
+            bool _instrument_all_loops;
         public:
             // The constructor
             // In this method name and description of phase can be
             // set.
             VisitorLoopPhase();
             ~VisitorLoopPhase();
+
+            void set_all_loops_instrumentation(const std::string& str);
 
             // Run method is where magics should be done
             virtual void run(TL::DTO& dto);

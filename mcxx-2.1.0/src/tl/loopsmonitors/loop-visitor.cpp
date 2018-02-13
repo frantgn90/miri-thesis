@@ -29,6 +29,8 @@
 #include "tl-nodecl-utils.hpp"
 #include "tl-nodecl-visitor.hpp"
 #include "tl-source.hpp"
+#include "tl-pragmasupport.hpp"
+
 
 // On every new nested level, EXTRAE_LOOPEVENT will be
 // increment by one.
@@ -44,6 +46,7 @@ namespace TL {
     // tree (representation of source code, output of frontend) in a recursive
     // manner.
 
+    // Helper function 
     void new_unsigned_variable(TL::Scope context, std::string name, 
             unsigned int i)
     {
@@ -58,11 +61,35 @@ namespace TL {
         new_symbol.set_value(init_value.parse_expression(context));
         context.insert_symbol(new_symbol);
     }
+    
+    Nodecl::NodeclBase get_statement_from_pragma(
+            const TL::PragmaCustomStatement& construct)
+    {
+        Nodecl::NodeclBase stmt = construct.get_statements();
+
+        ERROR_CONDITION(!stmt.is<Nodecl::List>(), "Invalid tree", 0);
+        stmt = stmt.as<Nodecl::List>().front();
+
+        ERROR_CONDITION(!stmt.is<Nodecl::Context>(), "Invalid tree", 0);
+        stmt = stmt.as<Nodecl::Context>().get_in_context();
+
+        ERROR_CONDITION(!stmt.is<Nodecl::List>(), "Invalid tree", 0);
+        stmt = stmt.as<Nodecl::List>().front();
+
+        return stmt;
+    }
+
+    void PragmaHandler(TL::PragmaCustomStatement node)
+    {
+        // -- tl-omp-base-hlt.cpp:9
+        //Nodecl::NodeclBase loop = get_statement_from_pragma(node);
+        //std::cout << loop.get_locus_str() << std::endl;
+        std::cout << "!!!!!!!!!!!!!!!!" << std::endl;
+    }
 
     class LoopsVisitor : public Nodecl::ExhaustiveVisitor<void>
     {
         public:
-            // Executed before visit child nodes
             virtual void visit_pre(const Nodecl::ForStatement &node)
             {
                 // It can be the loop-id for the moment.
@@ -101,7 +128,6 @@ namespace TL {
                 loop_nested_level += 1;
             }
 
-            // Executed after visit child nodes
             virtual void visit_post(const Nodecl::ForStatement &node)
             {
                 unsigned int loop_id = node.get_line();
@@ -141,27 +167,52 @@ namespace TL {
         set_phase_name("Loop visitor");
         set_phase_description("This phase shows information about loops");
 
+        register_parameter("all_loops",
+                "If this parameter is set all loops will be instrumented. If not" \
+                " just those loops with #pragma extrae loop(nesting-deph)",
+                _instrument_all_loops_str,
+                "0")
+            .connect(
+                std::bind(&VisitorLoopPhase::set_all_loops_instrumentation,
+                    this, std::placeholders::_1));
+
         loop_nested_level = 0;
     }
     VisitorLoopPhase::~VisitorLoopPhase()
     {
+    }
+
+    void VisitorLoopPhase::set_all_loops_instrumentation(const std::string& str)
+    {
+        parse_boolean_option("all_loops",
+                str, _instrument_all_loops, "Assuming true");
+
     }
     void VisitorLoopPhase::run(TL::DTO& dto)
     {
         Nodecl::NodeclBase top_level = 
             *std::static_pointer_cast<Nodecl::NodeclBase>(dto["nodecl"]);
 
-        // Nested level also has to be done by means of 
-        // user variable. This is because loops from diferent files
-        // can be nested.
-        //
-        new_unsigned_variable(top_level.retrieve_context(),"__mercurium_loopid", 1);
+        if (this->_instrument_all_loops)
+        {
+            LoopsVisitor loops_visitor;
+            loops_visitor.walk(top_level);
+        }
+        else
+        {
+            // Register #pragma extrae loop
+            register_new_directive(CURRENT_CONFIGURATION,
+                    "extrae", "loop", 0,0);
 
-        LoopsVisitor loops_visitor;
-        loops_visitor.walk(top_level);
+            // Handler for pragma extrae loop
+            PragmaMapDispatcher map_dispatcher;
+            map_dispatcher["extrae"].statement.pre["loop"]
+                .connect(std::bind(&PragmaHandler,std::placeholders::_1));
+
+            PragmaVisitor pragma_visitor(map_dispatcher, true);
+            pragma_visitor.walk(top_level);
+        }
     }
-
-    
 }
 
 EXPORT_PHASE(TL::VisitorLoopPhase);
