@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Loading some test-generators utilities
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/test-generators-utilities
+
+if [ "no" = "no" -o "no" = no ];
+then
+    gen_ignore_test "Nanos++ or OpenCL are disabled"
+    exit
+fi
+
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/mercurium-libraries
+
+cat <<EOF
+MCC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=oclmcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+MFC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=oclmfc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+MCXX="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=oclmcxx --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+EOF
+
+
+cat <<EOF
+test_CC_ompss="\${MCC} --variable=disable_opencl_file_check:1"
+test_FC_ompss="\${MFC} --variable=disable_opencl_file_check:1"
+test_CXX_ompss="\${MCXX} --variable=disable_opencl_file_check:1"
+
+test_CFLAGS_ompss="--ompss"
+test_FFLAGS_ompss="--ompss"
+test_CXXFLAGS_ompss="--ompss"
+EOF
+
+cat <<EOF
+test_nolink=yes
+EOF

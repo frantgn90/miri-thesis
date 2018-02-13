@@ -1,0 +1,333 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if Analysis is enabled */
+#undef ANALYSIS_ENABLED
+
+/* CUDA installation path */
+#undef CUDA_DIR
+
+/* Default type environment */
+#undef DEFAULT_TYPE_ENVIRONMENT
+
+/* Define to enable instrumentation of Mercurium using Extrae */
+#undef EXTRAE_ENABLED
+
+/* Define to enable instrumentation of used code loops using Extrae */
+#undef EXTRAE_LOOPS_ENABLED
+
+/* Define to 1 if binaries are installed in pkglibdir */
+#undef FORTRAN_NEW_SCANNER
+
+/* Define to 1 to support Advanced Bit Manipulation */
+#undef HAVE_ABM
+
+/* Define to 1 to support Multi-Precision Add-Carry Instruction Extensions */
+#undef HAVE_ADX
+
+/* Define to 1 to support Advanced Encryption Standard New Instruction Set
+   (AES-NI) */
+#undef HAVE_AES
+
+/* Support Altivec instructions */
+#undef HAVE_ALTIVEC
+
+/* Define to 1 to support Advanced Vector Extensions */
+#undef HAVE_AVX
+
+/* Define to 1 to support Advanced Vector Extensions 2 */
+#undef HAVE_AVX2
+
+/* Define to 1 to support AVX-512 Byte and Word Instructions */
+#undef HAVE_AVX512_BW
+
+/* Define to 1 to support AVX-512 Conflict Detection Instructions */
+#undef HAVE_AVX512_CD
+
+/* Define to 1 to support AVX-512 Doubleword and Quadword Instructions */
+#undef HAVE_AVX512_DQ
+
+/* Define to 1 to support AVX-512 Exponential & Reciprocal Instructions */
+#undef HAVE_AVX512_ER
+
+/* Define to 1 to support AVX-512 Foundation Extensions */
+#undef HAVE_AVX512_F
+
+/* Define to 1 to support AVX-512 Integer Fused Multiply Add Instructions */
+#undef HAVE_AVX512_IFMA
+
+/* Define to 1 to support AVX-512 Conflict Prefetch Instructions */
+#undef HAVE_AVX512_PF
+
+/* Define to 1 to support AVX-512 Vector Byte Manipulation Instructions */
+#undef HAVE_AVX512_VBMI
+
+/* Define to 1 to support AVX-512 Vector Length Extensions */
+#undef HAVE_AVX512_VL
+
+/* Define to 1 if backtrace is available */
+#undef HAVE_BACKTRACE
+
+/* Define to 1 to support Bit Manipulation Instruction Set 1 */
+#undef HAVE_BMI1
+
+/* Define to 1 to support Bit Manipulation Instruction Set 2 */
+#undef HAVE_BMI2
+
+/* Define to 1 if you have the `cacoshl' function. */
+#undef HAVE_CACOSHL
+
+/* Define to 1 if you have the `cacosl' function. */
+#undef HAVE_CACOSL
+
+/* Define to 1 if you have the `casinhl' function. */
+#undef HAVE_CASINHL
+
+/* Define to 1 if you have the `casinl' function. */
+#undef HAVE_CASINL
+
+/* Define to 1 if you have the `catanhl' function. */
+#undef HAVE_CATANHL
+
+/* Define to 1 if you have the `catanl' function. */
+#undef HAVE_CATANL
+
+/* Define to 1 if you have the `ccoshl' function. */
+#undef HAVE_CCOSHL
+
+/* Define to 1 if you have the `ccosl' function. */
+#undef HAVE_CCOSL
+
+/* Define to 1 if you have the `cpow' function. */
+#undef HAVE_CPOW
+
+/* Define to 1 if you have the `cpowf' function. */
+#undef HAVE_CPOWF
+
+/* Define to 1 if you have the `cpowl' function. */
+#undef HAVE_CPOWL
+
+/* Define to 1 if you have the `csinhl' function. */
+#undef HAVE_CSINHL
+
+/* Define to 1 if you have the `csinl' function. */
+#undef HAVE_CSINL
+
+/* Define to 1 if you have the `ctanhl' function. */
+#undef HAVE_CTANHL
+
+/* Define to 1 if you have the `ctanl' function. */
+#undef HAVE_CTANL
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
+
+/* Define to 1 if you have the declaration of `cygwin_conv_path', and to 0 if
+   you don't. */
+#undef HAVE_DECL_CYGWIN_CONV_PATH
+
+/* Define if you have the GNU dld library. */
+#undef HAVE_DLD
+
+/* Define to 1 if you have the `dlerror' function. */
+#undef HAVE_DLERROR
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define if you have the _dyld_func_lookup function. */
+#undef HAVE_DYLD
+
+/* Define to 1 to support Fused Multiply-Add Extensions 3 */
+#undef HAVE_FMA3
+
+/* Define to 1 to support Fused Multiply-Add Extensions 4 */
+#undef HAVE_FMA4
+
+/* Define to 1 if Fortran KIND=16 is supported */
+#undef HAVE_FORTRAN_KIND16
+
+/* Define if you have the iconv() function and it works. */
+#undef HAVE_ICONV
+
+/* Define to 1 if __int128 is available */
+#undef HAVE_INT128
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the libdl library or equivalent. */
+#undef HAVE_LIBDL
+
+/* Define if libdlloader will be built on this platform */
+#undef HAVE_LIBDLLOADER
+
+/* Define to 1 if mallinfo is available */
+#undef HAVE_MALLINFO
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if mkdtemp is available */
+#undef HAVE_MKDTEMP
+
+/* Define to 1 to support Multimedia Extensions */
+#undef HAVE_MMX
+
+/* Define to 1 to support Memory Protection Extensions */
+#undef HAVE_MPX
+
+/* Define to 1 if open_memstream is available */
+#undef HAVE_OPEN_MEMSTREAM
+
+/* Define to 1 to support Prefetch Vector Data Into Caches WT1 */
+#undef HAVE_PREFETCHWT1
+
+/* Define to 1 if quadmath.h is fully useable */
+#undef HAVE_QUADMATH_H
+
+/* Define to 1 to support Digital Random Number Generator */
+#undef HAVE_RDRND
+
+/* Define to 1 to support Secure Hash Algorithm Extension */
+#undef HAVE_SHA
+
+/* Define if you have the shl_load function. */
+#undef HAVE_SHL_LOAD
+
+/* Define to 1 to support Streaming SIMD Extensions */
+#undef HAVE_SSE
+
+/* Define to 1 to support Streaming SIMD Extensions */
+#undef HAVE_SSE2
+
+/* Define to 1 to support Streaming SIMD Extensions 3 */
+#undef HAVE_SSE3
+
+/* Define to 1 to support Streaming SIMD Extensions 4.1 */
+#undef HAVE_SSE4_1
+
+/* Define to 1 to support Streaming SIMD Extensions 4.2 */
+#undef HAVE_SSE4_2
+
+/* Define to 1 to support AMD Streaming SIMD Extensions 4a */
+#undef HAVE_SSE4a
+
+/* Define to 1 to support Supplemental Streaming SIMD Extensions 3 */
+#undef HAVE_SSSE3
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if strsignal is available */
+#undef HAVE_STRSIGNAL
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 to support eXtended Operations Extensions */
+#undef HAVE_XOP
+
+/* Define to 1 if __builtin_exp10 is available */
+#undef HAVE__BUILTIN_EXP10
+
+/* Define to 1 if __builtin_exp10f is available */
+#undef HAVE__BUILTIN_EXP10F
+
+/* Define to 1 if __builtin_exp10l is available */
+#undef HAVE__BUILTIN_EXP10L
+
+/* Define to 1 if __builtin_fpclassify is available */
+#undef HAVE__BUILTIN_FPCLASSIFY
+
+/* Define to 1 if __builtin_huge_valq is available */
+#undef HAVE__BUILTIN_HUGE_VALQ
+
+/* Define to 1 if __builtin_isinff is available */
+#undef HAVE__BUILTIN_ISINFF
+
+/* Define to 1 if __builtin_isinfl is available */
+#undef HAVE__BUILTIN_ISINFL
+
+/* Define to 1 if __builtin_isnanf is available */
+#undef HAVE__BUILTIN_ISNANF
+
+/* Define to 1 if __builtin_isnanl is available */
+#undef HAVE__BUILTIN_ISNANL
+
+/* Define to 1 if __builtin_nan is available */
+#undef HAVE__BUILTIN_NAN
+
+/* Define to 1 if __builtin_nanf is available */
+#undef HAVE__BUILTIN_NANF
+
+/* Define to 1 if __builtin_nanl is available */
+#undef HAVE__BUILTIN_NANL
+
+/* Define to 1 if __builtin_nexttoward is available */
+#undef HAVE__BUILTIN_NEXTTOWARD
+
+/* Define to 1 if __builtin_nexttowardf is available */
+#undef HAVE__BUILTIN_NEXTTOWARDF
+
+/* Define to 1 if __builtin_popcount is available */
+#undef HAVE__BUILTIN_POPCOUNT
+
+/* Define to 1 if __builtin_signbit is available */
+#undef HAVE__BUILTIN_SIGNBIT
+
+/* Define as const if the declaration of iconv() needs const. */
+#undef ICONV_CONST
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if binaries are installed in pkglibdir */
+#undef PKGLIB_INSTALL
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Disables vectorization */
+#undef VECTORIZATION_DISABLED
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const

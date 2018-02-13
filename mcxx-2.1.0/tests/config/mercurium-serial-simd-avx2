@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+# Loading some test-generators utilities
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/test-generators-utilities
+
+if [ "no" = "no" ];
+then
+    gen_ignore_test "Vectorization is disabled"
+    exit
+fi
+
+if [ "no" = "no" -o "yes" = "no" ];
+then
+    gen_ignore_test "Nanos++ or AVX2 support are disabled"
+    exit
+fi
+
+# Parsing the test-generator arguments
+parse_arguments $@
+
+if [ "$TG_ARG_SVML" = "yes" -a -z "" ];
+then
+    gen_ignore_test "ICC not enabled"
+    exit
+fi
+
+if [ "$TG_ARG_SVML" = "yes" -a "no" != yes ];
+then
+    gen_ignore_test "SVML not enabled"
+    exit
+fi
+
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/mercurium-libraries
+
+
+COMMON_NANOX_CFLAGS=-DNANOX
+
+if [ "$TG_ARG_SVML" != "yes" ];
+then
+
+cat <<EOF
+MCC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=mcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+MCXX="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=mcxx --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+
+compile_versions="\${compile_versions} nanox_mercurium"
+
+test_CC_nanox_mercurium="\${MCC}"
+test_CXX_nanox_mercurium="\${MCXX}"
+
+test_CFLAGS_nanox_mercurium="--simd --debug-flags=vectorization_verbose --openmp --avx2 -std=gnu99 ${COMMON_NANOX_CFLAGS}"
+test_CXXFLAGS_nanox_mercurium="--simd --debug-flags=vectorization_verbose --openmp --avx2 ${COMMON_NANOX_CFLAGS}"
+test_LDFLAGS_nanox_mercurium="/home/jmartinez/BSC/software/mcxx-2.1.0/lib/perish.o"
+
+EOF
+
+fi
+
+if [ ! -z "" ];
+then
+
+DISABLE_INTEL_INTRINSICS=""
+ICC_VERSION=$(icc --version | head -n 1 | sed -e "s/^icc (ICC) \([0-9]\+\)\(\.[0-9]\+\)*.*$/\1/i")
+if [ -n "$ICC_VERSION" -a "$ICC_VERSION" -le 15 ];
+then
+    DISABLE_INTEL_INTRINSICS="--disable-intel-intrinsics"
+fi
+
+if [ "$TG_ARG_SVML" = "yes" ]; then
+
+cat <<EOF
+
+IMCC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=imcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+compile_versions="\${compile_versions} nanox_imcc_svml"
+test_CC_nanox_imcc_svml="\${IMCC}"
+
+test_CFLAGS_nanox_imcc_svml="--simd --debug-flags=vectorization_verbose --openmp --avx2 --svml -std=gnu99  --enable-ms-builtins ${COMMON_NANOX_CFLAGS} ${DISABLE_INTEL_INTRINSICS}"
+test_CXXFLAGS_nanox_imcc_svml="--simd --debug-flags=vectorization_verbose --openmp --avx2 --svml -std=gnu99  --enable-ms-builtins ${COMMON_NANOX_CFLAGS} ${DISABLE_INTEL_INTRINSICS}"
+test_LDFLAGS_nanox_imcc_svml="/home/jmartinez/BSC/software/mcxx-2.1.0/lib/perish.o"
+
+compile_versions="\${compile_versions} nanox_imcc_svml_fast_math"
+test_CC_nanox_imcc_svml_fast_math="\${IMCC}"
+
+test_CFLAGS_nanox_imcc_svml_fast_math="--simd --debug-flags=vectorization_verbose --avx2 --openmp --svml --fast-math -std=gnu99  --enable-ms-builtins ${COMMON_NANOX_CFLAGS} ${DISABLE_INTEL_INTRINSICS}"
+test_CXXFLAGS_nanox_imcc_svml_fast_math="--simd --debug-flags=vectorization_verbose --avx2 --openmp --svml --fast-math -std=gnu99  --enable-ms-builtins ${COMMON_NANOX_CFLAGS} ${DISABLE_INTEL_INTRINSICS}"
+test_LDFLAGS_nanox_imcc_svml_fast_math="/home/jmartinez/BSC/software/mcxx-2.1.0/lib/perish.o"
+
+EOF
+
+else
+
+cat <<EOF
+
+IMCC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=imcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+compile_versions="\${compile_versions} nanox_imcc"
+test_CC_nanox_imcc="\${IMCC}"
+
+test_CFLAGS_nanox_imcc="--simd --debug-flags=vectorization_verbose --openmp --avx2 -std=gnu99 --Wn,-no-fast-transcendentals,-fp-model,precise --enable-ms-builtins ${COMMON_NANOX_CFLAGS} ${DISABLE_INTEL_INTRINSICS}"
+test_CXXFLAGS_nanox_imcc="--simd --debug-flags=vectorization_verbose --openmp --avx2 -std=gnu99 --Wn,-no-fast-transcendentals,-fp-model,precise --enable-ms-builtins ${COMMON_NANOX_CFLAGS} ${DISABLE_INTEL_INTRINSICS}"
+test_LDFLAGS_nanox_imcc="/home/jmartinez/BSC/software/mcxx-2.1.0/lib/perish.o"
+
+EOF
+
+fi
+
+fi
+
+cat <<EOF
+exec_versions="1thread"
+
+test_ENV_1thread="OMP_NUM_THREADS='1'"
+EOF

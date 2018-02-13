@@ -1,0 +1,37 @@
+# GCC
+[mcc : omp-base]
+language = C
+options =
+{simd} compiler_options = -flax-vector-conversions
+
+
+
+
+
+[mcxx : omp-base]
+language = C++
+{openmp|ompss-2} preprocessor_options = -include new
+{simd} compiler_options = -flax-vector-conversions
+preprocessor_name = @G++@
+compiler_name = @G++@
+linker_name = @G++@
+
+
+
+
+
+[mfc : omp-base]
+language = Fortran
+options = -I @PKGDATADIR@/fortran/openmp
+fortran_preprocessor_name = @GFORTRAN@
+fortran_preprocessor_options = -cpp -E
+compiler_name = @GFORTRAN@
+compiler_options = -frecursive
+linker_name = @GFORTRAN@
+linker_options =
+
+
+
+
+
+[mf95 : mfc]

@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+# Loading some test-generators utilities
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/test-generators-utilities
+
+
+# We cannot detect AVX2 at the moment
+gen_ignore_test "We cannot detect AVX2 at the moment"
+exit
+
+if [ "no" = "no" ];
+then
+    gen_ignore_test "Vectorization is disabled"
+    exit
+fi
+
+if [ "no" = "no" ];
+then
+    gen_ignore_test "MIC compilation is not enabled"
+    exit
+fi
+
+# Parsing the test-generator arguments
+parse_arguments $@
+
+SVML=
+if [ "$TG_ARG_SVML" = "yes" ];
+then
+    SVML="--svml --fast-math"
+fi
+
+if [ -n "" -a "no" = "yes" ];
+then
+cat <<EOF
+
+IMCC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=imcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+compile_versions="\${compile_versions} nanox_imcc"
+test_CC_nanox_imcc="\${IMCC}"
+
+test_CFLAGS_nanox_imcc="-O0 --simd --debug-flags=vectorization_verbose --openmp --avx2 ${SVML} --enable-ms-builtins ${PROGRAMMING_MODEL} ${COMMON_NANOX_CFLAGS}"
+test_CXXFLAGS_nanox_imcc="-O0 --simd --debug-flags=vectorization_verbose --openmp --avx2 ${SVML} --enable-ms-builtins ${PROGRAMMING_MODEL} ${COMMON_NANOX_CFLAGS}"
+
+test_LDFLAGS_nanox_imcc="-L/home/jmartinez/BSC/software/mcxx-2.1.0/lib"
+EOF
+
+
+if [ "no" != "no" ];
+then
+
+cat <<EOF
+runner="runner_sde"
+
+exec_versions="1thread 2thread 4thread"
+
+test_ENV_1thread="OMP_NUM_THREADS='1'"
+test_ENV_2thread="OMP_NUM_THREADS='2'"
+test_ENV_4thread="OMP_NUM_THREADS='4'"
+EOF
+
+fi
+
+fi
+
+
+if [ ! -z "" -a ! -z "" ];
+then
+cat <<EOF
+
+INTEL_RTL="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=iomp-imcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+compile_versions="\${compile_versions} intel_rtl"
+test_CC_intel_rtl="\${INTEL_RTL}"
+
+test_CFLAGS_intel_rtl="-O0 --simd --debug-flags=vectorization_verbose --openmp --avx2 ${SVML} --enable-ms-builtins ${PROGRAMMING_MODEL}"
+test_CXXFLAGS_intel_rtl="-O0 --simd --debug-flags=vectorization_verbose --openmp --avx2 ${SVML} --enable-ms-builtins ${PROGRAMMING_MODEL}"
+
+test_LDFLAGS_intel_rtl="-L/home/jmartinez/BSC/software/mcxx-2.1.0/lib"
+EOF
+
+
+if [ "no" != "no" -a ! -z "" ];
+then
+
+cat <<EOF
+runner="runner_sde"
+
+exec_versions="1thread 2thread 4thread"
+
+test_ENV_1thread="OMP_NUM_THREADS='1'"
+test_ENV_2thread="OMP_NUM_THREADS='2'"
+test_ENV_4thread="OMP_NUM_THREADS='4'"
+EOF
+
+fi
+
+fi

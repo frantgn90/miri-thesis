@@ -1,0 +1,3 @@
+gnulib/dummy.lo: gnulib/dummy.c /usr/include/stdc-predef.h
+
+/usr/include/stdc-predef.h:

@@ -1,0 +1,22 @@
+[ismpcc : imcc]
+{!ompss} options = --variable=copy_deps_by_default:0
+{ompss,!?copy-deps|!copy-deps} options = --variable=copy_deps_by_default:0
+{ompss,?copy-deps,copy-deps}   options = --variable=copy_deps_by_default:1
+
+
+
+
+
+[ismpcxx : imcxx]
+{!ompss} options = --variable=copy_deps_by_default:0
+{ompss,!?copy-deps|!copy-deps} options = --variable=copy_deps_by_default:0
+{ompss,?copy-deps,copy-deps}   options = --variable=copy_deps_by_default:1
+
+
+
+
+
+[ismpfc: imfc]
+{!ompss} options = --variable=copy_deps_by_default:0
+{ompss,!?copy-deps|!copy-deps} options = --variable=copy_deps_by_default:0
+{ompss,?copy-deps,copy-deps}   options = --variable=copy_deps_by_default:1

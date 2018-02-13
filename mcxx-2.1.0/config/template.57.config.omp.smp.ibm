@@ -1,0 +1,23 @@
+# IBM XL
+[xlsmpcc : xlmcc]
+{!ompss} options = --variable=copy_deps_by_default:0
+{ompss,!?copy-deps|!copy-deps} options = --variable=copy_deps_by_default:0
+{ompss,?copy-deps,copy-deps}   options = --variable=copy_deps_by_default:1
+
+
+
+
+
+[xlsmpcxx : xlmcxx]
+{!ompss} options = --variable=copy_deps_by_default:0
+{ompss,!?copy-deps|!copy-deps} options = --variable=copy_deps_by_default:0
+{ompss,?copy-deps,copy-deps}   options = --variable=copy_deps_by_default:1
+
+
+
+
+
+[xlsmpfc : xlmfc]
+{!ompss} options = --variable=copy_deps_by_default:0
+{ompss,!?copy-deps|!copy-deps} options = --variable=copy_deps_by_default:0
+{ompss,?copy-deps,copy-deps}   options = --variable=copy_deps_by_default:1

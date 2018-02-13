@@ -1,0 +1,6 @@
+Additional phase to mercurium source-to-source compiler that inject monitors 
+to loops automatically using the extrae API.
+
+For compiling this phase you just should set the --extrae-loops-enabled flag
+in configure time. It will install the new extraecc compiler. You can use this
+compiler as always.

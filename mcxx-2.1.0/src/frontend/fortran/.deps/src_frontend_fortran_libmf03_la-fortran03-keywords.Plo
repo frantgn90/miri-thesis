@@ -1,0 +1,204 @@
+src/frontend/fortran/src_frontend_fortran_libmf03_la-fortran03-keywords.lo: \
+ src/frontend/fortran/fortran03-keywords.c /usr/include/stdc-predef.h \
+ /usr/include/string.h /usr/include/features.h /usr/include/sys/cdefs.h \
+ /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-64.h \
+ /usr/lib/gcc/x86_64-redhat-linux/6.3.1/include/stddef.h \
+ /usr/include/xlocale.h /usr/include/bits/string.h \
+ /usr/include/bits/string2.h /usr/include/endian.h \
+ /usr/include/bits/endian.h /usr/include/bits/byteswap.h \
+ /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+ /usr/include/bits/byteswap-16.h /usr/include/stdlib.h \
+ src/frontend/fortran/fortran03-new-scanner.h \
+ support/gperf/gperf-compat-types.h /usr/include/stdio.h \
+ /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
+ /usr/lib/gcc/x86_64-redhat-linux/6.3.1/include/stdarg.h \
+ /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
+ /usr/include/bits/stdio.h src/frontend/cxx-macros.h config.h \
+ src/frontend/fortran/fortran03-lexer.h \
+ src/frontend/fortran/libmf03-common.h src/frontend/cxx-lexer.h \
+ src/frontend/libmcxx-common.h src/driver/cxx-driver-decls.h \
+ src/frontend/cxx-scope-decls.h \
+ /usr/lib/gcc/x86_64-redhat-linux/6.3.1/include/stdbool.h \
+ src/frontend/cxx-scope-fwd.h src/frontend/cxx-macros.h \
+ src/frontend/cxx-locus.h src/frontend/cxx-locus-inline.h \
+ /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h \
+ /usr/include/sys/types.h /usr/include/time.h /usr/include/sys/select.h \
+ /usr/include/bits/select.h /usr/include/bits/sigset.h \
+ /usr/include/bits/time.h /usr/include/sys/sysmacros.h \
+ /usr/include/bits/pthreadtypes.h /usr/include/alloca.h \
+ /usr/include/bits/stdlib-bsearch.h /usr/include/bits/stdlib-float.h \
+ lib/string_utils.h lib/libutils-common.h lib/red_black_tree.h \
+ lib/dhash_ptr.h src/frontend/cxx-ast-decls.h src/frontend/cxx-ast-fwd.h \
+ src/frontend/cxx-asttype.h src/frontend/cxx-instantiation-decls.h \
+ src/frontend/cxx-gccsupport-decls.h src/frontend/cxx-nodecl-decls.h \
+ src/frontend/cxx-nodecl-fwd.h src/frontend/cxx-typeenviron-decls.h \
+ src/frontend/cxx-type-fwd.h src/frontend/cxx-entrylist-decls.h \
+ src/frontend/cxx-type-decls.h src/frontend/cxx-cexpr-fwd.h \
+ src/frontend/cxx-cexpr-decls.h src/frontend/cxx-limits.h \
+ src/frontend/fortran/fortran03-scope-decls.h \
+ src/frontend/cxx-entity-specs.h src/frontend/cxx-buildscope-decls.h \
+ src/frontend/cxx-scope-decls.h src/frontend/cxx-nodecl-decls.h \
+ src/frontend/fortran/fortran03-typeenviron-decls.h \
+ src/frontend/fortran/fortran03-utils.h \
+ src/frontend/fortran/fortran03-parser-internal.h
+
+/usr/include/stdc-predef.h:
+
+/usr/include/string.h:
+
+/usr/include/features.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/include/gnu/stubs-64.h:
+
+/usr/lib/gcc/x86_64-redhat-linux/6.3.1/include/stddef.h:
+
+/usr/include/xlocale.h:
+
+/usr/include/bits/string.h:
+
+/usr/include/bits/string2.h:
+
+/usr/include/endian.h:
+
+/usr/include/bits/endian.h:
+
+/usr/include/bits/byteswap.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/typesizes.h:
+
+/usr/include/bits/byteswap-16.h:
+
+/usr/include/stdlib.h:
+
+src/frontend/fortran/fortran03-new-scanner.h:
+
+support/gperf/gperf-compat-types.h:
+
+/usr/include/stdio.h:
+
+/usr/include/libio.h:
+
+/usr/include/_G_config.h:
+
+/usr/include/wchar.h:
+
+/usr/lib/gcc/x86_64-redhat-linux/6.3.1/include/stdarg.h:
+
+/usr/include/bits/stdio_lim.h:
+
+/usr/include/bits/sys_errlist.h:
+
+/usr/include/bits/stdio.h:
+
+src/frontend/cxx-macros.h:
+
+config.h:
+
+src/frontend/fortran/fortran03-lexer.h:
+
+src/frontend/fortran/libmf03-common.h:
+
+src/frontend/cxx-lexer.h:
+
+src/frontend/libmcxx-common.h:
+
+src/driver/cxx-driver-decls.h:
+
+src/frontend/cxx-scope-decls.h:
+
+/usr/lib/gcc/x86_64-redhat-linux/6.3.1/include/stdbool.h:
+
+src/frontend/cxx-scope-fwd.h:
+
+src/frontend/cxx-macros.h:
+
+src/frontend/cxx-locus.h:
+
+src/frontend/cxx-locus-inline.h:
+
+/usr/include/bits/waitflags.h:
+
+/usr/include/bits/waitstatus.h:
+
+/usr/include/sys/types.h:
+
+/usr/include/time.h:
+
+/usr/include/sys/select.h:
+
+/usr/include/bits/select.h:
+
+/usr/include/bits/sigset.h:
+
+/usr/include/bits/time.h:
+
+/usr/include/sys/sysmacros.h:
+
+/usr/include/bits/pthreadtypes.h:
+
+/usr/include/alloca.h:
+
+/usr/include/bits/stdlib-bsearch.h:
+
+/usr/include/bits/stdlib-float.h:
+
+lib/string_utils.h:
+
+lib/libutils-common.h:
+
+lib/red_black_tree.h:
+
+lib/dhash_ptr.h:
+
+src/frontend/cxx-ast-decls.h:
+
+src/frontend/cxx-ast-fwd.h:
+
+src/frontend/cxx-asttype.h:
+
+src/frontend/cxx-instantiation-decls.h:
+
+src/frontend/cxx-gccsupport-decls.h:
+
+src/frontend/cxx-nodecl-decls.h:
+
+src/frontend/cxx-nodecl-fwd.h:
+
+src/frontend/cxx-typeenviron-decls.h:
+
+src/frontend/cxx-type-fwd.h:
+
+src/frontend/cxx-entrylist-decls.h:
+
+src/frontend/cxx-type-decls.h:
+
+src/frontend/cxx-cexpr-fwd.h:
+
+src/frontend/cxx-cexpr-decls.h:
+
+src/frontend/cxx-limits.h:
+
+src/frontend/fortran/fortran03-scope-decls.h:
+
+src/frontend/cxx-entity-specs.h:
+
+src/frontend/cxx-buildscope-decls.h:
+
+src/frontend/cxx-scope-decls.h:
+
+src/frontend/cxx-nodecl-decls.h:
+
+src/frontend/fortran/fortran03-typeenviron-decls.h:
+
+src/frontend/fortran/fortran03-utils.h:
+
+src/frontend/fortran/fortran03-parser-internal.h:

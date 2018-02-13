@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+/home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/mercurium-nanos6 ompss-2 $@

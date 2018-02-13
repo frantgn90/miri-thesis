@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+# Loading some test-generators utilities
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/test-generators-utilities
+
+if [ "no" = "no" ];
+then
+    gen_ignore_test "Vectorization is disabled"
+    exit
+fi
+
+if [ "no" = "no" ];
+then
+
+    gen_ignore_test "MIC compilation is disabled"
+    exit
+fi
+
+# if [ -n "" -a "no" = "yes" ];
+# then
+# cat <<EOF
+# 
+# IMCC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=imcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+# compile_versions="\${compile_versions} nanox_imcc"
+# test_CC_nanox_imcc="\${IMCC}"
+# 
+# if [ "$1" = "svml" ];
+# then
+# test_CFLAGS_nanox_imcc="-O0 --simd --debug-flags=vectorization_verbose --openmp --mmic --svml --fast-math --enable-ms-builtins ${PROGRAMMING_MODEL} ${COMMON_NANOX_CFLAGS}"
+# test_CXXFLAGS_nanox_imcc="-O0 --simd --debug-flags=vectorization_verbose --openmp --mmic --svml --fast-math --enable-ms-builtins ${PROGRAMMING_MODEL} ${COMMON_NANOX_CFLAGS}"
+# else
+# test_CFLAGS_nanox_imcc="-O0 --simd --debug-flags=vectorization_verbose --openmp --mmic --enable-ms-builtins ${PROGRAMMING_MODEL} ${COMMON_NANOX_CFLAGS}"
+# test_CXXFLAGS_nanox_imcc="-O0 --simd --debug-flags=vectorization_verbose --openmp --mmic --enable-ms-builtins ${PROGRAMMING_MODEL} ${COMMON_NANOX_CFLAGS}"
+# fi
+# test_LDFLAGS_nanox_imcc="-L/home/jmartinez/BSC/software/mcxx-2.1.0/lib"
+# EOF
+# 
+# 
+# if [ "no" != "no" ];
+# then
+# 
+# cat <<EOF
+# runner="runner_ssh"
+# ssh_host="no"
+# ssh_remote_commands="source \$HOME/.profile"
+# 
+# exec_versions="1thread 122thread 244thread"
+# 
+# test_ENV_1thread="OMP_NUM_THREADS='1'"
+# test_ENV_122thread="OMP_NUM_THREADS='122'"
+# test_ENV_244thread="OMP_NUM_THREADS='244'"
+# EOF
+# else
+# 
+# cat<<EOF
+# test_noexec=yes
+# EOF
+# 
+# fi
+# 
+# fi
+
+# Parsing the test-generator arguments
+parse_arguments $@
+
+if [ ! -z "" -a ! -z "" ];
+then
+
+DISABLE_INTEL_INTRINSICS=""
+ICC_VERSION=$(icc --version | head -n 1 | sed -e "s/^icc (ICC) \([0-9]\+\)\(\.[0-9]\+\)*.*$/\1/i")
+if [ -n "$ICC_VERSION" -o "$ICC_VERSION" -le 15 ];
+then
+    DISABLE_INTEL_INTRINSICS="--disable-intel-intrinsics"
+fi
+
+SVML=
+if [ "$TG_ARG_SVML" = "yes" ];
+then
+    SVML="--svml --fast-math"
+fi
+
+cat <<EOF
+
+INTEL_CC="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=iomp-imcc --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+INTEL_CXX="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --profile=iomp-imcxx --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+compile_versions="\${compile_versions} intel_rtl"
+test_CC_intel_rtl="\${INTEL_CC}"
+test_CXX_intel_rtl="\${INTEL_CXX}"
+
+
+test_CFLAGS_intel_rtl="-O0 --simd --debug-flags=vectorization_verbose --openmp --mmic ${SVML} ${DISABLE_INTEL_INTRINSICS} --enable-ms-builtins   ${PROGRAMMING_MODEL}"
+test_CXXFLAGS_intel_rtl="-O0 --simd --debug-flags=vectorization_verbose --openmp --mmic ${SVML} ${DISABLE_INTEL_INTRINSICS} --enable-ms-builtins ${PROGRAMMING_MODEL}"
+test_LDFLAGS_intel_rtl="-L/home/jmartinez/BSC/software/mcxx-2.1.0/lib"
+EOF
+
+
+if [ "no" != "no" -a ! -z "" ];
+then
+
+cat <<EOF
+runner="runner_ssh"
+ssh_host="no"
+ssh_remote_commands="source \$HOME/.profile"
+
+exec_versions="1thread 122thread 244thread"
+
+test_ENV_1thread="OMP_NUM_THREADS='1'"
+test_ENV_122thread="OMP_NUM_THREADS='122'"
+test_ENV_244thread="OMP_NUM_THREADS='244'"
+EOF
+else
+
+cat<<EOF
+test_noexec=yes
+EOF
+
+fi
+
+fi
+

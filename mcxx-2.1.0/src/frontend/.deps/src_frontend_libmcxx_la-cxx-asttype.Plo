@@ -1,0 +1,14 @@
+src/frontend/src_frontend_libmcxx_la-cxx-asttype.lo: \
+ src/frontend/cxx-asttype.c /usr/include/stdc-predef.h \
+ src/frontend/cxx-asttype.h src/frontend/libmcxx-common.h \
+ src/frontend/cxx-macros.h config.h
+
+/usr/include/stdc-predef.h:
+
+src/frontend/cxx-asttype.h:
+
+src/frontend/libmcxx-common.h:
+
+src/frontend/cxx-macros.h:
+
+config.h:

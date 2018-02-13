@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Loading some test-generators utilities
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/test-generators-utilities
+
+if [ yes = no ];
+then
+    gen_ignore_test "Fortran tests are disabled"
+    exit
+fi
+
+# Basic mercurium generator with Fortran support
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/mercurium $@
+
+if [ yes = "yes" ];
+then
+cat <<EOF
+test_FFLAGS="-DTEST_FORTRAN_NEW_SCANNER \${test_FFLAGS}"
+EOF
+fi
+
+cat <<EOF
+test_FFLAGS="--typecheck --fpc=/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/fortran/.libs/mf03-prescanner \${test_FFLAGS}"
+EOF

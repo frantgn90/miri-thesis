@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# Loading some test-generators utilities
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/test-generators-utilities
+
+# Parsing the test-generator arguments
+parse_arguments $@
+
+# Basic mercurium generator
+source /home/jmartinez/BSC/software/mcxx-2.1.0/tests/config/mercurium-libraries
+
+cat <<EOF
+MCXX="/home/jmartinez/BSC/software/mcxx-2.1.0/src/driver/plaincxx --output-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/tests --config-dir=/home/jmartinez/BSC/software/mcxx-2.1.0/config --verbose"
+test_CC="\${MCXX} --profile=plaincc"
+test_CXX="\${MCXX} --profile=plaincxx -std=c++03"
+test_FC="\${MCXX} --profile=plainfc"
+
+if [ "$test_nolink" == "no" -o "$TG_ARG_RUN" = "yes" ];
+then
+   unset test_nolink
+else
+   test_nolink=yes
+fi
+
+EOF

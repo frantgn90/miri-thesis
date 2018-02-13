@@ -1,0 +1,20 @@
+# OpenCL profile
+[oclmcc : mcc]
+
+
+
+
+
+[oclmcxx : mcxx]
+
+
+
+
+
+[oclmfc : mfc]
+
+
+
+
+
+[oclmf95 : oclmfc]
