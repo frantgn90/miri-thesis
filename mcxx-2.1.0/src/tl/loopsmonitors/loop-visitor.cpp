@@ -87,9 +87,15 @@ namespace TL {
         std::cout << "!!!!!!!!!!!!!!!!" << std::endl;
     }
 
-    class LoopsVisitor : public Nodecl::ExhaustiveVisitor<void>
+    class ExtraeLoopsVisitor : public Nodecl::ExhaustiveVisitor<void>
     {
+        private:
+            std::string _extrae_api_call;
         public:
+            ExtraeLoopsVisitor(std::string extrae_api_call)
+            {
+                this->_extrae_api_call = extrae_api_call;
+            }
             virtual void visit_pre(const Nodecl::ForStatement &node)
             {
                 // It can be the loop-id for the moment.
@@ -98,13 +104,13 @@ namespace TL {
 
                 Source src_loop_init;
                 src_loop_init 
-                    <<      "Extrae_eventandcounters("
+                    <<      this->_extrae_api_call << "("
                     <<          (EXTRAE_LOOPEVENT+loop_nested_level)
                     <<          ", " << loop_id << ");";
 
                 Source src_loop_fini;
                 src_loop_fini 
-                    <<      "Extrae_eventandcounters("
+                    <<      this->_extrae_api_call << "("
                     <<          (EXTRAE_LOOPEVENT+loop_nested_level)
                     <<          ", " << EXTRAE_EXITEVENT << ");";
 
@@ -146,11 +152,11 @@ namespace TL {
                 Source src;
                 src
                     << "{"
-                    <<      "Extrae_eventandcounters("
+                    <<      this->_extrae_api_call << "("
                     <<          (EXTRAE_ITEREVENT+loop_nested_level)
                     <<          ", ++" << new_it_var_name  << ");"
                     <<      statement_placeholder(new_statement)
-                    <<      "Extrae_eventandcounters("
+                    <<      this->_extrae_api_call << "("
                     <<          (EXTRAE_ITEREVENT+loop_nested_level)
                     <<          "," << EXTRAE_EXITEVENT << ");"
                     << "}";
@@ -176,26 +182,43 @@ namespace TL {
                 std::bind(&VisitorLoopPhase::set_all_loops_instrumentation,
                     this, std::placeholders::_1));
 
+        register_parameter("with_hwc",
+                "WetherExtrae events will also provide hardware counters "\
+                "information or not",
+                _with_hw_counters_str,
+                "0")
+            .connect(
+                std::bind(&VisitorLoopPhase::set_with_hwc_instrumentation,
+                    this, std::placeholders::_1));
+
         loop_nested_level = 0;
     }
     VisitorLoopPhase::~VisitorLoopPhase()
     {
     }
-
     void VisitorLoopPhase::set_all_loops_instrumentation(const std::string& str)
     {
         parse_boolean_option("all_loops",
                 str, _instrument_all_loops, "Assuming true");
-
+    }
+    void VisitorLoopPhase::set_with_hwc_instrumentation(const std::string& str)
+    {
+        parse_boolean_option("with_hwc",
+                str, _with_hw_counters, "Assuming true");
     }
     void VisitorLoopPhase::run(TL::DTO& dto)
     {
         Nodecl::NodeclBase top_level = 
             *std::static_pointer_cast<Nodecl::NodeclBase>(dto["nodecl"]);
 
+        if (this->_with_hw_counters)
+            this->_extrae_api_call = "Extrae_eventandcounters";
+        else
+            this->_extrae_api_call = "Extrae_event";
+
         if (this->_instrument_all_loops)
         {
-            LoopsVisitor loops_visitor;
+            ExtraeLoopsVisitor loops_visitor(this->_extrae_api_call);
             loops_visitor.walk(top_level);
         }
         else
