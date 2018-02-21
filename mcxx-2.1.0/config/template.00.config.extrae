@@ -2,33 +2,35 @@
 [extraecc]
 language = C
 options =
-preprocessor_name = @GCC@
+preprocessor_name = @MPICC@
 preprocessor_options = -E -I@EXTRAE_INCLUDE@ -include extrae.h
-compiler_name = @GCC@
+compiler_name = @MPICC@
 compiler_options =
-linker_name = @GCC@
-linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lseqtrace
+linker_name = @MPICC@
+linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lmpitrace
 compiler_phase = libloop_visitor
 
-#[plaincxx]
-#language = C++
-#options =
-#preprocessor_name = @G++@
-#preprocessor_options = -E
-#compiler_name = @G++@
-#compiler_options =
-#linker_name = @G++@
-#linker_options =
-#
-#[plainfc]
-#language = Fortran
-#options =
-#fortran_preprocessor_name = @GFORTRAN@
-#fortran_preprocessor_options = -cpp -E
-#compiler_name = @GFORTRAN@
-#compiler_options =
-#linker_name = @GFORTRAN@
-#linker_options =
-#
-#[plainf95 : plainfc]
+[extraecxx]
+language = C++
+options =
+preprocessor_name = @MPICXX@
+preprocessor_options = -E -I@EXTRAE_INCLUDE@ -include extrae.h
+compiler_name = @MPICXX@
+compiler_options =
+linker_name = @MPICXX@
+linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lmpitrace
+compiler_phase = libloop_visitor
+
+[extraefc]
+language = Fortran
+options = -I @MPI_INCLUDES@
+preprocessor_name = @MPIFORT@
+preprocessor_options = -E -I@EXTRAE_INCLUDE@ -include extraef.h
+compiler_name = @MPIFORT@
+compiler_options =
+linker_name = @MPIFORT@
+linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lmpitracef
+compiler_phase = libloop_visitor
+
+[extraef95 : extraefc]
 

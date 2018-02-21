@@ -241,7 +241,7 @@ AM_CONDITIONAL([EXTRAE_LOOPS_ENABLED], test x$extrae_loops_support = xyes)
 
 if test x"$extrae_loops_support" != x;
 then
-    COMPILER_NAMES="${COMPILER_NAMES} extraecc"
+    COMPILER_NAMES="${COMPILER_NAMES} extraecc extraecxx extraefc"
     INSTALL_CONFIG_FILES="${INSTALL_CONFIG_FILES} 00.config.extrae"
 fi
 
