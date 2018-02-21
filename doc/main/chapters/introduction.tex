@@ -231,7 +231,7 @@ sequences algorithms described in section \ref{ss:temporal_sequences} seems to
 be the better choice for structure detection, it has been considered to explain
 briefly the other types.
 
-\subsection{Formal notation}
+\subsection{Formal notation}\label{ss:formal_notation}
 
 Items are literals that belongs to a given alphabet $I=\{i_{1}, i_{2}, \dots,
 i_{m}\}$. Then an event is stated as a non-empty unordered set of items
@@ -267,7 +267,7 @@ events are sets of one item. If we use the whole callpath instead of just the
 MPI call and items are the different calls, now events can not be unordered set
 of items but ordered. 
 
-\subsection{Apriori-based algorithms}
+\subsection{Apriori-based algorithms}\label{ss:apriori_based}
 
 Mining frequent itemsets is the core of later analysis like mining association
 rules, correlations, sequential patterns and so on. Apriori first proposal was
@@ -374,7 +374,8 @@ effects or results of something will be [\dots]”}. In this case, the name come
 from the generation-and-test technique. A priori, all candidates formed by
 (k-1)-itemsets combinations are k-itemsets but it have to be tested.
 
-\subsection{Projection-based pattern growth algorithms}
+\subsection{Projection-based pattern growth
+algorithms}\label{ss:projection_based}
 
 Candidates generation presents to be critical for apriori algorithms and even if
 optimizations in the prune process has been introduced, the generated candidates
@@ -488,7 +489,8 @@ The frequent pattern derived from this analysis is $(fcam:3)$.
 \subsection{Temporal sequences}\label{ss:temporal_sequences}
 
 In this section will be shown the basis of these algorithms that concers about
-the periodicity of a certain patterns over the time. These are obviusly the
+the periodicity of a certain patterns over the time (generalizing, over any
+metric from which the sorting is done). These are obviusly the
 algorithms that best fits to the needs for trace structure detection. First
 developed framework for datasets considered to be episodic was presented by
 \cite{mannila1995discovering}.
@@ -496,8 +498,9 @@ developed framework for datasets considered to be episodic was presented by
 Two previous approaches were concerning about the analysis of arbirary ordered
 sequences of data, however, this approach considers order as an inherent
 characteristic of the sequential structure. This main difference leads to a
-different approach of sequential pattern mining and introduce new ideas like
-sliding windows. Nevertheless some important components are shared among them like:
+slightly different approach of sequential pattern mining and introduce new ideas 
+like sliding windows. Nevertheless some important components are shared among 
+them like:
 \begin{enumerate*}[label=(\roman*)]
   \item Frequency threshold, that is defined as the minimum number of times a
     sequence have to appear. It is analogous to minimum support of apriori and
@@ -508,14 +511,106 @@ sliding windows. Nevertheless some important components are shared among them li
     least as frequent as the superepisode, for candidates generation.
 \end{enumerate*}
 
-\subsection{Use in structure detection and discussion}
+The main objective of these sort of algorithms is: Given a class of episodes, an
+input sequence of events, a window width, and a frequency threshold, find all
+episodes of the class that occur frequently enough. Before go to the actual
+algorithm let's take a look to the main concepts.
 
-Seems that projection-based patter growth algorithm is what is most used in
-semantic structure detection. Reference to state of the art for that. Discuss
-how both types of algorithms can be used for this purpose and also and more
-important discuss the complexity of those algorithms. Maybe just an introduction
-of a real discussion because it should be done on methodology chapter.
+\subsubsection{Temporal sequences formal notation}
 
+On section \ref{ss:formal_notation} have been shown the typical formal notation
+for pattern mining, now this notation is extended for explaining the new
+concepts that arise from the temporal sequences minning.
+
+Given a class of elementary event types $E_{0}$, an event is a pair $(e,t)$
+where $e \in E_{0}$ and $t$ is an integer that represents the instant when
+the event appears. An event sequence is a triple $S=(T_{s},T^{s},S)$ where
+$T_{s}$ is the starting time, $T^{s}$ is the closing time and $S$ is an ordered
+sequence of events.
+
+A windows on $S=(T_{s},T^{s},S)$ is a sequence of events $W=(T_{w},T^{w},W')$
+where $T_{s} \leq T_{w}$,$T^{w} \leq T^{s}$ and $W'$ consists on those events
+$(e_{i},t_{i})$ where $T_{w} \leq t_{i} < T^{w}$. The width of windows is
+$width(W)=T^{w}-T_{w}=w$ and the set of all windows in a sequence S is
+$aw(S,w)$. 
+
+Episodes are collections of events occurring frequently close to each other, in
+general, are partially ordered sets of events that can be described as a
+directed acyclic graph. Is denoted as $\varphi =(V,\le,g)$ where V is a set of
+nodes, a partial order $\le$ on V and a function $g:V \rightarrow E_{0}$
+associating each node with an event type. In general V also can contain other
+episodes forming composite episodes. Episodes can be parallel or sequential.
+Is parallel when the partial order relation is trivial and an episode is
+sequential if the partial order relation is a total order. The crucial
+observation is that all episodes can be described as a composition of parallel
+and sequential episodes.
+
+Last definition is the episode frequency that is described as the ration between
+the number of windows containing a given episode and the total number of
+windows:
+$$
+fr(\varphi,S,w)=\frac{|\text{\{}W \in aw(S,w) | \varphi \text{ occurs in }
+W\text{\}}|}{|aw(S,w)|}
+$$
+So an episode is said to be frequent if $fr(\varphi,S,w)$ is above $min_freq$
+that is provided by the user.
+
+\subsubsection{Algorithm}
+
+The entire sequence is traversed by a sliding windows and for every one of these
+windows the analysis looking for episodes is done. The basis of the algorithm 
+presented here is shared with the already presented
+in section \ref{ss:apriori_based} in the sense that they are based on an
+iterative process that consists on an alternation between building candidates 
+and recognize frequent episodes by scanning the input data. Unlike in Apriori
+algorithm, in this case not all the input data is scanned because the target is 
+to get those episodes which events occurs close enough, so this analysis is done
+just on a given sliding windows. 
+
+As has been mentioned above, all episodes can be viewed as a composite episode
+consisted by parallel and serial episodes. Different methods are used for the
+detection. 
+\begin{enumerate}[label=\roman*)]
+  \item Parallel episodes: For candidate parallel episode there is a counter
+    that indicates how many events of episode appears into the windows. If the
+    counteris equal to $|\varphi|$ the index of windows is saved because it
+    indicates, the episode has been detected. When the counter is decremented
+    it means that we can add one more windows where this episode is.
+  \item Serial episodes: Serial candidat episodes are recognized by using state
+    automata. A new instance of the automata is initialized whenever first event
+    of episode appears on the sliding windows. This automata reach the accepting
+    state when all events are present (and have been arising following a certain
+    order) and is deactivated when the first element
+    that motivates its actiation leaves the window. When an automata is removed
+    and there is no other automata for this episode, the number of occurrences
+    is incremented.
+\end{enumerate}
+
+Instead of applying a naïve approach where every windows is scanned
+completelly, episodes are recognized in sequences in an incremental fashion. 
+Two adjacent windows are typically very similar so after
+recognizing episodes in a windows, incremental updates in data structures can be
+done for the next one.
+
+
+\subsection{Algorithm complexity}
+
+% TODO !!! Here I have to analize the complexity in terms of time of the
+% presented algorithms. This is a key section since this is the reason because I
+% wanted to research about using clustering instead these algorithms
+
+The pattern mining techniques has proved valuable but in some cases, particulary
+for candidate generation and test techniques, and when low support is used, the
+performance can degrade dramatically.
+
+In apriori algorithm presented in \ref{ss:apriori_based} has been observed that
+the number of candidates needs to be generated for a relatively long itemsets is
+really huge and presents an exponential growth with the number of items in the
+itemset. Additionally for every one of these candidates, data needs to be
+traversed again on the test phase.
+
+Projection-based pattern growth algorithms presented in
+\ref{ss:projection_based}
 
 \section{Clustering techniques}
 
