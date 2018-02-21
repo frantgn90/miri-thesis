@@ -7,7 +7,7 @@
 >
 
   <mpi enabled="yes">
-    <counters enabled="no" />
+    <counters enabled="yes" />
   </mpi>
 
   <openmp enabled="no" ompt="no">

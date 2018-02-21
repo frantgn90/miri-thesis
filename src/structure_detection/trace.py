@@ -6,6 +6,7 @@ import glob
 import re
 import os
 import logging
+import copy
 from multiprocessing import Pool
 
 from utilities import ProgressBar
@@ -118,7 +119,6 @@ class iter_event(event):
         self.type = self.fields[6]
         self.nested_level = int(self.type)-99100000
         self.iterid = self.fields[7]
-        pass
 
 class glop_event(event):
     def __init__(self, line, pcf):
@@ -291,6 +291,7 @@ class trace(object):
             mpi_opened = [False for i in range(self.tasks)]
             burst_last = [None for i in range(self.tasks)]
             callstack_last = [None for i in range(self.tasks)]
+            loop_stack = [[] for i in range(self.tasks)]
 
             file_size = os.stat(tracefile_name).st_size
             trace_simple_name = tracefile_name.split("/")[-1]
@@ -339,7 +340,8 @@ class trace(object):
                             else:
                                 assert not mpi_opened[rec.task_id-1]
                                 calls = zip(rec.events["LINE"], rec.events["CALL"])
-                                calls = map(lambda x: (x[0].line,x[1].call_name,x[0].file,None), calls)
+                                calls = map(lambda x: (x[0].line,x[1].call_name
+                                    ,x[0].file,None), calls)
                                 calls = list(calls); calls.reverse()
                                 mainindex = 0
                                 for i,c in enumerate(calls):
@@ -363,6 +365,9 @@ class trace(object):
                                     cs.partner.append(comm.task_recv_id)
                                     cs.metrics[rec.task_id-1]["mpi_msg_size"] = comm.size
 
+                                # Loopid information
+                                cs.loop_info = copy.copy(loop_stack[rec.task_id-1])
+
                                 callstack_last[rec.task_id-1] = cs
                                 mpi_opened[rec.task_id-1] = True
 
@@ -379,9 +384,14 @@ class trace(object):
 
                             callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                                     .update({x.type:x.value for x in rec.events["GLOP"]})
-                        #if len(rec.events["LOOP"]) > 0:
-                        #    for l in rec.events["LOOP"]:
-                        #        print (l.loopid)
+                        if len(rec.events["LOOP"]) > 0:
+                            assert len(rec.events["LOOP"]) == 1
+                            loop = rec.events["LOOP"][0]
+
+                            if loop.loopid == "0":
+                                loop_stack[rec.task_id-1].pop()
+                            else:
+                                loop_stack[rec.task_id-1].append(loop.loopid)
 
         return callstack_pool[:self.get_ntasks()]
 
@@ -413,7 +423,7 @@ class trace(object):
     def get_taskids(self):
         if self.splittrace:
             return list(map(lambda x: int(x.split(".")[-1]), self.prv_files))
-        return range(self.tasks)
+        return list(range(self.tasks))
         
 
  

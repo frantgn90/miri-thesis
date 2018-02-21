@@ -21,6 +21,12 @@ class callstack_ordered_list(object):
             self.callstack_list = callstacks
         self.callstack_list.sort()
 
+    def check_loop_id(self):
+        css = self.get_flat_callstack_list()
+        ref_loop_id = css[0].loop_info
+        same_loop_id = list(map(lambda x: x.loop_info == ref_loop_id, css))
+        return all(same_loop_id)
+
     def add_callstack(self, callstack):
         assert not callstack in self.callstack_list
 
@@ -318,6 +324,17 @@ class loop (callstack_ordered_list):
 
         logging.debug("New loop with {0} iterations."
                 .format(self.iterations))
+
+    def check_loop_id(self):
+        # Just check loop_id of this loop callstack and recursively
+        # call subloops check_loop_id
+
+        loop_cs = list(filter(lambda x: type(x) == callstack))
+        if len(loop_cs) > 0:
+            ref_loop_info = loop_cs[0].loop_info
+            res = list(map(lambda x: x.loop_info == ref_loop_indo, loop_cs))
+            return all(res)
+        return True
 
     def set_hidden_loop(self):
         assert self._id == -1
@@ -659,7 +676,6 @@ class loop (callstack_ordered_list):
                 item.callstack_set_owner_loop(self)
             else:
                 item.my_loop = self
-                
 
     def __len__(self):
         return len(self.callstack_list)

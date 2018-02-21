@@ -105,6 +105,7 @@ class callstack(object):
         
         self.signature_hash = shash
         self.signature = str(self.rank)+"#"+signature
+        self.loop_info = None
 
     @classmethod
     def from_trace(cls, rank, instant, lines, calls, files):
@@ -180,6 +181,8 @@ class callstack(object):
     def compact_with(self, other):
         ''' Diverge from previous call in the sense this merge procedure is for the '''
         ''' same path but different ranks '''
+        assert self.get_signature().split("#")[1:] == other.get_signature().split("#")[1:]
+        assert self.rank != other.rank
         self.compacted_ranks.append(other.rank)
         self.metrics[other.rank] = other.metrics[other.rank]
         self.burst_metrics[other.rank] = other.burst_metrics[other.rank]
@@ -338,6 +341,7 @@ class callstack(object):
 
         result = callstack(0, 0, result)
         if len(result) > 0:
+            result.loop_info = self.loop_info
             result.rank = self.rank
             result.repetitions = self.repetitions
             result.instants = self.instants
@@ -366,6 +370,7 @@ class callstack(object):
 
         result = callstack(0, 0, result)
         if len(result) > 0:
+            result.loop_info = self.loop_info
             result.rank = self.rank
             result.repetitions = self.repetitions
             result.instants = self.instants
@@ -397,6 +402,7 @@ class callstack(object):
         result = callstack(0,0, calls)
 
         if len(result) > 0:
+            result.loop_info = self.loop_info
             result.rank = self.rank
             result.repetitions = self.repetitions
             result.instants = self.instants

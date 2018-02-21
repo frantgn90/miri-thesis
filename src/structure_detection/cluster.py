@@ -294,6 +294,18 @@ class cluster (object):
     def __lt__(self, other):
         pass
 
+    def check_loop_id(self):
+        ref_loop_id = self.callstacks[0].loop_info
+        same_loop_id = list(map(lambda x: x.loop_info == ref_loop_id, 
+            self.callstacks))
+        return all(same_loop_id)
+
+    def check_structure(self):
+        res = []
+        for loop in self.loops:
+            res.append(loop.check_loop_id())
+
+        return all(res)
 
 def merge_clusters(clusters_pool):
     logging.debug("Classifying clusters by delta.")

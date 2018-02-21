@@ -218,11 +218,10 @@ def main(argc, argv):
     # Take into account just the parsed ranks (in case partial files are used)
     plane_cs_pool = []
     for rank in traceobj.get_taskids():
-        plane_cs_pool.extend(list(callstacks_pool[0].values()))
+        plane_cs_pool.extend(list(callstacks_pool[rank].values()))
 
     # Just for historical naming...
     callstacks_pool = plane_cs_pool
-
 
     ''' 4. Phases recognition ----- --------------------------------------- '''
     logging.info("Phases recognition...")
@@ -253,6 +252,8 @@ def main(argc, argv):
                 l._id, l.original_iterations))
     logging.info("Done")
 
+   
+
     ''' 6. Merging clusters ----------------------------------------------- '''
     logging.info("Merging clusters...")
     wfprof.step_init(5)
@@ -260,7 +261,7 @@ def main(argc, argv):
     wfprof.step_fini(5)
     logging.info("Done")
 
-    ''' 7. Inter-node reduction ------------------------------------------- '''
+    ''' 7. Inter-rank reduction ------------------------------------------- '''
     logging.info("Postprocessing callstacks...")
     wfprof.step_init(6)
     for cluster_obj in top_level_clusters:
@@ -277,6 +278,35 @@ def main(argc, argv):
 
     wfprof.step_fini(6)
     logging.info("Done")
+
+    ''' 7.1. Clustering sanity check --------------------------------------'''
+    ''' This sanity check requires to compile the binary with extraecc/    '''
+    ''' extraecxx/extraefc for automatic loops monitoring. These monitors  '''
+    ''' will provide us information about on what loop we are.             '''
+    ''' If clustering went right, all calls on same cluster will be from   '''
+    ''' the same loop, so if not it is an error and tuning of clustering   '''
+    ''' parameters should be explored.                                     '''
+    ''' If no loop-id information is available in trace, this step is not  '''
+    ''' usable.                                                            '''
+    ''' -------------------------------------------------------------------'''
+ 
+    ''' Testing for aliasing '''
+    for cluster in clusters_pool:
+        if not cluster.check_loop_id():
+             logging.error("Missarrangement of callstacks for cluster {0}"
+                     .format(cluster.cluster_id))
+        else:
+            logging.debug("Nice clustering for cluster {0}"
+                    .format(cluster.cluster_id))
+
+
+    #for cluster in clusters_pool:
+    #    res = cluster.check_structure()
+    #    if res:
+    #        print ("Cluster {0}: OK".format(cluster.cluster_id))
+    #    else:
+    #        print ("Cluster {0}: Error".format(cluster.cluster_id))
+
 
     ''' 8. Derivating metrics --------------------------------------------- '''
     logging.info("Derivating metrics")

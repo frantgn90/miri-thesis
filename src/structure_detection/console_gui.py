@@ -250,6 +250,11 @@ class console_gui(gui):
             else:
                 self.metric = ""
 
+            if (len(self.call.my_callstack.loop_info) > 0 
+                    and self.call.mpi_call):
+                self.third_col = "{0} - {1}".format(
+                        self.third_col, self.call.my_callstack.loop_info)
+
         def parse_partners(self, partners, show_ranks):
             res = ""
             for pr in partners:
