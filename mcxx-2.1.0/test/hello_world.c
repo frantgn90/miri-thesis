@@ -6,6 +6,12 @@
  */
 
 #include <stdio.h>
+#include <mpi.h>
+
+void just_barrier()
+{
+    MPI_Barrier(MPI_COMM_WORLD);
+}
 
 int main(int argc, char **argv)
 {
@@ -15,11 +21,8 @@ int main(int argc, char **argv)
             printf("Hola manola!\n");
     }
     
-    #pragma extrae loop
-    {
     for (int i=0; i<2; ++i)
-        printf("Hola manola!\n");
-    }
+        just_barrier();
 
     return 0;
 }
