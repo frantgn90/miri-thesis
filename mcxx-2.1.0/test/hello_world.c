@@ -15,6 +15,7 @@ void just_barrier()
 
 int main(int argc, char **argv)
 {
+    MPI_Init(&argc, &argv);
     for (int i=0; i<2; ++i)
     {
         for (int j=0; j<2; ++j)
@@ -24,6 +25,7 @@ int main(int argc, char **argv)
     for (int i=0; i<2; ++i)
         just_barrier();
 
+    MPI_Finalize();
     return 0;
 }
 

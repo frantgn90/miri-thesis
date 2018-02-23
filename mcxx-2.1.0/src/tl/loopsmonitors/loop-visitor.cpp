@@ -31,7 +31,6 @@
 #include "tl-source.hpp"
 #include "tl-pragmasupport.hpp"
 
-
 // On every new nested level, EXTRAE_LOOPEVENT will be
 // increment by one.
 #define EXTRAE_LOOPEVENT 99000000
@@ -87,48 +86,29 @@ namespace TL {
     class ExtraeLoopsVisitor : public Nodecl::ExhaustiveVisitor<void>
     {
         private:
-            std::string _extrae_api_call;
+            std::string _extrae_api_event_call;
+            std::string _extrae_api_nevent_call;
             std::string _nesting_level_var;
             bool _instrument_iterations;
+            bool _instrument_only_mpi;
         public:
-            ExtraeLoopsVisitor(std::string extrae_api_call,
+            ExtraeLoopsVisitor(
+                    std::string extrae_api_event_call,
+                    std::string extrae_api_nevent_call,
                     std::string nesting_level_var,
-                    bool instrument_iterations)
+                    bool instrument_iterations,
+                    bool instrument_only_mpi)
             {
-                this->_extrae_api_call = extrae_api_call;
+                this->_extrae_api_event_call = extrae_api_event_call;
+                this->_extrae_api_nevent_call = extrae_api_nevent_call;
                 this->_nesting_level_var = nesting_level_var;
                 this->_instrument_iterations = instrument_iterations;
+                this->_instrument_only_mpi = instrument_only_mpi;
             }
             void loop_visit_pre(Nodecl::NodeclBase node)
             {
-#if 0
-                Nodecl::ForStatement node_for;
-                Nodecl::WhileStatement node_while;
-                bool is_while = false;
-                bool is_for = false;
-
-                if (node.is<Nodecl::ForStatement>())
-                {
-                    is_for = true;
-                    node_for = node.as<Nodecl::ForStatement>();
-                }
-                else if (node.is<Nodecl::WhileStatement>())
-                {
-                    is_while = true;
-                    node_while = node.as<Nodecl::WhileStatement>();
-                }
-                else
-                {
-                    exit(1);
-                }
-#endif
-
-                /* 
-                 * It can be the loop-id for the moment.
-                 * ALERT: Two loops from different files can have the same line
-                 */
-                unsigned int loop_id = node.get_line();
-
+                unsigned int line = node.get_line();
+                std::string file_name = node.get_filename();
                                 
                 /*
                  * W/o taking into account the loop-deph, all loops will have 
@@ -137,31 +117,36 @@ namespace TL {
                  */
                 Source src_loop_init;
                 Source src_loop_fini;
-                src_loop_init 
-                    <<      this->_extrae_api_call << "("
-                    <<          EXTRAE_LOOPEVENT
-                    <<          ", " << std::to_string(loop_id) << ")";
-                
-                FORTRAN_LANGUAGE()
+                if (this->_instrument_only_mpi)
                 {
-                    src_loop_init << ";";
+                    src_loop_init << "helper_loopuid_push(" << line 
+                        << ",\"" << file_name << "\")";
+                    src_loop_fini << "helper_loopuid_pop()";
                 }
-                src_loop_fini 
-                    <<      this->_extrae_api_call << "("
-                    <<          EXTRAE_LOOPEVENT
-                    <<          ", " << EXTRAE_EXITEVENT << ")";
-                
+                else
+                {
+                    src_loop_init 
+                        <<      this->_extrae_api_event_call << "("
+                        <<          EXTRAE_LOOPEVENT << ", " 
+                        <<          "get_loop_hash(" << line 
+                        <<              ",\"" << file_name << "\"))";
+                    src_loop_fini 
+                        <<      this->_extrae_api_event_call << "("
+                        <<          EXTRAE_LOOPEVENT << ", " 
+                        <<          EXTRAE_EXITEVENT << ")";
+                }
                 C_LANGUAGE()
                 {
+                    src_loop_init << ";";
                     src_loop_fini << ";";
                 }
 
-                C_LANGUAGE()
+                FORTRAN_LANGUAGE()
                 {
                     Source::source_language = SourceLanguage::C;
                 }
 
-                Nodecl::NodeclBase node_loop_init = 
+                Nodecl::NodeclBase node_loop_init =  
                     src_loop_init.parse_statement(node);
                 Nodecl::NodeclBase node_loop_fini = 
                     src_loop_fini.parse_statement(node);
@@ -177,36 +162,35 @@ namespace TL {
 
             void loop_visit_post(Nodecl::NodeclBase node)
             {
-                Nodecl::ForStatement node_for;
-                Nodecl::WhileStatement node_while;
-                bool is_while = false;
-                bool is_for = false;
-
-                if (node.is<Nodecl::ForStatement>())
-                {
-                    is_for = true;
-                    node_for = node.as<Nodecl::ForStatement>();
-                }
-                else if (node.is<Nodecl::WhileStatement>())
-                {
-                    is_while = true;
-                    node_while = node.as<Nodecl::WhileStatement>();
-                }
-                else
-                {
-                    exit(1);
-                }
-
-                //TL::ForStatement for_statement(node);
-                //TL::Symbol ind_var = for_statement.get_induction_variable();
-                //std::string ind_var_name = ind_var.get_name();
-                
                 if (this->_instrument_iterations)
                 {
-                    unsigned int loop_id = node.get_line();
+                    Nodecl::ForStatement node_for;
+                    Nodecl::WhileStatement node_while;
+                    bool is_while = false;
+                    bool is_for = false;
 
-                    std::string new_it_var_name = std::string("__mercurium_it_id_")
-                        + std::to_string(loop_id);
+                    if (node.is<Nodecl::ForStatement>())
+                    {
+                        is_for = true;
+                        node_for = node.as<Nodecl::ForStatement>();
+                    }
+                    else if (node.is<Nodecl::WhileStatement>())
+                    {
+                        is_while = true;
+                        node_while = node.as<Nodecl::WhileStatement>();
+                    }
+                    else
+                    {
+                        exit(1);
+                    }
+
+                    //TL::ForStatement for_statement(node);
+                    //TL::Symbol ind_var = for_statement.get_induction_variable();
+                    //std::string ind_var_name = ind_var.get_name();
+                    
+                    std::string new_it_var_name = 
+                        std::string("__mercurium_it_id_") 
+                        + std::to_string(node.get_line()) + node.get_filename();
 
                     new_unsigned_variable(node.retrieve_context(), 
                             new_it_var_name, 0);
@@ -215,11 +199,11 @@ namespace TL {
                     Source src;
                     src
                         << "{"
-                        <<      this->_extrae_api_call << "("
+                        <<      this->_extrae_api_event_call << "("
                         <<          EXTRAE_ITEREVENT
                         <<          ", ++" << new_it_var_name  << ");"
                         <<      statement_placeholder(new_statement)
-                        <<      this->_extrae_api_call << "("
+                        <<      this->_extrae_api_event_call << "("
                         <<          EXTRAE_ITEREVENT
                         <<          "," << EXTRAE_EXITEVENT << ");"
                         << "}";
@@ -243,6 +227,34 @@ namespace TL {
             {
                 std::string fname = node.get_called().get_symbol().get_name();
                 std::cout << "MPI Detected: " << fname << std::endl;
+
+                Source src_mpi_init;
+                Source src_mpi_fini;
+
+                src_mpi_init << "helper_loopuid_extrae_entry()";
+                src_mpi_fini << "helper_loopuid_extrae_exit()";
+                C_LANGUAGE()
+                {
+                    src_mpi_init << ";";
+                    src_mpi_fini << ";";
+                }
+                FORTRAN_LANGUAGE()
+                {
+                    Source::source_language = SourceLanguage::C;
+                }
+
+                Nodecl::NodeclBase node_mpi_init =  
+                    src_mpi_init.parse_statement(node);
+                Nodecl::NodeclBase node_mpi_fini = 
+                    src_mpi_fini.parse_statement(node);
+
+                FORTRAN_LANGUAGE()
+                {
+                    Source::source_language = SourceLanguage::Current;
+                }
+
+                node.prepend_sibling(node_mpi_init);
+                node.append_sibling(node_mpi_fini);
             }
 
             virtual void visit_pre(const Nodecl::WhileStatement &node)
@@ -261,22 +273,23 @@ namespace TL {
             {
                 this->loop_visit_post(node);
             }
-            //virtual void visit_pre(const Nodecl::FunctionCall &node)
-            //{
-            //    std::string fname = node.get_called().get_symbol().get_name();
-            //    bool mpi_call = fname.find("MPI_") != std::string::npos;
+            virtual void visit_pre(const Nodecl::FunctionCall &node)
+            {
+                if (this->_instrument_only_mpi)
+                {
+                    std::string fname = node.get_called().get_symbol().get_name();
+                    bool mpi_call = fname.find("MPI_") != std::string::npos;
 
-            //    /*
-            //     * Maintain this entry point as simple as possible just
-            //     * in case more functions management is needed in 
-            //     * the future.
-            //     */
-            //    if (mpi_call)
-            //        this->mpi_call_visit_pre(node);
-            //}
-
+                    /*
+                     * Maintain this entry point as simple as possible just
+                     * in case more functions management is needed in 
+                     * the future.
+                     */
+                    if (mpi_call)
+                        this->mpi_call_visit_pre(node);
+                }
+            }
     };
-
 
     VisitorLoopPhase::VisitorLoopPhase()
     {
@@ -292,6 +305,16 @@ namespace TL {
                 std::bind(&VisitorLoopPhase::set_all_loops_instrumentation,
                     this, std::placeholders::_1));
 
+        register_parameter("only_mpi",
+                "If this parameter is set information about loops boundaries "\
+                "replaced by events just before and after MPI calls indicating"\
+                "to what loops every MPI call belongs to.",
+                _instrument_only_mpi_str,
+                "0")
+            .connect(
+                std::bind(&VisitorLoopPhase::set_only_mpi_instrumentation,
+                    this, std::placeholders::_1));
+
         register_parameter("with_hwc",
                 "WetherExtrae events will also provide hardware counters "\
                 "information or not",
@@ -300,6 +323,7 @@ namespace TL {
             .connect(
                 std::bind(&VisitorLoopPhase::set_with_hwc_instrumentation,
                     this, std::placeholders::_1));
+
         register_parameter("with_iters",
                 "Wether iterations will be instrumented or just loops.",
                 _instrument_iterations_str,
@@ -321,6 +345,11 @@ namespace TL {
         parse_boolean_option("all_loops",
                 str, _instrument_all_loops, "Assuming true");
     }
+    void VisitorLoopPhase::set_only_mpi_instrumentation(const std::string& str)
+    {
+        parse_boolean_option("only_mpi",
+                str, _instrument_only_mpi, "Assuming true");
+    }
     void VisitorLoopPhase::set_with_hwc_instrumentation(const std::string& str)
     {
         parse_boolean_option("with_hwc",
@@ -335,27 +364,47 @@ namespace TL {
         //new_unsigned_variable(top_level.retrieve_context(),
         //        this->_nesting_level_var, 0);
 
+        std::cout << "--- Params ---" << std::endl;
+        std::cout << "with_iters:" << this->_instrument_iterations << std::endl;
+        std::cout << "all_loops:" << this->_instrument_all_loops << std::endl;
+        std::cout << "only_mpi:" << this->_instrument_only_mpi << std::endl;
+        std::cout << "with_hwc:" << this->_with_hw_counters << std::endl;
+
         FORTRAN_LANGUAGE()
         {
             if (this->_with_hw_counters)
-                this->_extrae_api_call = "CALL extrae_eventandcounters";
+            {
+                this->_extrae_api_nevent_call = "";
+                this->_extrae_api_event_call = "CALL extrae_eventandcounters";
+            }
             else
-                this->_extrae_api_call = "CALL extrae_event";
+            {
+                this->_extrae_api_nevent_call = "CALL extrae_nevent";
+                this->_extrae_api_event_call = "CALL extrae_event";
+            }
         }
         else
         {
             if (this->_with_hw_counters)
-                this->_extrae_api_call = "Extrae_eventandcounters";
+            {
+                this->_extrae_api_nevent_call = "";
+                this->_extrae_api_event_call = "Extrae_eventandcounters";
+            }
             else
-                this->_extrae_api_call = "Extrae_event";
+            {
+                this->_extrae_api_nevent_call = "Extrae_nevent";
+                this->_extrae_api_event_call = "Extrae_event";
+            }
         }
 
-        if (this->_instrument_all_loops)
+        if (this->_instrument_all_loops || this->_instrument_only_mpi)
         {
             ExtraeLoopsVisitor loops_visitor(
-                    this->_extrae_api_call,
+                    this->_extrae_api_event_call,
+                    this->_extrae_api_nevent_call,
                     this->_nesting_level_var,
-                    this->_instrument_iterations);
+                    this->_instrument_iterations,
+                    this->_instrument_only_mpi);
             loops_visitor.walk(top_level);
         }
         else

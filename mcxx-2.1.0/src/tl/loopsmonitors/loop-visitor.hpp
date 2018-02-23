@@ -39,12 +39,15 @@ namespace TL
         private:
             std::string _instrument_all_loops_str;
             bool _instrument_all_loops;
+            std::string _instrument_only_mpi_str;
+            bool _instrument_only_mpi;
             std::string _with_hw_counters_str;
             bool _with_hw_counters;
             std::string _instrument_iterations_str;
             bool _instrument_iterations;
 
-            std::string _extrae_api_call;
+            std::string _extrae_api_nevent_call;
+            std::string _extrae_api_event_call;
             std::string _nesting_level_var ="__mercurium_loop_nest_level";
         public:
             // The constructor
@@ -56,6 +59,7 @@ namespace TL
             void set_all_loops_instrumentation(const std::string& str);
             void set_with_hwc_instrumentation(const std::string& str);
             void set_with_instr_iters(const std::string& str);
+            void set_only_mpi_instrumentation(const std::string& str);
 
             // Run method is where magics should be done
             virtual void run(TL::DTO& dto);
