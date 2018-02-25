@@ -223,9 +223,9 @@ namespace TL {
                 }
             }
 
-            void mpi_call_visit_pre(const Nodecl::FunctionCall node)
+            void mpi_call_visit_pre(const Nodecl::FunctionCall node, 
+                    std::string fname)
             {
-                std::string fname = node.get_called().get_symbol().get_name();
                 std::cout << "MPI Detected: " << fname << std::endl;
 
                 Source src_mpi_init;
@@ -277,16 +277,21 @@ namespace TL {
             {
                 if (this->_instrument_only_mpi)
                 {
-                    std::string fname = node.get_called().get_symbol().get_name();
-                    bool mpi_call = fname.find("MPI_") != std::string::npos;
+                    Symbol func = node.get_called().get_symbol();
 
-                    /*
-                     * Maintain this entry point as simple as possible just
-                     * in case more functions management is needed in 
-                     * the future.
-                     */
-                    if (mpi_call)
-                        this->mpi_call_visit_pre(node);
+                    if (func != NULL)
+                    {
+                        std::string fname = func.get_name();
+                        bool mpi_call = fname.find("MPI_") != std::string::npos;
+
+                        /*
+                         * Maintain this entry point as simple as possible just
+                         * in case more functions management is needed in 
+                         * the future.
+                         */
+                        if (mpi_call)
+                            this->mpi_call_visit_pre(node, fname);
+                    }
                 }
             }
     };
@@ -364,11 +369,12 @@ namespace TL {
         //new_unsigned_variable(top_level.retrieve_context(),
         //        this->_nesting_level_var, 0);
 
-        std::cout << "--- Params ---" << std::endl;
+        std::cout << "**** Params ****" << std::endl;
         std::cout << "with_iters:" << this->_instrument_iterations << std::endl;
         std::cout << "all_loops:" << this->_instrument_all_loops << std::endl;
         std::cout << "only_mpi:" << this->_instrument_only_mpi << std::endl;
         std::cout << "with_hwc:" << this->_with_hw_counters << std::endl;
+        std::cout << "****************" << std::endl;
 
         FORTRAN_LANGUAGE()
         {
