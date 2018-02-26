@@ -150,6 +150,8 @@ loopuidstack_tostr(loopuid_stack *stack)
     return res;
 }
 
+INTERFACE_ALIASES_F(helper_loopuid_push,
+        (unsigned int line, char * file_name), unsigned int)
 unsigned int helper_loopuid_push(unsigned int line, char *file_name)
 {
     unsigned int hash = get_loop_hash(line, file_name);
@@ -157,11 +159,13 @@ unsigned int helper_loopuid_push(unsigned int line, char *file_name)
     return hash;
 }
 
+INTERFACE_ALIASES_F(helper_loopuid_pop,(),extrae_value_t)
 extrae_value_t helper_loopuid_pop()
 {
     return loopuidstack_pop(&my_stack);
 }
 
+INTERFACE_ALIASES_F(helper_loopuid_extrae_entry,(),void)
 void helper_loopuid_extrae_entry()
 {
     unsigned int size;
@@ -181,6 +185,7 @@ void helper_loopuid_extrae_entry()
     free(values);
 }
 
+INTERFACE_ALIASES_F(helper_loopuid_extrae_exit,(),void)
 void helper_loopuid_extrae_exit()
 {
     unsigned int size = loopuidstack_size(&my_stack);

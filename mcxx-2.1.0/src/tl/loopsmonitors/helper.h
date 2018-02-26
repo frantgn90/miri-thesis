@@ -12,6 +12,9 @@
 #define TRUE 1
 #define FALSE 0
 
+#define INTERFACE_ALIASES_F(fname,params,rettype) \
+    rettype fname##_ params __attribute__ ((alias (#fname)));
+
 #include <extrae.h>
 #include <defines.h>
 
