@@ -153,6 +153,7 @@ def calcule_deltas_cplex(
     #
     # Preparing data for CPLEX
     #
+    assert False, "Vamos, llama a calcule_deltas_clustering"
 
     npoints = len(fcallstacks_pool)
 

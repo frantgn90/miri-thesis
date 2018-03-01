@@ -12,9 +12,16 @@ from multiprocessing import Pool
 from utilities import ProgressBar
 from callstack import call, callstack
 
+import numpy
+from clustering import plot_data
+
 TYPE_STATE = "1"
 TYPE_EVENT = "2"
 TYPE_COMMS = "3"
+
+MONITOR_PERIOD=10e8
+last_monitor_time = 0
+n_monitor = 0
 
 class record(object):
     def __init__(self,line,pcf):
@@ -224,7 +231,10 @@ class pcf(object):
         return self.pcfinfo[event_type]["name"]
 
     def translate_event(self, event_type, event_value):
-        return self.pcfinfo[event_type]["values"][event_value]
+        if event_type in self.pcfinfo:
+            if event_value in self.pcfinfo[event_type]["values"]:
+                return self.pcfinfo[event_type]["values"][event_value]
+        return "{0}_{1}".format(event_type, event_value)
 
 
 class trace(object):
@@ -262,6 +272,7 @@ class trace(object):
         self.tasks = int(applications_info.split("(")[0])
 
         self.pcf = pcf(self.pcf_file)
+        self.data_from_monitor=[]
 
     def parse(self, nprocesses=1):
         assert nprocesses != 0
@@ -277,6 +288,8 @@ class trace(object):
                     cs.calc_reduce_info()
         else:
             res = self._parse_parallel(nprocesses)
+        if len(self.data_from_monitor) > 0:
+            plot_data(self.data_from_monitor)
         return res
 
     def _parse_sequential(self, prv_files):
@@ -300,6 +313,10 @@ class trace(object):
                 for line in tracefile:
                     rec = record.new(line[:-1], self.pcf)
                     if rec is None: continue
+
+                    self.data_from_monitor.extend(
+                            self.__monitor_callstack_pool(int(line.split(":")[5]), callstack_pool))
+
                     if rec.type == TYPE_COMMS:
                         ssuccess = rsuccess = False
                         if rec.physical_send in mpi_init_hashmap[rec.task_send_id-1]:
@@ -345,7 +362,7 @@ class trace(object):
                                 calls = list(calls); calls.reverse()
                                 mainindex = 0
                                 for i,c in enumerate(calls):
-                                    if c[1] == "main" or c[1] == "MAIN_":
+                                    if c[1] == "main" or c[1] == "MAIN__":
                                         mainindex = i
 
                                 calls = calls[mainindex:]
@@ -424,9 +441,37 @@ class trace(object):
         if self.splittrace:
             return list(map(lambda x: int(x.split(".")[-1]), self.prv_files))
         return list(range(self.tasks))
-        
 
- 
+    def __monitor_callstack_pool(self, time, callstack_pool):
+        global last_monitor_time, n_monitor
+        period = time - last_monitor_time
+        last_monitor_time = time
+
+        data=[]
+        if period < MONITOR_PERIOD:
+            return data
+
+        print ("TIME: {0} Preiod: {1}/{2}".format(time, period,MONITOR_PERIOD))
+
+        for rank,callstacks in enumerate(callstack_pool):
+            for signature,cs in callstacks.items():
+                if cs.repetitions[cs.rank] > 1:
+                    data.append([
+                        cs.repetitions[cs.rank], 
+                        numpy.mean(self.__get_distances(cs.instants)),
+                        n_monitor
+                    ])
+        n_monitor += 1
+        return data
+
+    def __get_distances(self, times):
+        dist=[]
+        for i in range(1,len(times)):
+            dist.append(times[i]-times[i-1])
+        return dist
+
+
+
 # Testing
 #basename = sys.argv[1]
 #tr = trace(basename)
