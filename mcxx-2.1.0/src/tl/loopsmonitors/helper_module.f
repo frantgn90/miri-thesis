@@ -8,23 +8,24 @@
 ! http://fortranwiki.org/fortran/show/iso_c_binding
 
       module helper_module
-          interface
-              function helper_loopuid_push (line,file_name) bind (C)
-              use iso_c_binding, only: c_int,c_char
-              integer (c_int), VALUE :: line
-              character (c_char) :: file_name(*)
-              end function helper_loopuid_push
+      use iso_c_binding
+      interface
+          subroutine helper_loopuid_push (line,file_name) bind (C)
+          use iso_c_binding, only: c_int,c_char
+          integer (c_int), VALUE :: line
+          character (c_char) :: file_name(*)
+          end subroutine helper_loopuid_push
       
-              function helper_loopuid_pop() bind(C)
-              use iso_c_binding
-              end function helper_loopuid_pop 
+          subroutine helper_loopuid_pop() bind(C)
+          use iso_c_binding
+          end subroutine helper_loopuid_pop 
       
-              subroutine helper_loopuid_extrae_entry() bind(C)
-              use iso_c_binding
-              end subroutine helper_loopuid_extrae_entry
+          subroutine helper_loopuid_extrae_entry() bind(C)
+          use iso_c_binding
+          end subroutine helper_loopuid_extrae_entry
       
-              subroutine helper_loopuid_extrae_exit() bind(C)
-              use iso_c_binding
-              end subroutine helper_loopuid_extrae_exit
-          end interface          
+          subroutine helper_loopuid_extrae_exit() bind(C)
+          use iso_c_binding
+          end subroutine helper_loopuid_extrae_exit
+      end interface          
       end module helper_module

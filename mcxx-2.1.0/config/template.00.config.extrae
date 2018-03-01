@@ -7,7 +7,8 @@ preprocessor_options = -E -I@EXTRAE_INCLUDE@ -include extrae.h
 compiler_name = @MPICC@
 compiler_options =
 linker_name = @MPICC@
-linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lmpitrace
+#linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lmpitrace
+linker_options = /home/jmartinez/BSC/master/git/mcxx-2.1.0/src/tl/loopsmonitors/libhelper.a 
 compiler_phase = libloop_visitor
 
 [extraecxx]
@@ -18,7 +19,8 @@ preprocessor_options = -E -I@EXTRAE_INCLUDE@ -include extrae.h
 compiler_name = @MPICXX@
 compiler_options =
 linker_name = @MPICXX@
-linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lmpitrace
+#linker_options = -Wl,-rpath -Wl,@EXTRAE_LIB@ -L@EXTRAE_LIB@ -lmpitrace
+linker_options = /home/jmartinez/BSC/master/git/mcxx-2.1.0/src/tl/loopsmonitors/libhelper.a 
 compiler_phase = libloop_visitor
 
 [extraefc]

@@ -105,11 +105,47 @@ namespace TL {
                 this->_instrument_iterations = instrument_iterations;
                 this->_instrument_only_mpi = instrument_only_mpi;
             }
-            void loop_visit_pre(Nodecl::NodeclBase node)
+            void loop_visit_entry(bool entry, Nodecl::NodeclBase node)
             {
-                unsigned int line = node.get_line();
-                std::string file_name = node.get_filename();
-                                
+                Nodecl::ForStatement node_for;
+                Nodecl::WhileStatement node_while;
+                bool is_while = false;
+                bool is_for = false;
+
+                if (node.is<Nodecl::ForStatement>())
+                {
+                    is_for = true;
+                    node_for = node.as<Nodecl::ForStatement>();
+                }
+                else if (node.is<Nodecl::WhileStatement>())
+                {
+                    is_while = true;
+                    node_while = node.as<Nodecl::WhileStatement>();
+                }
+                else
+                {
+                    exit(1);
+                }
+
+                int line = node.get_line();
+                std::string filename = node.get_filename();
+                if (entry)
+                {
+                    loop_visit_pre(node, is_while, node_while, is_for, node_for,
+                            line, filename);
+                }
+                else
+                {
+                    loop_visit_post(node, is_while, node_while, is_for, node_for,
+                            line, filename);
+                }
+            }
+            void loop_visit_pre(Nodecl::NodeclBase node,
+                bool is_while, Nodecl::WhileStatement node_while,
+                bool is_for, Nodecl::ForStatement node_for,
+                int line, std::string filename
+                )
+            {
                 /*
                  * W/o taking into account the loop-deph, all loops will have 
                  * the same event_id. In order to see it correctly on Paraver 
@@ -117,11 +153,21 @@ namespace TL {
                  */
                 Source src_loop_init;
                 Source src_loop_fini;
+
                 if (this->_instrument_only_mpi)
                 {
-                    src_loop_init << "helper_loopuid_push(" << line 
-                        << ",\"" << file_name << "\")";
-                    src_loop_fini << "helper_loopuid_pop()";
+                    C_LANGUAGE()
+                    {
+                        src_loop_init << "helper_loopuid_push(" << line 
+                            << ",\"" << filename << "\");";
+                        src_loop_fini << "helper_loopuid_pop();";
+                    }
+                    FORTRAN_LANGUAGE()
+                    {
+                        src_loop_init << "CALL helper_loopuid_push(" << line
+                            << ",C_CHAR_\"" << filename << "\" // C_NULL_CHAR)";
+                        src_loop_fini << "CALL helper_loopuid_pop()";
+                    }
                 }
                 else
                 {
@@ -129,16 +175,18 @@ namespace TL {
                         <<      this->_extrae_api_event_call << "("
                         <<          EXTRAE_LOOPEVENT << ", " 
                         <<          "get_loop_hash(" << line 
-                        <<              ",\"" << file_name << "\"))";
+                        <<              ",\"" << filename << "\"))";
                     src_loop_fini 
                         <<      this->_extrae_api_event_call << "("
                         <<          EXTRAE_LOOPEVENT << ", " 
                         <<          EXTRAE_EXITEVENT << ")";
-                }
-                C_LANGUAGE()
-                {
-                    src_loop_init << ";";
-                    src_loop_fini << ";";
+
+                    C_LANGUAGE()
+                    {
+                        src_loop_init << ";";
+                        src_loop_fini << ";";
+                    }
+
                 }
 
                 FORTRAN_LANGUAGE()
@@ -160,29 +208,14 @@ namespace TL {
                 node.append_sibling(node_loop_fini);
             }
 
-            void loop_visit_post(Nodecl::NodeclBase node)
+            void loop_visit_post(Nodecl::NodeclBase node,
+                bool is_while, Nodecl::WhileStatement node_while,
+                bool is_for,   Nodecl::ForStatement node_for,
+                int line, std::string filename
+                )
             {
                 if (this->_instrument_iterations)
                 {
-                    Nodecl::ForStatement node_for;
-                    Nodecl::WhileStatement node_while;
-                    bool is_while = false;
-                    bool is_for = false;
-
-                    if (node.is<Nodecl::ForStatement>())
-                    {
-                        is_for = true;
-                        node_for = node.as<Nodecl::ForStatement>();
-                    }
-                    else if (node.is<Nodecl::WhileStatement>())
-                    {
-                        is_while = true;
-                        node_while = node.as<Nodecl::WhileStatement>();
-                    }
-                    else
-                    {
-                        exit(1);
-                    }
 
                     //TL::ForStatement for_statement(node);
                     //TL::Symbol ind_var = for_statement.get_induction_variable();
@@ -190,10 +223,11 @@ namespace TL {
                     
                     std::string new_it_var_name = 
                         std::string("__mercurium_it_id_") 
-                        + std::to_string(node.get_line()) + node.get_filename();
+                        + std::to_string(line) + filename;
 
                     new_unsigned_variable(node.retrieve_context(), 
-                            new_it_var_name, 0);
+                        new_it_var_name, 0);
+
 
                     Nodecl::NodeclBase new_statement;
                     Source src;
@@ -208,6 +242,7 @@ namespace TL {
                         <<          "," << EXTRAE_EXITEVENT << ");"
                         << "}";
 
+                    // TODO: There is any superclass that contains all loop statements?
                     Nodecl::NodeclBase generated_code = src.parse_statement(node);
                     if (is_for)
                     {
@@ -231,8 +266,14 @@ namespace TL {
                 Source src_mpi_init;
                 Source src_mpi_fini;
 
+                FORTRAN_LANGUAGE()
+                {
+                    src_mpi_init << "CALL ";
+                    src_mpi_fini << "CALL ";
+                }
                 src_mpi_init << "helper_loopuid_extrae_entry()";
                 src_mpi_fini << "helper_loopuid_extrae_exit()";
+
                 C_LANGUAGE()
                 {
                     src_mpi_init << ";";
@@ -259,19 +300,19 @@ namespace TL {
 
             virtual void visit_pre(const Nodecl::WhileStatement &node)
             {
-                this->loop_visit_pre(node);
+                this->loop_visit_entry(true, node.as<Nodecl::NodeclBase>());
             }
             virtual void visit_pre(const Nodecl::ForStatement &node)
             {
-                this->loop_visit_pre(node);
+                this->loop_visit_entry(true, node.as<Nodecl::NodeclBase>());
             }
             virtual void visit_post(const Nodecl::WhileStatement &node)
             {
-                this->loop_visit_post(node);
+                this->loop_visit_entry(false, node.as<Nodecl::NodeclBase>());
             }
             virtual void visit_post(const Nodecl::ForStatement &node)
             {
-                this->loop_visit_post(node);
+                this->loop_visit_entry(false, node.as<Nodecl::NodeclBase>());
             }
             virtual void visit_pre(const Nodecl::FunctionCall &node)
             {
