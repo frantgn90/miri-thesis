@@ -25,41 +25,41 @@ get_loop_hash(unsigned int line, char *file_name)
     return hash;
 }
 
-unsigned int 
-get_loop_uid(unsigned int line, char *file_name)
-{
-    unsigned int hm_key = line % HASHMAP_SIZE;
-    hashmap_entry_top *hm_entry_top = &loopid_hashmap[hm_key];
-
-    hashmap_entry *item = hm_entry_top->first;
-    unsigned int entry_size = hm_entry_top->size;
-
-    for (int i=0; i<entry_size; ++i)
-    {
-        if (item->info->line == line
-                && item->info->file_name == file_name)
-        {
-            return item->info->id;
-        }
-        item = item->next;
-    }
-
-    loopid_container *new_info = (loopid_container *) 
-        malloc(sizeof(loopid_container));
-    new_info->line = line;
-    new_info->file_name = file_name;
-    new_info->id = last_loop_id++;
-
-    hashmap_entry *new_hm_entry = (hashmap_entry *)
-        malloc(sizeof(hashmap_entry));
-    new_hm_entry->info = new_info;
-    new_hm_entry->next = hm_entry_top->first;
-
-    hm_entry_top->first = new_hm_entry;
-    hm_entry_top->size++;
-
-    return new_info->id;
-}
+//unsigned int 
+//get_loop_uid(unsigned int line, char *file_name)
+//{
+//    unsigned int hm_key = line % HASHMAP_SIZE;
+//    hashmap_entry_top *hm_entry_top = &loopid_hashmap[hm_key];
+//
+//    hashmap_entry *item = hm_entry_top->first;
+//    unsigned int entry_size = hm_entry_top->size;
+//
+//    for (int i=0; i<entry_size; ++i)
+//    {
+//        if (item->info->line == line
+//                && item->info->file_name == file_name)
+//        {
+//            return item->info->id;
+//        }
+//        item = item->next;
+//    }
+//
+//    loopid_container *new_info = (loopid_container *) 
+//        malloc(sizeof(loopid_container));
+//    new_info->line = line;
+//    new_info->file_name = file_name;
+//    new_info->id = last_loop_id++;
+//
+//    hashmap_entry *new_hm_entry = (hashmap_entry *)
+//        malloc(sizeof(hashmap_entry));
+//    new_hm_entry->info = new_info;
+//    new_hm_entry->next = hm_entry_top->first;
+//
+//    hm_entry_top->first = new_hm_entry;
+//    hm_entry_top->size++;
+//
+//    return new_info->id;
+//}
 
 loopuid_stack * 
 new_loopuidstack()
@@ -151,18 +151,17 @@ loopuidstack_tostr(loopuid_stack *stack)
 }
 
 INTERFACE_ALIASES_F(helper_loopuid_push,
-        (unsigned int line, char * file_name), unsigned int)
-unsigned int helper_loopuid_push(unsigned int line, char *file_name)
+        (unsigned int line, char * file_name), void)
+void helper_loopuid_push(unsigned int line, char *file_name)
 {
     unsigned int hash = get_loop_hash(line, file_name);
     loopuidstack_push(&my_stack, (extrae_value_t)hash);
-    return hash;
 }
 
-INTERFACE_ALIASES_F(helper_loopuid_pop,(),extrae_value_t)
-extrae_value_t helper_loopuid_pop()
+INTERFACE_ALIASES_F(helper_loopuid_pop, (), void)
+void helper_loopuid_pop()
 {
-    return loopuidstack_pop(&my_stack);
+    loopuidstack_pop(&my_stack);
 }
 
 INTERFACE_ALIASES_F(helper_loopuid_extrae_entry,(),void)

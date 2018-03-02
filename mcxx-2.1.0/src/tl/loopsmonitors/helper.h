@@ -8,6 +8,11 @@
 #ifndef HELPER_H
 #define HELPER_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #define HASHMAP_SIZE 100
 #define TRUE 1
 #define FALSE 0
@@ -57,7 +62,7 @@ struct loopuid_stack
 };
 typedef struct loopuid_stack loopuid_stack;
 
-static int last_loop_id = 0;
+//static int last_loop_id = 0;
 extern loopuid_stack my_stack;
 extern hashmap_entry_top loopid_hashmap[HASHMAP_SIZE];
 
@@ -68,10 +73,10 @@ get_loop_hash(
         unsigned int line, 
         char *file_name);
 
-unsigned int 
-get_loop_uid(
-        unsigned int line, 
-        char *file);
+//unsigned int 
+//get_loop_uid(
+//        unsigned int line, 
+//        char *file);
 
 loopuid_stack * 
 new_loopuidstack();
@@ -102,12 +107,12 @@ loopuidstack_tov(
 // This interface is a bit easier to manage
 // with Mercurium
 
-unsigned int 
+void
 helper_loopuid_push(
         unsigned int line,
         char *file_name);
 
-extrae_value_t 
+void
 helper_loopuid_pop();
 
 void 
@@ -115,5 +120,10 @@ helper_loopuid_extrae_entry();
 
 void 
 helper_loopuid_extrae_exit();
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* !HELPER_H */

@@ -48,7 +48,6 @@ namespace TL
 
             std::string _extrae_api_nevent_call;
             std::string _extrae_api_event_call;
-            std::string _nesting_level_var ="__mercurium_loop_nest_level";
         public:
             // The constructor
             // In this method name and description of phase can be
@@ -60,6 +59,7 @@ namespace TL
             void set_with_hwc_instrumentation(const std::string& str);
             void set_with_instr_iters(const std::string& str);
             void set_only_mpi_instrumentation(const std::string& str);
+            Nodecl::NodeclBase load_headers(Nodecl::NodeclBase);
 
             // Run method is where magics should be done
             virtual void run(TL::DTO& dto);
