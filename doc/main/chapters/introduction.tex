@@ -208,24 +208,142 @@ instead of as a pattern mining problem, as a classification problem.
 Classification algorithms like clustering presents much better performance with 
 about quasy-lineal costs.
 
-\section{Performance analysis tools environment and workflow}\label{s:pt_evironment}
+%\section{Performance analysis tools environment and workflow}\label{s:pt_evironment}
+\section{Performance analysis tools}\label{s:pt_evironment}
 
-%\begin{figure}
-%  \caption{Current performance analysis workflow}
-%  \label{currentAnalysisFlow}
-%  \centering
-%    \includegraphics[width=250px]{current_analysis_flow.eps}
-%\end{figure}
+This thesis has been developed in the Performance Tools team at Barcelona
+Supercomputing Center and therefore the tool and techniques explained in this
+document have been designed to fit in this environment and workflow. 
 
-Talk about the BSC performance tools environment and introduce the analysis flow
-with and without this proposed tool.
+The main tools designed and developed in PTT are Extrae, Paraver and Dimemas.
+Although other satellite tools are also in the environment they will not be
+explained because are out of the scope of this project. These tools are: Clustering,
+Tracking, Folding, Spectral and Basic Analysis.
 
-This is the mission of the parallel performance analysis. In an application-centric
+\subsection{Extrae}
+
+Like it name (in spanish) indicates, it is about extracting information. Extrae is
+the piece of software in charge of inject monitors to the application to
+be studied and
+extract valuable information for the analysis. Different mechanism for
+monitoring are available being the most used the interposition mechanism by
+means of the {\tt LD\_PRELOAD} environment variable present in UNIX systems.
+By this mechanism just calls to a given framework can be instrumented because
+what it does is to divert a framework calls by the program to extrae, then extrae get
+the information and calls the actual framework function. It supports several frameworks: 
+\begin{enumerate*}[label=(\roman*)]
+  \item MPI (for several implementations)
+  \item OpenMP
+  \item OMPSs
+  \item CUDA
+  \item OpenCL
+  \item pThreads
+  \item Java
+  \item and Python.
+\end{enumerate*}
+
+The information that can be collected by Extrae is not just timming what is maybe
+the most important one but also some hardware counters by means of PAPI
+interface. All of this information can be complemented by user events that can
+push the desired information to the tracefile by means of the Extrae API. One
+possible use of the Extrae API is to extract information about how different
+iterations from a given loop are behaving.
+
+All these gathered information from all threads/processes in the target
+application is finally merged and presented to the analizer as an ASCII
+tracefile. Since the task of analyze a super-huge ASCII file is a tough work, a
+visualizer has been developed, that is Paraver.
+
+\subsection{Paraver}
+
+The task of analyze numbers is tough when there is a huge quantity so
+the natural choice is to represent them visually since we as humans are very
+good understanding visual patterns. For example in mathematics
+is usual to use plots. In the field of performance analysis, visualizer tools
+also has been developed, having in BSC the Paraver tool that as its name indicates
+(in spanish) is  about ``to see''. Paraver allows to have a qualitative global 
+perception of the application behavior by visual inspection and then to be able 
+to focus on the detailed quantitative analysis of the problems.
+
+Its power lies on two main concepts. The first one is that paraver traces are
+semantic agnostics therefore it is provided by auxiliar files called pcf (paraver
+configuration file\footnote{Do not confuse with cfg files}) and row\footnote{It 
+is called row because it provide names for the rows of the timeline so for the 
+space axis} (names configuration file). It allows to extend the tool with
+support for new performance data or programming models easily. The second and
+more interesting is that the derived calculations from initial metrics from trace is
+not hardcoded in the tool but configurable so for example to derive a typical
+metric like IPC you should filter number of
+instructions by one hand, number of cycles by the other hand and then perfom a
+division. This powerful approach give the resposability to the user that can
+leads to the ``blank page
+syndrome''\footnote{https://en.wikipedia.org/wiki/Writer\%27s\_block\#Blank\_page
+\_syndrome} for the not so skiled users. For avoid this
+sort of problems the Paraver package provides a set of configuration files of
+the most used views that perform all the filters and derivations for you.
+
+\subsection{Dimemas}
+
+Like the other tools Dimemas also have a so descriptive name, it means (in
+spanish) ``tell me more'' but is fine to use the acronim that is ``DIstributed
+MEmory MAchine Simulator''. It is a high-abstracted trace-driven MPI simulator
+perfect to perform the called ``what if'' experiments. It is capable to simulate
+the interconection network of a distributed memory machine by means of a high
+abstracted model that consists on three fundamental parameters:
+\begin{enumerate*}[label=(\roman*)]
+  \item Latency (s) that models the actual latency of the network and also the
+    possible overhead because the software stack before arrives to the NIC
+  \item Bandwidth (mb/s) that models the bandwidth of the network and
+  \item Contention that is modeled by the number of messages in flight 
+    allowed on a given instant on a given network (intra-nodes, inter-nodes or
+    inter-machines) and the number of input and output messages from a given
+    node in a given instant.
+\end{enumerate*}
+
+Dimemas as Paraver are Extrae-dependant software since they need traces to work.
+In the Dimemas case it needs to perform a conversion by means of the {\tt
+prv2dim} converter in order to ease the simulation. As an output it builds up a
+new Paraver trace that can be analyzed as the original.
+
+Only communication times are simulated through the Dimemas models so CPU times
+remain the same on the output tracefile. Even if it is a minor detail, since it
+is important to introduce because the usefulness of it for the purposses of this
+thesis, actually there is a mechanism to modify CPU burst times. At parsing time
+(done by the {\tt prv2dim}) a metric and a coeficient to multiply for this
+metric can be specified. Normally the metric is the number of cycles and the
+coeficient is the cycle time. By this way the user is able to remove the
+possible noise that has affected the original execution.
+
+\subsection{Analysis workflow}
+
+In an application-centric
 approach, the performance analysis is a cyclic process consisting of observing 
 the behaviour of the application so as to hypothesize the possible problems that 
 affect its performance and finally translate these hypotheses to improvements in
 the application re-starting the cycle to validate them. Obviously, the less number 
-of iterations of this cycle the less time wasted and also the less money spent.
+of iterations of this cycle the less time wasted and it directly depends on the
+quality of the hypothesis that is strongly related with the possibilities the
+analysis tools provides.
+
+In figure \ref{fig:currentAnalysisFlow} it can be seen the current approach
+followed for building up hypothesis. There are two factor to take into account:
+The first is the HPC applications used to be very repetitive so same information
+is shown both horitzontally (because repetitivity) and vertically (because SPMD)
+and the second is the size of the traces becomes huge and even with visualizers 
+it is tough to analyze not only because the huge ammoung of information but also 
+because the response time of interactive analysis becomes prohibitives. 
+The typical solution is to focus on the regions of interest that can provide
+more insights and this is done by an iterative process described follows:
+\begin{enumerate}[label=\roman*)]
+  \item 1
+\end{enumerate}
+
+\begin{figure}
+  \caption{Current performance analysis workflow}
+  \label{fig:currentAnalysisFlow}
+  \centering
+    \includegraphics[width=250px]{current_analysis_flow.eps}
+\end{figure}
 
 
 % NOTES

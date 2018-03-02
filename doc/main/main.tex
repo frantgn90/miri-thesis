@@ -26,11 +26,23 @@
 \usepackage{pseudocode}
 \usepackage{lettrine}
 \usepackage[inline]{enumitem}
+\usepackage{draftwatermark}
+\usepackage{fancyhdr}% http://ctan.org/pkg/fancyhdr
+\pagestyle{fancy}% Change page style to fancy
+
+%\renewcommand{\headrulewidth}{0.4pt}% Default \headrulewidth is 0.4pt
+
+
+\SetWatermarkText{DRAFT}
+\SetWatermarkScale{5}
+\SetWatermarkColor[rgb]{0.95,0.95,0.95}
 
 \graphicspath{ {imgs/} }
 
 \title{
-  {\Huge Inferring program structure from an execution trace}
+%  {\Huge Inferring program structure from an execution trace}
+  {\Huge Efficient Application Structure Detection by means of Clustering
+  techniques}
 }
 \author{
   {Juan Francisco Martínez Vera}\\
@@ -54,4 +66,3 @@
 \bibliographystyle{apalike}
 
 \end{document}
-
