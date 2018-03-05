@@ -16,14 +16,41 @@ hashmap_entry_top loopid_hashmap[HASHMAP_SIZE];
 unsigned int
 get_loop_hash(unsigned int line, char *file_name)
 {
-    unsigned int hash = 0;
-    for(int i=0; i<strlen(file_name); ++i)
+    /* https://stackoverflow.com/questions/7666509/hash-function-for-string */
+
+    unsigned int ndigits = 0;
+    unsigned int nchars = strlen(file_name);
+    unsigned int ll = line;
+    while (ll > 0) 
     {
-        hash ^= file_name[i];
+        ++ndigits;
+        ll /= 10;
     }
-    hash ^= line;
+
+    char str[nchars+ndigits+2];
+    memcpy((void *)&str[0], (void *)file_name, nchars);
+    snprintf(&str[nchars], ndigits+2, "_%d", line);
+
+    unsigned int hash = 5381;
+    int c, i=0;
+
+    while (c = str[i++])
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
     return hash;
 }
+
+//unsigned int
+//get_loop_hash(unsigned int line, char *file_name)
+//{
+//    unsigned int hash = 0;
+//    for(int i=0; i<strlen(file_name); ++i)
+//    {
+//        hash ^= file_name[i];
+//    }
+//    hash ^= line;
+//    return hash;
+//}
 
 //unsigned int 
 //get_loop_uid(unsigned int line, char *file_name)
