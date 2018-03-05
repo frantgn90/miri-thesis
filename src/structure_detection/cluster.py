@@ -23,6 +23,9 @@ class cluster (object):
         self.delta = None
         self.nmerges = 0
 
+    def get_first_callstack(self):
+        return self.loops[0].get_first_callstack()
+
     def get_first_line(self):
         return self.loops[0].get_first_line()
 
@@ -53,21 +56,21 @@ class cluster (object):
             callstacks = list(filter(lambda x: x.rank == rank, self.callstacks))
             # Trying to remove aliasing by a new clustering dimension...
             # On that case, just code after the "else" is needed
-            #aliasing_detector=tmatrix.from_callstacks_obj(callstacks)
-            #if aliasing_detector.aliased():
-            #    callstack_parts = aliasing_detector.get_subloops()
-            #    subloops = []
-            #    for x in callstack_parts:
-            #        new_loop = loop(callstacks=x,id=loops_id)
-            #        new_loop.cluster_id = self.cluster_id
-            #        subloops.append(new_loop)
-            #        loops_id += 1
-            #    ranks_subloops.append(subloops)
-            #else:
-            new_loop = loop(callstacks=callstacks, id=loops_id)
-            new_loop.cluster_id = self.cluster_id
-            ranks_loops.append(new_loop)
-            loops_id += 1
+            aliasing_detector=tmatrix.from_callstacks_obj(callstacks)
+            if aliasing_detector.aliased():
+                callstack_parts = aliasing_detector.get_subloops()
+                subloops = []
+                for x in callstack_parts:
+                    new_loop = loop(callstacks=x,id=loops_id)
+                    new_loop.cluster_id = self.cluster_id
+                    subloops.append(new_loop)
+                    loops_id += 1
+                ranks_subloops.append(subloops)
+            else:
+                new_loop = loop(callstacks=callstacks, id=loops_id)
+                new_loop.cluster_id = self.cluster_id
+                ranks_loops.append(new_loop)
+                loops_id += 1
             
 
         if len(ranks_loops) > 0:

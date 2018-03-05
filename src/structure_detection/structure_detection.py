@@ -208,12 +208,13 @@ def main(argc, argv):
             traceobj.total_time, 
             bottom_bound), callstacks_pool[rank].items()))
     wfprof.step_fini(2)
-    logging.info("Reduced to {0} callstacks".format(
-        [len(x) for x in callstacks_pool]))
 
     if len(callstacks_pool) == 0:
         logging.info("All callsacks has been filtered.")
         exit(0)
+
+    logging.info("Reduced to {0} callstacks".format(
+        [len(x) for x in callstacks_pool]))
 
     # Take into account just the parsed ranks (in case partial files are used)
     plane_cs_pool = []
@@ -223,7 +224,11 @@ def main(argc, argv):
     # Just for historical naming...
     callstacks_pool = plane_cs_pool
 
-    ''' 4. Phases recognition ----- --------------------------------------- '''
+    # REMOVE!!!!!! This is when application is extrae statically linked
+    for cs in callstacks_pool:
+        del cs.calls[-2]
+
+    ''' 4. Phases recognition --------------------------------------------- '''
     logging.info("Phases recognition...")
     wfprof.step_init(3)
     deltas = calcule_deltas_clustering(callstacks_pool, constants.TOTAL_TIME)

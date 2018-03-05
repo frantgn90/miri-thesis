@@ -56,9 +56,17 @@ class callstack_ordered_list(object):
 
     def get_common_callstack(self):
         """ could be implemented as a parallel reduce """
+
         common_callstack = self.callstack_list[0]
+ 
+        # If it is a nested loop or conditional
         if isinstance(common_callstack, callstack_ordered_list):
             common_callstack = common_callstack.common_callstack
+
+        common_callstack = copy.deepcopy(common_callstack)
+
+        if common_callstack.calls[-1].mpi_call:
+            common_callstack.calls = common_callstack.calls[:-1]
 
         for item in self.callstack_list[1:]:
             if isinstance(item, callstack_ordered_list):

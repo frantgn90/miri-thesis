@@ -38,7 +38,8 @@ class pseudocode(object):
         self.burst_threshold = 0 # All burst
 
         # Sort the clusters by program order
-        clusters_set.sort(key=lambda x: x.get_first_line(), reverse=False)
+        #clusters_set.sort(key=lambda x: x.get_first_line(), reverse=False)
+        clusters_set.sort(key=lambda x: x.get_first_callstack(), reverse=False)
         self.clusters_set = clusters_set
 
     def beautify(self):

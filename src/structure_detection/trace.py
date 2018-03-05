@@ -57,20 +57,24 @@ class communication(record):
         super(communication, self).__init__(line, pcf)
         self.cpu_send_id = self.cpu_id
         self.ptask_send_id = self.appl_id
-        self.task_send_id = self.task_id
+        self.task_send_id = int(self.task_id)
         self.thread_send_id = self.thread_id
-        self.logical_send = self.fields[5]
-        self.physical_send = self.fields[6]
+        self.logical_send = int(self.fields[5])
+        self.physical_send = int(self.fields[6])
         
         self.cpu_recv_id = self.fields[7]
         self.ptask_recv_id = self.fields[8]
         self.task_recv_id = int(self.fields[9])
         self.thread_recv_id = self.fields[10]
-        self.logical_recv = self.fields[11]
-        self.physical_recv = self.fields[12]
+        self.logical_recv = int(self.fields[11])
+        self.physical_recv = int(self.fields[12])
 
-        self.size = self.fields[13]
+        self.size = int(self.fields[13])
         self.tag = self.fields[14]
+
+        # Auxiliar variables
+        self.recv_merged = False
+        self.send_merged = False
 
 class event(record):
     def __init__(self, line, pcf):
@@ -283,13 +287,17 @@ class trace(object):
             else:
                 traces = self.prv_files
             res = self._parse_sequential(traces)
+
+            # Reduce merged info
             for rank in range(self.get_ntasks()):
                 for cs in res[rank].values():
                     cs.calc_reduce_info()
         else:
             res = self._parse_parallel(nprocesses)
+
         if len(self.data_from_monitor) > 0:
             plot_data(self.data_from_monitor)
+
         return res
 
     def _parse_sequential(self, prv_files):
@@ -314,43 +322,60 @@ class trace(object):
                     rec = record.new(line[:-1], self.pcf)
                     if rec is None: continue
 
-                    self.data_from_monitor.extend(
-                            self.__monitor_callstack_pool(int(line.split(":")[5]), callstack_pool))
+                    #self.data_from_monitor.extend(
+                    #        self.__monitor_callstack_pool(int(line.split(":")[5]), callstack_pool))
 
                     if rec.type == TYPE_COMMS:
-                        ssuccess = rsuccess = False
-                        if rec.physical_send in mpi_init_hashmap[rec.task_send_id-1]:
-                            cs = mpi_init_hashmap[rec.task_send_id-1][rec.phyisical_send]
-                            cs.metrics[rec.task_send_id]["mpi_msg_size"] = rec.size
-                            cs.partner.append(rec.task_recv_id)
-                            ssuccess = True
-                        if rec.physical_recv in mpi_fini_hashmap[rec.task_recv_id-1]:
-                            cs = mpi_fini_hashmap[rec.task_recv_id-1][rec.phyisical_recv]
-                            cs.metrics[rec.task_recv_id]["mpi_msg_size"] = rec.size
-                            cs.partner.append(rec.task_send_id)
-                            rsuccess = True
-                        if not (ssuccess and rsuccess):
-                            comm_hashmap[rec.task_send_id-1].update({rec.physical_send:rec})
-                            comm_hashmap[rec.task_recv_id-1].update({rec.physical_recv:rec})
+                        if rec.logical_send in mpi_init_hashmap[rec.task_send_id-1]:
+                            cs = mpi_init_hashmap[rec.task_send_id-1][rec.logical_send]
+                            cs.add_mpi_msg_size(rec.size)
+                            cs.set_partner(rec.task_recv_id-1)
+                            del mpi_init_hashmap[rec.task_send_id-1][rec.logical_send]
+                            rec.send_merged = True
+                        else:
+                            comm_hashmap[rec.task_send_id-1].update({rec.logical_send:rec})
+
+                        if rec.logical_recv in mpi_fini_hashmap[rec.task_recv_id-1]:
+                            cs = mpi_fini_hashmap[rec.task_recv_id-1][rec.logical_recv]
+                            cs.add_mpi_msg_size(rec.size)
+                            cs.set_partner(rec.task_send_id-1)
+                            del mpi_fini_hashmap[rec.task_recv_id-1][rec.logical_recv]
+                            rec.recv_merged = True
+                        else:
+                            comm_hashmap[rec.task_recv_id-1].update({rec.logical_recv:rec})
+
                     elif rec.type == TYPE_EVENT:
                         if len(rec.events["MPI"]) > 0:
+                            assert len(rec.events["MPI"]) == 1
                             if rec.events["MPI"][0].value == "0":
                                 assert mpi_opened[rec.task_id-1]
                                 
                                 cs = callstack_last[rec.task_id-1]
                                 cs.metrics[rec.task_id-1]["mpi_duration"] = rec.time - cs.instants[0]
-                                if rec.time in comm_hashmap[rec.task_id-1]:
-                                    comm = comm_hashmap[rec.task_id-1][rec.time]
-                                    cs.partner.append(comm.task_send_id)
-                                    cs.metrics[rec.task_id-1]["mpi_msg_size"] = comm.size
-    
-                                # Intra-rank merge
+                                
+                                # On-line merge. It is better in terms of memory usage because 
+                                # we are compressing information from very beginning
                                 if not cs.get_signature() in callstack_pool[rec.task_id-1]:
                                     callstack_pool[rec.task_id-1].update(
                                             {cs.get_signature():cs})
                                 else:
                                     callstack_pool[rec.task_id-1][cs.get_signature()].merge(cs)
+                                    cs = callstack_pool[rec.task_id-1][cs.get_signature()]
 
+                                    # Update mpi_init_hashmap with merged callstack
+                                    if cs.instants[-1] in mpi_init_hashmap[rec.task_id-1]:
+                                        mpi_init_hashmap[rec.task_id-1][cs.instants[-1]] = cs
+
+                                # Recv communication
+                                if rec.time in comm_hashmap[rec.task_id-1]:
+                                    comm = comm_hashmap[rec.task_id-1][rec.time]
+                                    cs.set_partner(comm.task_send_id-1)
+                                    cs.add_mpi_msg_size(comm.size)
+                                    if comm_hashmap[rec.task_id-1][rec.time].send_merged:
+                                        del comm_hashmap[rec.task_id-1][rec.time]
+                                else:
+                                    mpi_fini_hashmap[rec.task_id-1].update({rec.time: cs})
+    
                                 mpi_opened[rec.task_id-1] = False
                                 callstack_last[rec.task_id-1] = None
                                 burst_last[rec.task_id-1] = None
@@ -379,8 +404,12 @@ class trace(object):
                                 # Send communication
                                 if rec.time in comm_hashmap[rec.task_id-1]:
                                     comm = comm_hashmap[rec.task_id-1][rec.time]
-                                    cs.partner.append(comm.task_recv_id)
-                                    cs.metrics[rec.task_id-1]["mpi_msg_size"] = comm.size
+                                    cs.set_partner(comm.task_recv_id-1)
+                                    cs.add_mpi_msg_size(comm.size)
+                                    if comm_hashmap[rec.task_id-1][rec.time].recv_merged:
+                                        del comm_hashmap[rec.task_id-1][rec.time]
+                                else:
+                                    mpi_init_hashmap[rec.task_id-1].update({rec.time: cs})
 
                                 # Loopid information
                                 cs.loop_info = copy.copy(loop_stack[rec.task_id-1])
@@ -402,13 +431,24 @@ class trace(object):
                             callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                                     .update({x.type:x.value for x in rec.events["GLOP"]})
                         if len(rec.events["LOOP"]) > 0:
-                            assert len(rec.events["LOOP"]) == 1
-                            loop = rec.events["LOOP"][0]
+                            for loop in rec.events["LOOP"]:
+                                if loop.loopid == "0":
+                                    loop_stack[rec.task_id-1].pop()
+                                else:
+                                    loop_stack[rec.task_id-1].append(loop.loopid)
 
-                            if loop.loopid == "0":
-                                loop_stack[rec.task_id-1].pop()
-                            else:
-                                loop_stack[rec.task_id-1].append(loop.loopid)
+        for rank in self.get_taskids():
+            if len(comm_hashmap[rank]) > 0:
+                logging.warning("[{1}] {0} communications with no matching!!"
+                        .format(len(comm_hashmap[rank]),rank))
+
+            if len(mpi_init_hashmap[rank]) > 0:
+                logging.warning("[{1}] {0} mpi_init with no matching!!"
+                        .format(len(mpi_init_hashmap[rank]),rank))
+
+            if len(mpi_fini_hashmap[rank]) > 0:
+                logging.warning("[{1}] {0} mpi_fini with no matching!!"
+                        .format(len(mpi_fini_hashmap[rank]),rank))
 
         return callstack_pool[:self.get_ntasks()]
 

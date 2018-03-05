@@ -106,6 +106,11 @@ class callstack(object):
         self.signature_hash = shash
         self.signature = str(self.rank)+"#"+signature
         self.loop_info = None
+        self.already_with_size = 1
+
+    @classmethod
+    def empty(cls):
+        return cls(0,0,[])
 
     @classmethod
     def from_trace(cls, rank, instant, lines, calls, files):
@@ -119,9 +124,17 @@ class callstack(object):
 
         return cls(rank, instant, calls_obj)
 
-    def set_partner(self, partner):
-        self.partner.update(partner)
-        self.compacted_partner.append((self.rank, self.partner))
+    def add_mpi_msg_size(self,size):
+        if self.repetitions[self.rank] == 1:
+            self.metrics[self.rank]["mpi_msg_size"] = size
+        else:
+            self.metrics[self.rank]["mpi_msg_size_merged"][self.already_with_size] = size
+            self.already_with_size += 1
+
+    def set_partner(self, new_partner):
+        if not new_partner in self.partner:
+            self.partner.add(new_partner)
+            self.compacted_partner.append((self.rank, self.partner))
 
     def get_instants(self):
         return self.instants
