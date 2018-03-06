@@ -15,6 +15,8 @@ loopuid_stack my_stack = { .top = NULL, .size = 0 };
 loopuid_stack decission_stack = { .top = NULL, .size = 0 };
 loopuid_stack itercounter_stack = { .top = NULL, .size = 0 };
 unsigned int rand_init = FALSE;
+unsigned int env_chance = FALSE;
+double env_chance_value = 0;
 hashmap_entry_top loopid_hashmap[HASHMAP_SIZE];
 
 unsigned int
@@ -243,10 +245,19 @@ void helper_loopuid_stack_extrae_exit()
 void 
 helper_loop_entry(unsigned int line, char *file_name)
 {
+    // Just executed on first entry
     if (!rand_init)
     {
         srand(time(NULL));
         rand_init = TRUE;
+
+        char *env_chance_p = getenv(ENVVAR_CHANCE);
+        if (env_chance_p != NULL)
+        {
+            env_chance = TRUE;
+            env_chance_value = atof(env_chance_p);
+            printf("It. chance set to: %f\n", env_chance_value);
+        }
     }
 
     unsigned int hash = get_loop_hash(line, file_name);
@@ -266,11 +277,16 @@ void
 helper_loop_iter_entry(double chance)
 {
     double r = (double)rand() / (double)RAND_MAX;
-    unsigned int instrument_iter = (r < chance);
+    unsigned int instrument_iter;
+    if (!env_chance)
+        instrument_iter = (r < chance);
+    else
+        instrument_iter = (r < env_chance_value);
 
     loopuid_item* top = loopuidstack_top(&itercounter_stack);
+    top->val++;
     if (instrument_iter)
-        Extrae_eventandcounters(EXTRAE_ITEREVENT, ++top->val);
+        Extrae_eventandcounters(EXTRAE_ITEREVENT, top->val);
     loopuidstack_push(&decission_stack, (extrae_value_t) instrument_iter);
 }
 
