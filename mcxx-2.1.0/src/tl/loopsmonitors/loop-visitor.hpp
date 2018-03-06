@@ -41,10 +41,9 @@ namespace TL
             bool _instrument_all_loops;
             std::string _instrument_only_mpi_str;
             bool _instrument_only_mpi;
-            std::string _with_hw_counters_str;
-            bool _with_hw_counters;
             std::string _instrument_iterations_str;
             bool _instrument_iterations;
+            double _instrument_iterations_chance;
 
             std::string _extrae_api_nevent_call;
             std::string _extrae_api_event_call;

@@ -9,8 +9,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <helper.h>
+#include <time.h>
 
 loopuid_stack my_stack = { .top = NULL, .size = 0 };
+loopuid_stack decission_stack = { .top = NULL, .size = 0 };
+loopuid_stack itercounter_stack = { .top = NULL, .size = 0 };
+unsigned int rand_init = FALSE;
 hashmap_entry_top loopid_hashmap[HASHMAP_SIZE];
 
 unsigned int
@@ -123,6 +127,12 @@ loopuidstack_pop(loopuid_stack *stack)
     return res;
 }
 
+loopuid_item *
+loopuidstack_top(loopuid_stack *stack)
+{
+    return stack->top;
+}
+
 unsigned int 
 loopuidstack_size(loopuid_stack *stack)
 {
@@ -191,8 +201,8 @@ void helper_loopuid_pop()
     loopuidstack_pop(&my_stack);
 }
 
-INTERFACE_ALIASES_F(helper_loopuid_extrae_entry,(),void)
-void helper_loopuid_extrae_entry()
+INTERFACE_ALIASES_F(helper_loopuid_stack_extrae_entry,(),void)
+void helper_loopuid_stack_extrae_entry()
 {
     unsigned int size;
     extrae_type_t *types;
@@ -211,8 +221,8 @@ void helper_loopuid_extrae_entry()
     free(values);
 }
 
-INTERFACE_ALIASES_F(helper_loopuid_extrae_exit,(),void)
-void helper_loopuid_extrae_exit()
+INTERFACE_ALIASES_F(helper_loopuid_stack_extrae_exit,(),void)
+void helper_loopuid_stack_extrae_exit()
 {
     unsigned int size = loopuidstack_size(&my_stack);
     extrae_type_t *types = (extrae_type_t *) malloc(sizeof(extrae_type_t)*size);
@@ -228,4 +238,46 @@ void helper_loopuid_extrae_exit()
 
     free(types);
     free(values);
+}
+
+void 
+helper_loop_entry(unsigned int line, char *file_name)
+{
+    if (!rand_init)
+    {
+        srand(time(NULL));
+        rand_init = TRUE;
+    }
+
+    unsigned int hash = get_loop_hash(line, file_name);
+    Extrae_event(EXTRAE_LOOPEVENT, hash);
+    loopuidstack_push(&itercounter_stack, (extrae_value_t) 0);
+}
+
+void 
+helper_loop_exit()
+{
+    unsigned int niters = (unsigned int)loopuidstack_pop(&itercounter_stack);
+    Extrae_event(EXTRAE_LOOPITERCEVENT, niters);
+    Extrae_event(EXTRAE_LOOPEVENT, EXTRAE_EXITEVENT);
+}
+
+void 
+helper_loop_iter_entry(double chance)
+{
+    double r = (double)rand() / (double)RAND_MAX;
+    unsigned int instrument_iter = (r < chance);
+
+    loopuid_item* top = loopuidstack_top(&itercounter_stack);
+    if (instrument_iter)
+        Extrae_eventandcounters(EXTRAE_ITEREVENT, ++top->val);
+    loopuidstack_push(&decission_stack, (extrae_value_t) instrument_iter);
+}
+
+void 
+helper_loop_iter_exit()
+{
+    unsigned int instrument_iter = loopuidstack_pop(&decission_stack);
+    if (instrument_iter)
+        Extrae_eventandcounters(EXTRAE_ITEREVENT, EXTRAE_EXITEVENT);
 }

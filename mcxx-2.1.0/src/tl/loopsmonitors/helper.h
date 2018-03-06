@@ -64,6 +64,9 @@ typedef struct loopuid_stack loopuid_stack;
 
 //static int last_loop_id = 0;
 extern loopuid_stack my_stack;
+extern loopuid_stack decission_stack;
+extern loopuid_stack itercounter_stack;
+extern unsigned int rand_init;
 extern hashmap_entry_top loopid_hashmap[HASHMAP_SIZE];
 
 /* Functions */
@@ -116,10 +119,25 @@ void
 helper_loopuid_pop();
 
 void 
-helper_loopuid_extrae_entry();
+helper_loopuid_stack_extrae_entry();
 
 void 
-helper_loopuid_extrae_exit();
+helper_loopuid_stack_extrae_exit();
+
+void 
+helper_loop_entry(
+        unsigned int line, 
+        char *file_name);
+
+void 
+helper_loop_exit();
+
+void 
+helper_loop_iter_entry(
+        double chance);
+
+void 
+helper_loop_iter_exit();
 
 #ifdef __cplusplus
 }

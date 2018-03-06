@@ -92,21 +92,18 @@ namespace TL {
     class ExtraeLoopsVisitor : public Nodecl::ExhaustiveVisitor<void>
     {
         private:
-            std::string _extrae_api_event_call;
-            std::string _extrae_api_nevent_call;
             std::string _nesting_level_var;
             bool _instrument_iterations;
             bool _instrument_only_mpi;
+            double _instrument_iterations_chance;
         public:
             ExtraeLoopsVisitor(
-                    std::string extrae_api_event_call,
-                    std::string extrae_api_nevent_call,
                     bool instrument_iterations,
+                    double instrument_iterations_chance,
                     bool instrument_only_mpi)
             {
-                this->_extrae_api_event_call = extrae_api_event_call;
-                this->_extrae_api_nevent_call = extrae_api_nevent_call;
                 this->_instrument_iterations = instrument_iterations;
+                this->_instrument_iterations_chance = instrument_iterations_chance;
                 this->_instrument_only_mpi = instrument_only_mpi;
             }
             void loop_visit_entry(bool entry, Nodecl::NodeclBase node)
@@ -138,11 +135,11 @@ namespace TL {
                     loop_visit_pre(node, is_while, node_while, is_for, node_for,
                             line, filename);
                 }
-                //else
-                //{
-                //    loop_visit_post(node, is_while, node_while, is_for, node_for,
-                //            line, filename);
-                //}
+                else
+                {
+                    loop_visit_post(node, is_while, node_while, is_for, node_for,
+                            line, filename);
+                }
             }
             void loop_visit_pre(Nodecl::NodeclBase node,
                 bool is_while, Nodecl::WhileStatement node_while,
@@ -162,27 +159,17 @@ namespace TL {
                 {
                     src_loop_init
                         << "helper_loopuid_push(" << line 
-                        << ",\"" << filename << "\");";
+                        <<     ",\"" << filename << "\");";
                     src_loop_fini 
                         << "helper_loopuid_pop();";
                 }
                 else
                 {
                     src_loop_init 
-                        <<      this->_extrae_api_event_call << "("
-                        <<          EXTRAE_LOOPEVENT << ", " 
-                        <<          "get_loop_hash(" << line 
-                        <<              ",\"" << filename << "\"))";
+                        << "helper_loop_entry(" << line
+                        <<     ",\"" << filename << "\");";
                     src_loop_fini 
-                        <<      this->_extrae_api_event_call << "("
-                        <<          EXTRAE_LOOPEVENT << ", " 
-                        <<          EXTRAE_EXITEVENT << ")";
-
-                    C_LANGUAGE()
-                    {
-                        src_loop_init << ";";
-                        src_loop_fini << ";";
-                    }
+                        << "helper_loop_exit();";
                 }
 
                 FORTRAN_LANGUAGE()
@@ -204,65 +191,74 @@ namespace TL {
                 node.append_sibling(node_loop_fini);
             }
 
-//            void loop_visit_post(Nodecl::NodeclBase node,
-//                bool is_while, Nodecl::WhileStatement node_while,
-//                bool is_for,   Nodecl::ForStatement node_for,
-//                int line, std::string filename
-//                )
-//            {
-//                if (this->_instrument_iterations)
-//                {
-//
-//                    //TL::ForStatement for_statement(node);
-//                    //TL::Symbol ind_var = for_statement.get_induction_variable();
-//                    //std::string ind_var_name = ind_var.get_name();
-//                    
-//                    std::string new_it_var_name = 
-//                        std::string("__mercurium_it_id_") 
-//                        + std::to_string(line) + filename;
-//
-//                    new_unsigned_variable(node.retrieve_context(), 
-//                        new_it_var_name, 0);
-//
-//
-//                    Nodecl::NodeclBase new_statement;
-//                    Source src;
-//                    src
-//                        << "{"
-//                        <<      this->_extrae_api_event_call << "("
-//                        <<          EXTRAE_ITEREVENT
-//                        <<          ", ++" << new_it_var_name  << ");"
-//                        <<      statement_placeholder(new_statement)
-//                        <<      this->_extrae_api_event_call << "("
-//                        <<          EXTRAE_ITEREVENT
-//                        <<          "," << EXTRAE_EXITEVENT << ");"
-//                        << "}";
-//
-//                    // TODO: There is any superclass that contains all loop statements?
-//                    Nodecl::NodeclBase generated_code = src.parse_statement(node);
-//                    if (is_for)
-//                    {
-//                        new_statement.replace(node_for);
-//                        node_for.get_statement().replace(generated_code);
-//                    }
-//                    else if (is_while)
-//                    {
-//                        new_statement.replace(node_while);
-//                        node_while.get_statement().replace(generated_code);
-//
-//                    }
-//                }
-//            }
+            void loop_visit_post(Nodecl::NodeclBase node,
+                bool is_while, Nodecl::WhileStatement node_while,
+                bool is_for,   Nodecl::ForStatement node_for,
+                int line, std::string filename)
+            {
+                if (this->_instrument_iterations)
+                {
+
+                    //TL::ForStatement for_statement(node);
+                    //TL::Symbol ind_var = for_statement.get_induction_variable();
+                    //std::string ind_var_name = ind_var.get_name();
+                    
+                    std::string new_it_var_name = 
+                        std::string("__mercurium_it_id_") 
+                        + std::to_string(line) + "_" + filename;
+
+                    new_unsigned_variable(node.retrieve_context(), 
+                            new_it_var_name, 0);
+
+                    Nodecl::NodeclBase new_statement;
+                    Source src;
+                    src
+                        << "{"
+                        <<      "helper_loop_iter_entry("
+                        <<          std::to_string(this->
+                                _instrument_iterations_chance )
+                        <<      ");"
+                        <<      statement_placeholder(new_statement)
+                        <<      "helper_loop_iter_exit();"
+                        << "}";
+
+                    // TODO: There is any superclass that contains all loop 
+                    // statements?
+
+                    FORTRAN_LANGUAGE()
+                    {
+                        Source::source_language = SourceLanguage::C;
+                    }
+
+                    Nodecl::NodeclBase generated_code = src.parse_statement(node);
+
+                    FORTRAN_LANGUAGE()
+                    {
+                        Source::source_language = SourceLanguage::Current;
+                    }
+
+                    if (is_for)
+                    {
+                        new_statement.replace(node_for.get_statement());
+                        node_for.get_statement().replace(generated_code);
+                    }
+                    else if (is_while)
+                    {
+                        new_statement.replace(node_while.get_statement());
+                        node_while.get_statement().replace(generated_code);
+                    }
+                }
+            }
 
             void mpi_call_visit_pre(const Nodecl::FunctionCall node, 
                     std::string fname)
             {
-                std::cout << "MPI Detected: " << fname << std::endl;
+                //std::cout << "MPI Detected: " << fname << std::endl;
                 Source src_mpi_init;
                 Source src_mpi_fini;
 
-                src_mpi_init << "helper_loopuid_extrae_entry();";
-                src_mpi_fini << "helper_loopuid_extrae_exit();";
+                src_mpi_init << "helper_loopuid_stack_extrae_entry();";
+                src_mpi_fini << "helper_loopuid_stack_extrae_exit();";
 
                 FORTRAN_LANGUAGE()
                 {
@@ -347,17 +343,10 @@ namespace TL {
                 std::bind(&VisitorLoopPhase::set_only_mpi_instrumentation,
                     this, std::placeholders::_1));
 
-        register_parameter("with_hwc",
-                "WetherExtrae events will also provide hardware counters "\
-                "information or not",
-                _with_hw_counters_str,
-                "0")
-            .connect(
-                std::bind(&VisitorLoopPhase::set_with_hwc_instrumentation,
-                    this, std::placeholders::_1));
-
         register_parameter("with_iters",
-                "Wether iterations will be instrumented or just loops.",
+                "Wether iterations will be instrumented or just loops, in that"\
+                " case the value indicates the chance of an iteration to be"\
+                " instrumented",
                 _instrument_iterations_str,
                 "0")
             .connect(
@@ -369,8 +358,8 @@ namespace TL {
     }
     void VisitorLoopPhase::set_with_instr_iters(const std::string& str)
     {
-        parse_boolean_option("with_iters",
-                str, _instrument_iterations, "Assuming true");
+        this->_instrument_iterations_chance = std::stod(str);
+        this->_instrument_iterations = (this->_instrument_iterations_chance > 0);
     }
     void VisitorLoopPhase::set_all_loops_instrumentation(const std::string& str)
     {
@@ -382,49 +371,33 @@ namespace TL {
         parse_boolean_option("only_mpi",
                 str, _instrument_only_mpi, "Assuming true");
     }
-    void VisitorLoopPhase::set_with_hwc_instrumentation(const std::string& str)
-    {
-        parse_boolean_option("with_hwc",
-                str, _with_hw_counters, "Assuming true");
-    }
     void VisitorLoopPhase::run(TL::DTO& dto)
     {
         Nodecl::NodeclBase top_level = 
             *std::static_pointer_cast<Nodecl::NodeclBase>(dto["nodecl"]);
 
-        /* This variable will control the nesting level */
-        //new_unsigned_variable(top_level.retrieve_context(),
-        //        this->_nesting_level_var, 0);
+        if (this->_instrument_only_mpi || this->_instrument_iterations)
+            this->_instrument_all_loops = true;
 
-        std::cout << "**** Params ****" << std::endl;
-        std::cout << "with_iters:" << this->_instrument_iterations << std::endl;
-        std::cout << "all_loops:" << this->_instrument_all_loops << std::endl;
-        std::cout << "only_mpi:" << this->_instrument_only_mpi << std::endl;
-        std::cout << "with_hwc:" << this->_with_hw_counters << std::endl;
-        std::cout << "****************" << std::endl;
-
-        if (this->_with_hw_counters)
-        {
-            this->_extrae_api_nevent_call = "Extrae_neventandcounters";
-            this->_extrae_api_event_call = "Extrae_eventandcounters";
-        }
-        else
-        {
-            this->_extrae_api_nevent_call = "Extrae_nevent";
-            this->_extrae_api_event_call = "Extrae_event";
-        }
+        //std::cout << "----- Params -----" << std::endl;
+        //std::cout << "- with_iters:" << this->_instrument_iterations 
+        //    << std::endl;
+        //std::cout << "--- chance  :" << this->_instrument_iterations_chance 
+        //    << std::endl;
+        //std::cout << "- all_loops :" << this->_instrument_all_loops 
+        //    << std::endl;
+        //std::cout << "- only_mpi  :" << this->_instrument_only_mpi << std::endl;
+        //std::cout << "------------------" << std::endl;
 
         this->load_headers(top_level);
 
-        if (this->_instrument_all_loops || this->_instrument_only_mpi)
+        /* With no pragmas */
+        if (this->_instrument_all_loops)
         {
             ExtraeLoopsVisitor loops_visitor(
-                    this->_extrae_api_event_call,
-                    this->_extrae_api_nevent_call,
                     this->_instrument_iterations,
+                    this->_instrument_iterations_chance,
                     this->_instrument_only_mpi);
-
-            
             loops_visitor.walk(top_level);
         }
         else
@@ -433,16 +406,16 @@ namespace TL {
             assert(false);
 
             /* Register #pragma extrae loop */
-            //register_new_directive(CURRENT_CONFIGURATION,
-            //        "extrae", "loop", 0,0);
+            register_new_directive(CURRENT_CONFIGURATION,
+                    "extrae", "loop", 0,0);
 
-            ///* Handler for pragma extrae loop */
-            //PragmaMapDispatcher map_dispatcher;
-            //map_dispatcher["extrae"].statement.pre["loop"]
-            //    .connect(std::bind(&PragmaHandler,std::placeholders::_1));
+            /* Handler for pragma extrae loop */
+            PragmaMapDispatcher map_dispatcher;
+            map_dispatcher["extrae"].statement.pre["loop"]
+                .connect(std::bind(&PragmaHandler,std::placeholders::_1));
 
-            //PragmaVisitor pragma_visitor(map_dispatcher, true);
-            //pragma_visitor.walk(top_level);
+            PragmaVisitor pragma_visitor(map_dispatcher, true);
+            pragma_visitor.walk(top_level);
         }
     }
 
