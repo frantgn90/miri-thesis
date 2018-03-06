@@ -161,6 +161,7 @@ class hwc_event(event):
         super(hwc_event, self).__init__(line, pcf)
         self.type = self.fields[6]
         self.type_name = self.pcf.translate_type(self.type)
+        self.type_name_short = self.type_name.split(" ")[0]
         self.value = int(self.fields[7])
 
 
