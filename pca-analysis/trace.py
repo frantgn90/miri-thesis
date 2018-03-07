@@ -131,6 +131,7 @@ class loop_event(event):
         self.type = self.fields[6]
         self.nested_level = int(self.type)-99000000
         self.loopid = self.fields[7]
+        self.loop_name = self.pcf.translate_event(self.type, self.loopid)
         self.entry = (self.loopid != "0")
         self.exit = (self.loopid == "0")
 

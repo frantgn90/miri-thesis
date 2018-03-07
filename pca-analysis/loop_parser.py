@@ -69,7 +69,7 @@ class iteration(object):
         pass
 
 class loop(object):
-    def __init__(self, loopid):
+    def __init__(self, loopid, code_loc):
         self.loopid = loopid
         self.iterations = []
         # One loop can be executed so many times
@@ -78,6 +78,7 @@ class loop(object):
         self.fini=[]
         self.duration=[]
         self.niters=[]
+        self.code_loc = code_loc
     def new_iteration(self, it):
         self.iterations.append(it)
     def set_init(self, init):
@@ -127,7 +128,7 @@ def loop_handler(loop_record):
         if loop_record.loopid in loop_hmap:
             loopobj = loop_hmap[loop_record.loopid]
         else:
-            loopobj = loop(loop_record.loopid)
+            loopobj = loop(loop_record.loopid, loop_record.loop_name)
         loopobj.set_init(loop_record.time)
         loop_stack.push(loopobj)
     elif loop_record.exit:
@@ -182,7 +183,7 @@ def main(argc, argv):
 
     for loopid, loopobj in loop_hmap.items():
         loopobj.calcule()
-        print("=== {0} ===".format(loopobj.loopid))
+        print("=== {0} ===".format(loopobj.code_loc))
         print("--- General ---")
         print("It. Chance  = {0} ({1}/{2})".format(
             loopobj.chance,len(loopobj.iterations),
