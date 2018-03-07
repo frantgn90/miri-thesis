@@ -242,8 +242,8 @@ void helper_loopuid_stack_extrae_exit()
     free(values);
 }
 
-void 
-helper_loop_entry(unsigned int line, char *file_name)
+INTERFACE_ALIASES_F(helper_loop_entry,(unsigned int line, char *file_name),void)
+void helper_loop_entry(unsigned int line, char *file_name)
 {
     // Just executed on first entry
     if (!rand_init)
@@ -260,38 +260,66 @@ helper_loop_entry(unsigned int line, char *file_name)
         }
     }
 
-    unsigned int hash = get_loop_hash(line, file_name);
-    Extrae_event(EXTRAE_LOOPEVENT, hash);
-    loopuidstack_push(&itercounter_stack, (extrae_value_t) 0);
+    unsigned int instrument_loop = TRUE;
+    if (loopuidstack_size(&decission_stack) > 0)
+    {
+        instrument_loop = loopuidstack_top(&decission_stack)->val;
+    }
+    if (instrument_loop)
+    {
+        unsigned int hash = get_loop_hash(line, file_name);
+        Extrae_event(EXTRAE_LOOPEVENT, hash);
+        loopuidstack_push(&itercounter_stack, (extrae_value_t) 0);
+    }
 }
 
-void 
-helper_loop_exit()
+INTERFACE_ALIASES_F(helper_loop_exit,(),void)
+void helper_loop_exit()
 {
-    unsigned int niters = (unsigned int)loopuidstack_pop(&itercounter_stack);
-    Extrae_event(EXTRAE_LOOPITERCEVENT, niters);
-    Extrae_event(EXTRAE_LOOPEVENT, EXTRAE_EXITEVENT);
+    unsigned int instrument_loop = TRUE;
+    if (loopuidstack_size(&decission_stack) > 0)
+    {
+        instrument_loop = loopuidstack_top(&decission_stack)->val;
+    }
+    if (instrument_loop)
+    {
+        unsigned int niters = (unsigned int)loopuidstack_pop(&itercounter_stack);
+        Extrae_event(EXTRAE_LOOPITERCEVENT, niters);
+        Extrae_event(EXTRAE_LOOPEVENT, EXTRAE_EXITEVENT);
+    }
 }
 
-void 
-helper_loop_iter_entry(double chance)
+INTERFACE_ALIASES_F(helper_loop_iter_entry,(double chance),void)
+void helper_loop_iter_entry(double chance)
 {
+    unsigned int instrument_iter = TRUE;
+    unsigned int top_instrument_iter = TRUE;
     double r = (double)rand() / (double)RAND_MAX;
-    unsigned int instrument_iter;
-    if (!env_chance)
-        instrument_iter = (r < chance);
-    else
-        instrument_iter = (r < env_chance_value);
 
-    loopuid_item* top = loopuidstack_top(&itercounter_stack);
-    top->val++;
-    if (instrument_iter)
-        Extrae_eventandcounters(EXTRAE_ITEREVENT, top->val);
-    loopuidstack_push(&decission_stack, (extrae_value_t) instrument_iter);
+    if (loopuidstack_size(&decission_stack) > 0)
+    {
+        top_instrument_iter = loopuidstack_top(&decission_stack)->val;
+    }
+
+    if (top_instrument_iter)
+    {
+        if (!env_chance)
+            instrument_iter = (r < chance);
+        else
+            instrument_iter = (r < env_chance_value);
+
+        loopuid_item* top = loopuidstack_top(&itercounter_stack);
+        top->val++; 
+
+        if (instrument_iter)
+            Extrae_eventandcounters(EXTRAE_ITEREVENT, top->val);
+    }
+    loopuidstack_push(&decission_stack, 
+            (extrae_value_t) instrument_iter&top_instrument_iter);
 }
 
-void 
-helper_loop_iter_exit()
+INTERFACE_ALIASES_F(helper_loop_iter_exit,(),void)
+void helper_loop_iter_exit()
 {
     unsigned int instrument_iter = loopuidstack_pop(&decission_stack);
     if (instrument_iter)
