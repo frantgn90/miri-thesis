@@ -72,17 +72,25 @@ class loop(object):
     def __init__(self, loopid):
         self.loopid = loopid
         self.iterations = []
+        # One loop can be executed so many times
+        # if it is a subloop
+        self.init=[]
+        self.fini=[]
+        self.duration=[]
+        self.niters=[]
     def new_iteration(self, it):
         self.iterations.append(it)
     def set_init(self, init):
-        self.init = init
+        self.init.append(init)
     def set_fini(self, fini):
-        assert fini > self.init
-        self.fini = fini
-        self.duration = self.fini - self.init
+        assert fini > self.init[-1]
+        self.fini.append(fini)
+        self.duration.append(self.fini[-1] - self.init[-1])
     def set_niters(self, niters):
-        self.niters = niters
-        self.chance = len(self.iterations) / niters
+        self.niters.append(niters)
+        self.chance = len(self.iterations) / self.get_total_iters()
+    def get_total_iters(self):
+        return sum(self.niters)
     def calcule(self):
         import numpy as np
         self.ittime_mean = np.mean(list(map(
@@ -91,6 +99,9 @@ class loop(object):
             lambda x: x.duration, self.iterations)))
         self.ittime_std = np.std(list(map(
             lambda x: x.duration, self.iterations)))
+        self.niters_mean = np.mean(self.niters)
+        self.niters_median = np.median(self.niters)
+        self.niters_std = np.std(self.niters)
         hwc_keys = list(map(lambda x: list(x.hwc.keys()), self.iterations))
         self.hwc_keys=[]
         for k in hwc_keys: self.hwc_keys.extend(k)
@@ -113,18 +124,17 @@ loop_hmap  = {}
 
 def loop_handler(loop_record):
     if loop_record.entry:
-        loopobj = loop(loop_record.loopid)
+        if loop_record.loopid in loop_hmap:
+            loopobj = loop_hmap[loop_record.loopid]
+        else:
+            loopobj = loop(loop_record.loopid)
         loopobj.set_init(loop_record.time)
         loop_stack.push(loopobj)
     elif loop_record.exit:
         loopobj = loop_stack.pop()
         loopobj.set_fini(loop_record.time)
-        # A sublop will be repetaed as many times as iterations
-        # have the superloop so put all them together.
-        if loopobj.loopid in loop_hmap:
-            loop_hmap[loopobj.loopid].append(loopobj)
-        else:
-            loop_hmap[loopobj.loopid] = [loopobj]
+        if not loopobj.loopid in loop_hmap:
+            loop_hmap[loopobj.loopid] = loopobj
 
 
 def iter_handler(iter_record, hwc_record_set):
@@ -170,24 +180,29 @@ def main(argc, argv):
 
     parser.parse(event_callback=event_handler)
 
-    for loopid, loopset in loop_hmap.items():
-        for loopobj in loopset:
-            loopobj.calcule()
-            print("--- {0} ---".format(loopobj.loopid))
-            print("It. Chance  = {0}".format(loopobj.chance))
-            print("N.Its   = {0}".format(loopobj.niters))
-            print("It.mean = {0}".format(loopobj.ittime_mean))
-            print("It.medi = {0}".format(loopobj.ittime_median))
-            print("It.std  = {0}".format(loopobj.ittime_std))
-            print("--- HWC ---")
-            for name in loopobj.hwc_keys:
-                print("{0:>20} = {1}".format(name+"   Mean",
-                    round(loopobj.hwc_mean[name],2)))
-                print("{0:>20} = {1}".format(name+" Median",
-                    round(loopobj.hwc_median[name],2)))
-                print("{0:>20} = {1}".format(name+"    Std",
-                    round(loopobj.hwc_std[name],2)))
-                
+    for loopid, loopobj in loop_hmap.items():
+        loopobj.calcule()
+        print("=== {0} ===".format(loopobj.loopid))
+        print("--- General ---")
+        print("It. Chance  = {0} ({1}/{2})".format(
+            loopobj.chance,len(loopobj.iterations),
+            loopobj.get_total_iters()))
+        print("N. Total Its = {0}".format(loopobj.get_total_iters()))
+        print("N. Its = {0}/{1} ({2})".format(
+            loopobj.niters_mean, loopobj.niters_median, 
+            loopobj.niters_std))
+        print("It. Time = {0}/{1} ({2})".format(
+            round(loopobj.ittime_mean,2),
+            round(loopobj.ittime_median, 2),
+            round(loopobj.ittime_std,2)))
+        print("--- HWC ---")
+        for name in loopobj.hwc_keys:
+            print("{0} = {1}/{2} ({3})".format(name,
+                round(loopobj.hwc_mean[name],2),
+                round(loopobj.hwc_median[name],2),
+                round(loopobj.hwc_std[name],2)))
+        print()
+            
 
 
 if __name__ == "__main__":
