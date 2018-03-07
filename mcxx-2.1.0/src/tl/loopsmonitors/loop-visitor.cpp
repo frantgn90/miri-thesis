@@ -253,30 +253,52 @@ namespace TL {
             void mpi_call_visit_pre(const Nodecl::FunctionCall node, 
                     std::string fname)
             {
-                //std::cout << "MPI Detected: " << fname << std::endl;
                 Source src_mpi_init;
                 Source src_mpi_fini;
+                bool insert_init = false;
+                bool insert_fini = false;
 
-                src_mpi_init << "helper_loopuid_stack_extrae_entry();";
-                src_mpi_fini << "helper_loopuid_stack_extrae_exit();";
+                if (fname.find("MPI_Init") != std::string::npos
+                        or fname.find("mpi_init") != std::string::npos)
+                {
+                    src_mpi_fini << "helper_init();";
+                    insert_fini = true;
+                }
+                else if (fname.find("MPI_Finalize") != std::string::npos
+                        or fname.find("mpi_finalize") != std::string::npos)
+                {
+                    src_mpi_init << "helper_fini();";
+                    insert_init = true;
+                }
+
+                if (not insert_init and not insert_fini)
+                {
+                    src_mpi_init << "helper_loopuid_stack_extrae_entry();";
+                    src_mpi_fini << "helper_loopuid_stack_extrae_exit();";
+                    insert_init = insert_fini = true;
+                }
 
                 FORTRAN_LANGUAGE()
                 {
                     Source::source_language = SourceLanguage::C;
                 }
 
-                Nodecl::NodeclBase node_mpi_init =  
-                    src_mpi_init.parse_statement(node);
-                Nodecl::NodeclBase node_mpi_fini = 
-                    src_mpi_fini.parse_statement(node);
+                Nodecl::NodeclBase node_mpi_init;
+                Nodecl::NodeclBase node_mpi_fini;
+                if (insert_init)
+                    node_mpi_init = src_mpi_init.parse_statement(node);
+                if (insert_fini)
+                    node_mpi_fini = src_mpi_fini.parse_statement(node);
 
                 FORTRAN_LANGUAGE()
                 {
                     Source::source_language = SourceLanguage::Current;
                 }
 
-                node.prepend_sibling(node_mpi_init);
-                node.append_sibling(node_mpi_fini);
+                if (insert_init)
+                    node.prepend_sibling(node_mpi_init);
+                if (insert_fini)
+                    node.append_sibling(node_mpi_fini);
             }
 
             virtual void visit_pre(const Nodecl::WhileStatement &node)
@@ -297,24 +319,21 @@ namespace TL {
             }
             virtual void visit_pre(const Nodecl::FunctionCall &node)
             {
-                if (this->_instrument_only_mpi)
-                {
-                    Symbol func = node.get_called().get_symbol();
+                Symbol func = node.get_called().get_symbol();
 
-                    if (func != NULL)
-                    {
-                        std::string fname = func.get_name();
-                        bool mpi_call = (fname.find("MPI_") != std::string::npos 
+                if (func != NULL)
+                {
+                    std::string fname = func.get_name();
+                    bool mpi_call = (fname.find("MPI_") != std::string::npos 
                             or fname.find("mpi_") != std::string::npos);
 
-                        /*
-                         * Maintain this entry point as simple as possible just
-                         * in case more functions management is needed in 
-                         * the future.
-                         */
-                        if (mpi_call)
-                            this->mpi_call_visit_pre(node, fname);
-                    }
+                    /*
+                     * Maintain this entry point as simple as possible just
+                     * in case more functions management is needed in 
+                     * the future.
+                     */
+                    if (mpi_call)
+                        this->mpi_call_visit_pre(node, fname);
                 }
             }
     };
