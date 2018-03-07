@@ -14,7 +14,7 @@
 loopuid_stack my_stack = { .top = NULL, .size = 0 };
 loopuid_stack decission_stack = { .top = NULL, .size = 0 };
 loopuid_stack itercounter_stack = { .top = NULL, .size = 0 };
-unsigned int rand_init = FALSE;
+unsigned int helper_initialized = FALSE;
 unsigned int env_chance = FALSE;
 double env_chance_value = 0;
 hashmap_entry_top loopid_hashmap[HASHMAP_SIZE];
@@ -40,59 +40,49 @@ get_loop_hash(unsigned int line, char *file_name)
     unsigned int hash = 5381;
     int c, i=0;
 
-    while (c = str[i++])
+    while ((c = str[i++]))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
     return hash;
 }
 
-//unsigned int
-//get_loop_hash(unsigned int line, char *file_name)
-//{
-//    unsigned int hash = 0;
-//    for(int i=0; i<strlen(file_name); ++i)
-//    {
-//        hash ^= file_name[i];
-//    }
-//    hash ^= line;
-//    return hash;
-//}
+unsigned int 
+get_loop_uid(unsigned int line, char *file_name)
+{
 
-//unsigned int 
-//get_loop_uid(unsigned int line, char *file_name)
-//{
-//    unsigned int hm_key = line % HASHMAP_SIZE;
-//    hashmap_entry_top *hm_entry_top = &loopid_hashmap[hm_key];
-//
-//    hashmap_entry *item = hm_entry_top->first;
-//    unsigned int entry_size = hm_entry_top->size;
-//
-//    for (int i=0; i<entry_size; ++i)
-//    {
-//        if (item->info->line == line
-//                && item->info->file_name == file_name)
-//        {
-//            return item->info->id;
-//        }
-//        item = item->next;
-//    }
-//
-//    loopid_container *new_info = (loopid_container *) 
-//        malloc(sizeof(loopid_container));
-//    new_info->line = line;
-//    new_info->file_name = file_name;
-//    new_info->id = last_loop_id++;
-//
-//    hashmap_entry *new_hm_entry = (hashmap_entry *)
-//        malloc(sizeof(hashmap_entry));
-//    new_hm_entry->info = new_info;
-//    new_hm_entry->next = hm_entry_top->first;
-//
-//    hm_entry_top->first = new_hm_entry;
-//    hm_entry_top->size++;
-//
-//    return new_info->id;
-//}
+    unsigned int hash = get_loop_hash(line, file_name);
+    unsigned int hm_key = hash % HASHMAP_SIZE;
+    hashmap_entry_top *hm_entry_top = &loopid_hashmap[hm_key];
+
+    hashmap_entry *item = hm_entry_top->first;
+    unsigned int entry_size = hm_entry_top->size;
+
+    for (int i=0; i<entry_size; ++i)
+    {
+        if (item->info->line == line
+                && item->info->file_name == file_name)
+        {
+            return item->info->id;
+        }
+        item = item->next;
+    }
+
+    loopid_container *new_info = (loopid_container *) 
+        malloc(sizeof(loopid_container));
+    new_info->line = line;
+    new_info->file_name = file_name;
+    new_info->id = hash;
+
+    hashmap_entry *new_hm_entry = (hashmap_entry *)
+        malloc(sizeof(hashmap_entry));
+    new_hm_entry->info = new_info;
+    new_hm_entry->next = hm_entry_top->first;
+
+    hm_entry_top->first = new_hm_entry;
+    hm_entry_top->size++;
+
+    return new_info->id;
+}
 
 loopuid_stack * 
 new_loopuidstack()
@@ -180,7 +170,7 @@ loopuidstack_tostr(loopuid_stack *stack)
     loopuid_item *iterator = stack->top;
     while(iterator != NULL)
     {
-        snprintf(&res[res_i],char_size+1,"%03d",iterator->val);
+        snprintf(&res[res_i],char_size+1,"%03llu",iterator->val);
         res[res_i+char_size]=separator;
         iterator = iterator->next;
         res_i+=(char_size+1);
@@ -189,11 +179,77 @@ loopuidstack_tostr(loopuid_stack *stack)
     return res;
 }
 
+INTERFACE_ALIASES_F(helper_init,(),void)
+void helper_init()
+{
+    // Just executed on first entry
+    if (!helper_initialized)
+    {
+        helper_initialized = TRUE;
+        srand(time(NULL));
+
+        char *env_chance_p = getenv(ENVVAR_CHANCE);
+        if (env_chance_p != NULL)
+        {
+            env_chance = TRUE;
+            env_chance_value = atof(env_chance_p);
+            printf("It. chance set to: %f\n", env_chance_value);
+        }
+
+        for (int i=0; i<HASHMAP_SIZE; ++i)
+        {
+            loopid_hashmap[i].first = NULL;
+            loopid_hashmap[i].size = 0;
+        }
+    }
+    else
+    {
+        printf("[HELPER] Warning: helper_init() called more than one time\n");
+    }
+}
+
+INTERFACE_ALIASES_F(helper_fini,(),void)
+void helper_fini()
+{
+    unsigned int nvalues = 0;
+    extrae_type_t type = EXTRAE_LOOPEVENT;
+    extrae_value_t *values;
+    char **desc_values;
+    for (int i=0; i<HASHMAP_SIZE; ++i)
+        nvalues += loopid_hashmap[i].size;
+
+    values = (extrae_value_t *) calloc(nvalues, sizeof(extrae_value_t));
+    desc_values = (char **) calloc(nvalues, sizeof(char *));
+    for (int i=0; i<nvalues; ++i)
+        desc_values[i] = (char *) malloc(50*sizeof(char));
+
+    int nvalues_i = 0;
+    for (int i=0; i<HASHMAP_SIZE; ++i)
+    {
+        unsigned int entry_size = loopid_hashmap[i].size;
+        hashmap_entry *item = loopid_hashmap[i].first;
+        if (entry_size > 0)
+        {
+            for (int j=0; j<entry_size; ++j)
+            {
+                unsigned int line = item->info->line;
+                char *file_name = item->info->file_name;
+                sprintf(desc_values[nvalues_i], "%s:%d", file_name, line);
+                values[nvalues_i] = item->info->id;
+                nvalues_i += 1;
+                item = item->next;
+            }
+        }
+    }
+    Extrae_define_event_type(&type, "Instrumented loops by extraecc/fc", 
+            &nvalues, values, desc_values);
+}
+
 INTERFACE_ALIASES_F(helper_loopuid_push,
         (unsigned int line, char * file_name), void)
 void helper_loopuid_push(unsigned int line, char *file_name)
 {
-    unsigned int hash = get_loop_hash(line, file_name);
+    unsigned int hash = get_loop_uid(line, file_name);
     loopuidstack_push(&my_stack, (extrae_value_t)hash);
 }
 
@@ -245,21 +301,6 @@ void helper_loopuid_stack_extrae_exit()
 INTERFACE_ALIASES_F(helper_loop_entry,(unsigned int line, char *file_name),void)
 void helper_loop_entry(unsigned int line, char *file_name)
 {
-    // Just executed on first entry
-    if (!rand_init)
-    {
-        srand(time(NULL));
-        rand_init = TRUE;
-
-        char *env_chance_p = getenv(ENVVAR_CHANCE);
-        if (env_chance_p != NULL)
-        {
-            env_chance = TRUE;
-            env_chance_value = atof(env_chance_p);
-            printf("It. chance set to: %f\n", env_chance_value);
-        }
-    }
-
     unsigned int instrument_loop = TRUE;
     if (loopuidstack_size(&decission_stack) > 0)
     {
@@ -267,7 +308,7 @@ void helper_loop_entry(unsigned int line, char *file_name)
     }
     if (instrument_loop)
     {
-        unsigned int hash = get_loop_hash(line, file_name);
+        unsigned int hash = get_loop_uid(line, file_name);
         Extrae_event(EXTRAE_LOOPEVENT, hash);
         loopuidstack_push(&itercounter_stack, (extrae_value_t) 0);
     }

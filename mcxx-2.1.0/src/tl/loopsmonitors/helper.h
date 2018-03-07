@@ -66,7 +66,7 @@ typedef struct loopuid_stack loopuid_stack;
 extern loopuid_stack my_stack;
 extern loopuid_stack decission_stack;
 extern loopuid_stack itercounter_stack;
-extern unsigned int rand_init;
+extern unsigned int helper_initialized;
 extern hashmap_entry_top loopid_hashmap[HASHMAP_SIZE];
 
 /* Functions */
@@ -138,6 +138,12 @@ helper_loop_iter_entry(
 
 void 
 helper_loop_iter_exit();
+
+void
+helper_init();
+
+void 
+helper_fini();
 
 #ifdef __cplusplus
 }
