@@ -9,6 +9,7 @@ import logging
 import copy
 from multiprocessing import Pool
 import numpy
+import progressbar
 
 TYPE_STATE = "1"
 TYPE_EVENT = "2"
@@ -319,7 +320,8 @@ class trace(object):
         for tracefile_name in prv_files:
             file_size = os.stat(tracefile_name).st_size
             trace_simple_name = tracefile_name.split("/")[-1]
-            
+            bar = progressbar.ProgressBar(max_value=file_size)
+            bar_completed=0
             with open(tracefile_name) as tracefile:
                 for line in tracefile:
                     rec = record.new(line[:-1], self.pcf)
@@ -331,6 +333,8 @@ class trace(object):
                         self.__record_event_callback(rec)
                     elif rec.type == TYPE_STATE:
                         self.__record_state_callback(rec)
+                    bar_completed += len(line)
+                    bar.update(bar_completed)
         return None
 
     def _parse_parallel(self, nprocesses):
