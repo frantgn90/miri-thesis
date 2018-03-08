@@ -183,26 +183,51 @@ def main(argc, argv):
 
     for loopid, loopobj in loop_hmap.items():
         loopobj.calcule()
-        print("=== {0} ===".format(loopobj.code_loc))
-        print("--- General ---")
-        print("It. Chance  = {0} ({1}/{2})".format(
-            loopobj.chance,len(loopobj.iterations),
-            loopobj.get_total_iters()))
-        print("N. Total Its = {0}".format(loopobj.get_total_iters()))
-        print("N. Its = {0}/{1} ({2})".format(
-            loopobj.niters_mean, loopobj.niters_median, 
-            loopobj.niters_std))
-        print("It. Time = {0}/{1} ({2})".format(
-            round(loopobj.ittime_mean,2),
-            round(loopobj.ittime_median, 2),
-            round(loopobj.ittime_std,2)))
-        print("--- HWC ---")
-        for name in loopobj.hwc_keys:
-            print("{0} = {1}/{2} ({3})".format(name,
-                round(loopobj.hwc_mean[name],2),
-                round(loopobj.hwc_median[name],2),
-                round(loopobj.hwc_std[name],2)))
-        print()
+    import csv
+    with open(tracefile.replace(".prv","_loops.csv"), "w", newline='') as csvfile:
+        loopswriter = csv.writer(csvfile,quoting=csv.QUOTE_MINIMAL)
+        
+        loopswriter.writerow(["Loop loc.","Total iters",
+            "Iters m","Iters med", "Iters std", 
+            "Iter time m", "Iter time med", "Iter time std"] 
+            + list(map(lambda x: x+"_mean", loopobj.hwc_keys))
+            + list(map(lambda x: x+"_median", loopobj.hwc_keys))
+            + list(map(lambda x: x+"_std", loopobj.hwc_keys)))
+
+        for loopid,loopobj in loop_hmap.items():
+            loopswriter.writerow(
+                      [loopobj.code_loc]
+                    + [loopobj.get_total_iters()]
+                    + [loopobj.niters_mean]
+                    + [loopobj.niters_median]
+                    + [loopobj.niters_std]
+                    + [loopobj.ittime_mean]
+                    + [loopobj.ittime_median]
+                    + [loopobj.ittime_std]
+                    + [ loopobj.hwc_mean[key] for key in loopobj.hwc_keys ]
+                    + [ loopobj.hwc_median[key] for key in loopobj.hwc_keys ]
+                    + [ loopobj.hwc_std[key] for key in loopobj.hwc_keys ])
+                    
+        #print("=== {0} ===".format(loopobj.code_loc))
+        #print("--- General ---")
+        #print("It. Chance  = {0} ({1}/{2})".format(
+        #    loopobj.chance,len(loopobj.iterations),
+        #    loopobj.get_total_iters()))
+        #print("N. Its = {0}/{1} ({2})".format(
+        #    loopobj.niters_mean, loopobj.niters_median, 
+        #    loopobj.niters_std))
+        #print("N. Total Its = {0}".format(loopobj.get_total_iters()))
+        #print("It. Time = {0}/{1} ({2})".format(
+        #    round(loopobj.ittime_mean,2),
+        #    round(loopobj.ittime_median, 2),
+        #    round(loopobj.ittime_std,2)))
+        #print("--- HWC ---")
+        #for name in loopobj.hwc_keys:
+        #    print("{0} = {1}/{2} ({3})".format(name,
+        #        round(loopobj.hwc_mean[name],2),
+        #        round(loopobj.hwc_median[name],2),
+        #        round(loopobj.hwc_std[name],2)))
+        #print()
             
 
 
