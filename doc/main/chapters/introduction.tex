@@ -38,7 +38,7 @@ efficient way. Improving the efficiency is not just a matter that affects to one
 layer of the stack but can be applied to every one of them. For example the
 tremendous evolution of the last fourty years were improvements done mostly on
 circuits layer what have been following the Moore's law \cite{moore:1965}. The
-manufacturers have been reducing the size of transistors by a ration of 2 every
+manufacturers have been reducing the size of transistors by a ratio of 2 every
 18 months as were predicted in figure \ref{moore-prediction}. Performance improvements 
 were also at microarchitecture level with
 disruptive designs that allows ILP like HPS\footnote{High Performance Substrace,
@@ -75,12 +75,12 @@ This layer is the actual implementation of the algorithm, i.e. where programmers
 transforms algorithm to  semantic code that can be transformed lately into
 executable binary by compilers. This layer is indeed the interface between pure 
 algorithm and the machine architecture. Having an efficient algorithm
-mathecamically speaking is not enforcing having an efficient program 
+mathematically speaking is not enforcing having an efficient program 
 because at algorithm level we do not care about the machine. 
 The mechanism to assess the quality in terms of performance are the performance 
 analysis tools that allows to analyze and detect the bottlenecks. 
 There are two main trends, by one hand we have the profilers and by other hand trace
-tools. Profiler tools provide performance summaries. This summaries provides 
+tools. Profiler tools generates performance summaries that provides 
 coarse-grain information, with low-overhead. It means that you can feel the problem 
 and infer what could be the origin but the information is not enough if you want 
 to be sure. For gather more detail, the other typical approach are the tracing 
@@ -159,11 +159,12 @@ with 10,649,600 cores\cite{top500_2017} and the trend is even increment this
 numbers because the exa-scale era. Analyze application with this quantity 
 of processes with fine-grain detail becomes a really tough task when not
 impossible because of the huge amount of information. The typical tools like 
-visualizers are not enough being one of the major challenges the identification
-of the hot spots so the researchers demands tools that ease the 
-process of performance analysis. Taking all of this into account the main 
-motivation of this work is to ease the analysis by means of reducing execution 
-traces to the minimal and meaningful expression.
+visualizers are not enough responsiveness so one of the major challenges is the 
+identification of the hot spots to just focus on these subsets of information. 
+Researchers demands 
+tools that ease the process of performance analysis so taking all of this into 
+account the main motivation of this work is to ease the analysis by means of 
+reducing execution traces to the minimal and meaningful expression.
 
 We can say that HPC applications shares a common idiosyncrasy between them. 
 Mathematic solvers needs to iterate again and again until the result converge and 
@@ -213,12 +214,12 @@ about quasy-lineal costs.
 
 This thesis has been developed in the Performance Tools team at Barcelona
 Supercomputing Center and therefore the tool and techniques explained in this
-document have been designed to fit in this environment and workflow. 
+document have been designed to fit in this environment. 
 
-The main tools designed and developed in PTT are Extrae, Paraver and Dimemas.
-Although other satellite tools are also in the environment they will not be
-explained because are out of the scope of this project. These tools are: Clustering,
-Tracking, Folding, Spectral and Basic Analysis.
+The main tools designed and developed in the BSC Performance Tools Team are 
+Extrae, Paraver and Dimemas although other satellite tools are also in the environment they will not be
+explained because are out of the scope of this project. These tools are: 
+Clustering, Tracking, Folding, Spectral and Basic Analysis.
 
 \subsection{Extrae}
 
@@ -300,7 +301,7 @@ abstracted model that consists on three fundamental parameters:
     node in a given instant.
 \end{enumerate*}
 
-Dimemas as Paraver are Extrae-dependant software since they need traces to work.
+Dimemas as Paraver is Extrae-dependant software since they need traces to work.
 In the Dimemas case it needs to perform a conversion by means of the {\tt
 prv2dim} converter in order to ease the simulation. As an output it builds up a
 new Paraver trace that can be analyzed as the original.
@@ -309,45 +310,81 @@ Only communication times are simulated through the Dimemas models so CPU times
 remain the same on the output tracefile. Even if it is a minor detail, since it
 is important to introduce because the usefulness of it for the purposses of this
 thesis, actually there is a mechanism to modify CPU burst times. At parsing time
-(done by the {\tt prv2dim}) a metric and a coeficient to multiply for this
-metric can be specified. Normally the metric is the number of cycles and the
-coeficient is the cycle time. By this way the user is able to remove the
-possible noise that has affected the original execution.
+(done by the {\tt prv2dim}) a hardware counter and a coeficient to multiply 
+for this it can be specified. Normally the hardware counter is the number of 
+cycles and the coeficient is the cycle time. By this way the user is able to 
+remove the possible O.S. noise that has affected the original
+execution\footnote{Noise intruced by O.S. can be detected in Paraver by a fall 
+  of the frecuency. This is becuse cycles counter forms part of the context of
+  every process but not the time so whenever a process loss CPU, cycles will not
+  be counted until return to execution but time is not stopped although. This
+  phenomena implies an increment on the traced cycle time. Take into account
+  that is impossible to guarantee a fall on frequency is because O.S. or because
+  any other source like DVFS so it works only when we can assume the frequency
+of the processor is quite stable.}.
 
 \subsection{Analysis workflow}
 
 In an application-centric
 approach, the performance analysis is a cyclic process consisting of observing 
-the behaviour of the application so as to hypothesize the possible problems that 
-affect its performance and finally translate these hypotheses to improvements in
-the application re-starting the cycle to validate them. Obviously, the less number 
-of iterations of this cycle the less time wasted and it directly depends on the
-quality of the hypothesis that is strongly related with the possibilities the
-analysis tools provides.
+the behaviour of the application so as to hypothesize the possible problems 
+that affect its performance and finally translate these hypotheses to 
+improvements in the application re-starting the cycle to validate them as is
+depicted in figure \ref{fig:perf_analysis_workflow}.
+Obviously, the less number of iterations of this cycle the less time wasted and it directly depends on the quality of the hypothesis that is strongly related with the possibilities the analysis tools provides.
 
-In figure \ref{fig:currentAnalysisFlow} it can be seen the current approach
-followed for building up hypothesis. There are two factor to take into account:
-The first is the HPC applications used to be very repetitive so same information
-is shown both horitzontally (because repetitivity) and vertically (because SPMD)
-and the second is the size of the traces becomes huge and even with visualizers 
-it is tough to analyze not only because the huge ammoung of information but also 
-because the response time of interactive analysis becomes prohibitives. 
-The typical solution is to focus on the regions of interest that can provide
-more insights and this is done by an iterative process described follows:
-\begin{enumerate}[label=\roman*)]
-  \item 1
-\end{enumerate}
-
-\begin{figure}
-  \caption{Current performance analysis workflow}
-  \label{fig:currentAnalysisFlow}
+\begin{figure}[]
   \centering
-    \includegraphics[width=250px]{current_analysis_flow.eps}
+  \includegraphics[width=150px]{performance_analysis_diagram.png}
+  \caption{Performance analysis workflow}
+  \label{fig:perf_analysis_workflow}
 \end{figure}
 
+\begin{figure}[]
+  \centering
+  \includegraphics[width=80px]{analysis_subphases.png}
+  \caption{Analysis subphases}
+  \label{fig:analysis_subphases}
+\end{figure}
 
-% NOTES
-% .- Remember to demonstrate the interarrival time of different calls in the sam
-%e loop body tend to be the same.
+This work is centered on the analysis phase of the workflow and more accuratelly on
+the initial phases of the analysis where all the non important information is
+tried to be filtered and rejected in order to work with these regions of
+interest from where more valuable information can be gathered. The current
+approach is  a craftwork where the experience of the analyzer is crucial to have
+a good quality results since this is not an easy task because information 
+obtained from the trace extraction phase used to be huge. Analysis phase is
+typical subdivided into the following subphases (see figure
+\ref{fig:analysis_subphases}):
+\begin{enumerate}[label=\roman*)]
+  \item Filter as much as possible irrelevant information. Before this phase is
+    used to be impossible to work with visualizers so the main goal is to end up
+    just with the needed information for inspect the structure of the
+    application.
+  \item HPC applications are used to have a common idiosincracy that is to
+    present very repetitive patterns both in space (different processes) and 
+    time dimensions. Exploiting this typical characteristic, next step is cut
+    the more interesting parts of the execution e.g. an iteration or a set of
+    iterations that seems to presents interesting information because its 
+    extremelly bad performance.
+  \item Last and most important, the analysis. Once one part of the execution is
+    detected to be interesting it is then gathered from the original trace i.e.
+    with all the original information.
+\end{enumerate}
+This work could be very difficult and tedious and used to drive to repeat the
+same process several times and since every one of the steps is potentially very 
+time consumed when dealing with huge trace, it could be a waste of time. Both first and second subphases could need to be repeated
+several times because the first filter is not good enough or because on the last
+phase analyzer realize the cut is not as interesting as looked like.
 
-
+Summing up there is a lot of repetitive craftwork that can be and even have to
+be automatized leading the work more efficient and effective, making available
+more time to the actual real work that is figure out what is going on with the
+performance that is the imaginative and human work. In this thesis this problem
+has been identified and studied and is trying to solve it by proposing
+an alternative way to deal with analysis phase. As has been introduced before, 
+the proposal consist basically 
+on instead of playing and try to figure out what to filter what to cut and what
+to analyze, ease this process by providing the minimal and meaningful expression
+of the trace, transforming it to a pseudocode with performance information 
+attached that will leads to an easy decission to what to analyze first.
