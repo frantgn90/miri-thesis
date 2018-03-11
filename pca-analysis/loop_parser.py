@@ -53,17 +53,13 @@ class iteration(object):
         assert fini > self.init
         self.fini = fini
         self.duration = self.fini - self.init
-    def set_hwc_init(self, name, value):
-        assert not name in self.hwc
-        self.hwc[name] = value
+    #def set_hwc_init(self, name, value):
+    #    assert not name in self.hwc
+    #    self.hwc[name] = value
     def set_hwc_fini(self, name, value):
         # Some HWC does not appear at the iterations entry
         # but only in the end. Why??
         #assert name in self.hwc
-        #self.hwc[name] = value-self.hwc[name]
-        # Extrae does the substraction from the last hwc evet 
-        # for you. To be sure the numbers are correct just
-        # be sure MPI HWC are deactivated.
         self.hwc[name] = value
     def calcule(self):
         pass
@@ -89,10 +85,14 @@ class loop(object):
         self.duration.append(self.fini[-1] - self.init[-1])
     def set_niters(self, niters):
         self.niters.append(niters)
-        self.chance = len(self.iterations) / self.get_total_iters()
     def get_total_iters(self):
         return sum(self.niters)
     def calcule(self):
+        if self.get_total_iters() > 0:
+            self.chance = len(self.iterations) / self.get_total_iters()
+        else:
+            self.chance = 0
+
         import numpy as np
         self.ittime_mean = np.mean(list(map(
             lambda x: x.duration, self.iterations)))
@@ -113,122 +113,127 @@ class loop(object):
         # Lets assume just one HWC set
         for hwc_key in self.hwc_keys:
             self.hwc_mean[hwc_key] = np.mean(list(map(
-                lambda x: x.hwc[hwc_key], self.iterations)))
+                lambda x: x.hwc[hwc_key] if hwc_key in x.hwc else 0 , 
+                self.iterations)))
             self.hwc_median[hwc_key] = np.median(list(map(
-                lambda x: x.hwc[hwc_key], self.iterations)))
+                lambda x: x.hwc[hwc_key] if hwc_key in x.hwc else 0, 
+                self.iterations)))
             self.hwc_std[hwc_key] = np.std(list(map(
-                lambda x: x.hwc[hwc_key], self.iterations)))
+                lambda x: x.hwc[hwc_key] if hwc_key in x.hwc else 0, 
+                self.iterations)))
 
-loop_stack = stack()
-iter_stack = stack()
-loop_hmap  = {}
+loop_stack = [] #stack()
+iter_stack = [] #stack()
+loop_hmap  = [] #{}
 
 def loop_handler(loop_record):
     if loop_record.entry:
-        if loop_record.loopid in loop_hmap:
-            loopobj = loop_hmap[loop_record.loopid]
+        if loop_record.loopid in loop_hmap[loop_record.task_id-1]:
+            loopobj = loop_hmap[loop_record.task_id-1][loop_record.loopid]
         else:
             loopobj = loop(loop_record.loopid, loop_record.loop_name)
         loopobj.set_init(loop_record.time)
-        loop_stack.push(loopobj)
+        loop_stack[loop_record.task_id-1].push(loopobj)
     elif loop_record.exit:
-        loopobj = loop_stack.pop()
+        loopobj = loop_stack[loop_record.task_id-1].pop()
         loopobj.set_fini(loop_record.time)
-        if not loopobj.loopid in loop_hmap:
-            loop_hmap[loopobj.loopid] = loopobj
+        if not loopobj.loopid in loop_hmap[loop_record.task_id-1]:
+            loop_hmap[loop_record.task_id-1][loopobj.loopid] = loopobj
 
 
 def iter_handler(iter_record, hwc_record_set):
     if iter_record.entry:
         itobj = iteration(iter_record.iterid)
         itobj.set_init(iter_record.time)
-        for hwc_record in hwc_record_set:
-            itobj.set_hwc_init(hwc_record.type_name_short, hwc_record.value)
-        iter_stack.push(itobj)
+        # Extrae reset HWC once they are gathered so
+        # substraction is not needed.
+        #for hwc_record in hwc_record_set:
+        #    itobj.set_hwc_init(hwc_record.type_name_short, hwc_record.value)
+        iter_stack[iter_record.task_id-1].push(itobj)
     elif iter_record.exit:
-        itobj = iter_stack.pop()
+        itobj = iter_stack[iter_record.task_id-1].pop()
         itobj.set_fini(iter_record.time)
         for hwc_record in hwc_record_set:
             itobj.set_hwc_fini(hwc_record.type_name_short, hwc_record.value)
-        loop_stack.top().new_iteration(itobj)
+        loop_stack[iter_record.task_id-1].top().new_iteration(itobj)
 
 def niter_handler(niter_record):
-    loop_stack.top().set_niters(niter_record.niters)
+    loop_stack[niter_record.task_id-1].top().set_niters(niter_record.niters)
 
 def main(argc, argv):
     tracefile = argv[1]
     parser = trace(tracefile)
 
     def event_handler(record):
-        # Just for testing purposes!
-        if record.task_id == 1:
-            # Is important to maintain the order of the
-            # handlers calls since we are working with
-            # stacks.
-            if len(record.events["LOOP"]) > 0:
-                assert len(record.events["LOOP"]) == 1
-                loop_handler(record.events["LOOP"][0])
-            # We are waiting for hwc to be injected at same record
-            # as iter. Event_eventandcounters API call have been used.
-            if len(record.events["ITER"]) > 0:
-                assert len(record.events["ITER"]) == 1
-                assert len(record.events["HWC"]) > 0
-                iter_handler(record.events["ITER"][0],
-                        record.events["HWC"])
-            if len(record.events["NITER"]) > 0:
-                assert len(record.events["NITER"]) == 1
-                niter_handler(record.events["NITER"][0])
+        # Is important to maintain the order of the
+        # handlers calls since we are working with
+        # stacks.
+        if len(record.events["LOOP"]) > 0:
+            assert len(record.events["LOOP"]) == 1
+            loop_handler(record.events["LOOP"][0])
+        # We are waiting for hwc to be injected at same record
+        # as iter. Event_eventandcounters API call have been used.
+        if len(record.events["ITER"]) > 0:
+            assert len(record.events["ITER"]) == 1
+            assert len(record.events["HWC"]) > 0
+            iter_handler(record.events["ITER"][0],
+                    record.events["HWC"])
+        if len(record.events["NITER"]) > 0:
+            assert len(record.events["NITER"]) == 1
+            niter_handler(record.events["NITER"][0])
+
+    for i in range(parser.get_ntasks()):
+        loop_stack.append(stack())
+        iter_stack.append(stack())
+        loop_hmap.append(dict())
 
     parser.parse(event_callback=event_handler)
 
-    for loopid, loopobj in loop_hmap.items():
-        loopobj.calcule()
-    import csv
-    with open(tracefile.replace(".prv","_loops.csv"), "w", newline='') as csvfile:
-        loopswriter = csv.writer(csvfile,quoting=csv.QUOTE_MINIMAL)
-        
-        loopswriter.writerow(["Loop loc.","Total iters",
-            "Iters m","Iters med", "Iters std", 
-            "Iter time m", "Iter time med", "Iter time std"] 
-            + list(map(lambda x: x+"_mean", loopobj.hwc_keys))
-            + list(map(lambda x: x+"_median", loopobj.hwc_keys))
-            + list(map(lambda x: x+"_std", loopobj.hwc_keys)))
+    for task in parser.get_taskids():
+        for loopid, loopobj in loop_hmap[task].items():
+            loopobj.calcule()
 
-        for loopid,loopobj in loop_hmap.items():
-            loopswriter.writerow(
-                      [loopobj.code_loc]
-                    + [loopobj.get_total_iters()]
-                    + [loopobj.niters_mean]
-                    + [loopobj.niters_median]
-                    + [loopobj.niters_std]
-                    + [loopobj.ittime_mean]
-                    + [loopobj.ittime_median]
-                    + [loopobj.ittime_std]
-                    + [ loopobj.hwc_mean[key] for key in loopobj.hwc_keys ]
-                    + [ loopobj.hwc_median[key] for key in loopobj.hwc_keys ]
-                    + [ loopobj.hwc_std[key] for key in loopobj.hwc_keys ])
-                    
-        #print("=== {0} ===".format(loopobj.code_loc))
-        #print("--- General ---")
-        #print("It. Chance  = {0} ({1}/{2})".format(
-        #    loopobj.chance,len(loopobj.iterations),
-        #    loopobj.get_total_iters()))
-        #print("N. Its = {0}/{1} ({2})".format(
-        #    loopobj.niters_mean, loopobj.niters_median, 
-        #    loopobj.niters_std))
-        #print("N. Total Its = {0}".format(loopobj.get_total_iters()))
-        #print("It. Time = {0}/{1} ({2})".format(
-        #    round(loopobj.ittime_mean,2),
-        #    round(loopobj.ittime_median, 2),
-        #    round(loopobj.ittime_std,2)))
-        #print("--- HWC ---")
-        #for name in loopobj.hwc_keys:
-        #    print("{0} = {1}/{2} ({3})".format(name,
-        #        round(loopobj.hwc_mean[name],2),
-        #        round(loopobj.hwc_median[name],2),
-        #        round(loopobj.hwc_std[name],2)))
-        #print()
-            
+    import csv
+    for task in parser.get_taskids():
+        task_hwc_keys = set()
+        for loopid, loopobj in loop_hmap[task].items():
+            task_hwc_keys.update(loopobj.hwc_keys)
+
+        with open(tracefile.replace(".prv","_loops_{0}.csv".format(task)), 
+                "w", newline='') as csvfile:
+            loopswriter = csv.writer(csvfile,quoting=csv.QUOTE_MINIMAL)
+            loopswriter.writerow([
+                "Loop loc.",
+                "Total iters",
+                #"Iters",
+                #"Iters med", 
+                #"Iters std", 
+                "Iter time m", 
+                #"Iter time med", 
+                "Iter time std"] 
+                + list(map(lambda x: x+"_mean", task_hwc_keys))
+                #+ list(map(lambda x: x+"_median", task_hwc_keys))
+                #+ list(map(lambda x: x+"_std", taskhwc_keys))
+                )
+
+            for loopid,loopobj in loop_hmap[task].items():
+                if loopobj.niters_mean <= 1: continue
+                print (task_hwc_keys)
+                print (loopobj.hwc_keys)
+                loopswriter.writerow(
+                          [loopobj.code_loc]
+                        + [loopobj.get_total_iters()]
+                #        + [loopobj.niters_mean]
+                #        + [loopobj.niters_median]
+                #        + [loopobj.niters_std]
+                        + [loopobj.ittime_mean]
+                #        + [loopobj.ittime_median]
+                        + [loopobj.ittime_std]
+                        + [ loopobj.hwc_mean[key] for key in task_hwc_keys 
+                            if key in loopobj.hwc_mean]
+                #       + [ loopobj.hwc_median[key] for key in task_hwc_keys ]
+                #        + [ loopobj.hwc_std[key] for key in task_hwc_keys ]
+                )
 
 
 if __name__ == "__main__":
