@@ -8,12 +8,8 @@ import os
 import logging
 import copy
 from multiprocessing import Pool
-
-from utilities import ProgressBar
-from callstack import call, callstack
-
 import numpy
-from clustering import plot_data
+import progressbar
 
 TYPE_STATE = "1"
 TYPE_EVENT = "2"
@@ -22,6 +18,16 @@ TYPE_COMMS = "3"
 MONITOR_PERIOD=10e8
 last_monitor_time = 0
 n_monitor = 0
+
+class stack(object):
+    def __init__(self):
+        self.stack = []
+    def push(self, v):
+        self.stack.append(v)
+    def top(self):
+        return self.stack[-1]
+    def pop(self):
+        return self.stack.pop()
 
 class record(object):
     def __init__(self,line,pcf):
@@ -98,7 +104,9 @@ class event(record):
                 "900000": {"name":"LOOP", "class":loop_event,
                     "re":re.compile("990000*")},
                 "910000": {"name":"ITER", "class":iter_event,
-                    "re":re.compile("991000*")}
+                    "re":re.compile("991000*")},
+                "920000": {"name":"NITER", "class":niter_event,
+                    "re":re.compile("992000*")}
         }
 
         self.events = {x["name"]:[] for x in self.events_supported.values()}
@@ -123,6 +131,9 @@ class loop_event(event):
         self.type = self.fields[6]
         self.nested_level = int(self.type)-99000000
         self.loopid = self.fields[7]
+        self.loop_name = self.pcf.translate_event(self.type, self.loopid)
+        self.entry = (self.loopid != "0")
+        self.exit = (self.loopid == "0")
 
 class iter_event(event):
     def __init__(self, line, pcf):
@@ -130,6 +141,14 @@ class iter_event(event):
         self.type = self.fields[6]
         self.nested_level = int(self.type)-99100000
         self.iterid = self.fields[7]
+        self.entry = (self.iterid != "0")
+        self.exit = (self.iterid == "0")
+
+class niter_event(event):
+    def __init__(self, line, pcf):
+        super(niter_event, self).__init__(line, pcf)
+        self.type = self.fields[6]
+        self.niters = int(self.fields[7])
 
 class glop_event(event):
     def __init__(self, line, pcf):
@@ -144,6 +163,7 @@ class hwc_event(event):
         super(hwc_event, self).__init__(line, pcf)
         self.type = self.fields[6]
         self.type_name = self.pcf.translate_type(self.type)
+        self.type_name_short = self.type_name.split(" ")[0]
         self.value = int(self.fields[7])
 
 
@@ -276,181 +296,47 @@ class trace(object):
         self.tasks = int(applications_info.split("(")[0])
 
         self.pcf = pcf(self.pcf_file)
-        self.data_from_monitor=[]
 
-    def parse(self, nprocesses=1):
+    def parse(self, 
+            comms_callback = lambda x: None, 
+            event_callback = lambda x: None, 
+            state_callback = lambda x: None, 
+            nprocesses=1):
         assert nprocesses != 0
+
+        self.__record_comms_callback = comms_callback
+        self.__record_event_callback = event_callback
+        self.__record_state_callback = state_callback
 
         if nprocesses == 1:
             if self.splittrace:
                 traces = self.prv_files + [self.comm_file]
             else:
                 traces = self.prv_files
-            res = self._parse_sequential(traces)
-
-            # Reduce merged info
-            for rank in range(self.get_ntasks()):
-                for cs in res[rank].values():
-                    cs.calc_reduce_info()
+            self._parse_sequential(traces)
         else:
-            res = self._parse_parallel(nprocesses)
-
-        if len(self.data_from_monitor) > 0:
-            plot_data(self.data_from_monitor)
-
-        return res
+            self._parse_parallel(nprocesses)
 
     def _parse_sequential(self, prv_files):
-        comm_hashmap = [{} for i in range(self.tasks)]
-        mpi_init_hashmap = [{} for i in range(self.tasks)]
-        mpi_fini_hashmap = [{} for i in range(self.tasks)]
-        
-
-        callstack_pool = [{} for i in range(self.tasks)]
-
         for tracefile_name in prv_files:
-            mpi_opened = [False for i in range(self.tasks)]
-            burst_last = [None for i in range(self.tasks)]
-            callstack_last = [None for i in range(self.tasks)]
-            loop_stack = [[] for i in range(self.tasks)]
-
             file_size = os.stat(tracefile_name).st_size
             trace_simple_name = tracefile_name.split("/")[-1]
-            print ("[{0}] Parsing trace {1}".format(os.getpid(), trace_simple_name))
+            bar = progressbar.ProgressBar(max_value=file_size)
+            bar_completed=0
             with open(tracefile_name) as tracefile:
                 for line in tracefile:
                     rec = record.new(line[:-1], self.pcf)
                     if rec is None: continue
-
-                    #self.data_from_monitor.extend(
-                    #        self.__monitor_callstack_pool(int(line.split(":")[5]), callstack_pool))
-
+                    
                     if rec.type == TYPE_COMMS:
-                        if rec.logical_send in mpi_init_hashmap[rec.task_send_id-1]:
-                            cs = mpi_init_hashmap[rec.task_send_id-1][rec.logical_send]
-                            cs.add_mpi_msg_size(rec.size)
-                            cs.set_partner(rec.task_recv_id-1)
-                            del mpi_init_hashmap[rec.task_send_id-1][rec.logical_send]
-                            rec.send_merged = True
-                        else:
-                            comm_hashmap[rec.task_send_id-1].update({rec.logical_send:rec})
-
-                        if rec.logical_recv in mpi_fini_hashmap[rec.task_recv_id-1]:
-                            cs = mpi_fini_hashmap[rec.task_recv_id-1][rec.logical_recv]
-                            cs.add_mpi_msg_size(rec.size)
-                            cs.set_partner(rec.task_send_id-1)
-                            del mpi_fini_hashmap[rec.task_recv_id-1][rec.logical_recv]
-                            rec.recv_merged = True
-                        else:
-                            comm_hashmap[rec.task_recv_id-1].update({rec.logical_recv:rec})
-
+                        self.__record_comms_callback(rec)
                     elif rec.type == TYPE_EVENT:
-                        if len(rec.events["MPI"]) > 0:
-                            assert len(rec.events["MPI"]) == 1
-                            if rec.events["MPI"][0].value == "0":
-                                assert mpi_opened[rec.task_id-1]
-                                
-                                cs = callstack_last[rec.task_id-1]
-                                cs.metrics[rec.task_id-1]["mpi_duration"] = rec.time - cs.instants[0]
-                                
-                                # On-line merge. It is better in terms of memory usage because 
-                                # we are compressing information from very beginning
-                                if not cs.get_signature() in callstack_pool[rec.task_id-1]:
-                                    callstack_pool[rec.task_id-1].update(
-                                            {cs.get_signature():cs})
-                                else:
-                                    callstack_pool[rec.task_id-1][cs.get_signature()].merge(cs)
-                                    cs = callstack_pool[rec.task_id-1][cs.get_signature()]
-
-                                    # Update mpi_init_hashmap with merged callstack
-                                    if cs.instants[-1] in mpi_init_hashmap[rec.task_id-1]:
-                                        mpi_init_hashmap[rec.task_id-1][cs.instants[-1]] = cs
-
-                                # Recv communication
-                                if rec.time in comm_hashmap[rec.task_id-1]:
-                                    comm = comm_hashmap[rec.task_id-1][rec.time]
-                                    cs.set_partner(comm.task_send_id-1)
-                                    cs.add_mpi_msg_size(comm.size)
-                                    if comm_hashmap[rec.task_id-1][rec.time].send_merged:
-                                        del comm_hashmap[rec.task_id-1][rec.time]
-                                else:
-                                    mpi_fini_hashmap[rec.task_id-1].update({rec.time: cs})
-    
-                                mpi_opened[rec.task_id-1] = False
-                                callstack_last[rec.task_id-1] = None
-                                burst_last[rec.task_id-1] = None
-                            else:
-                                assert not mpi_opened[rec.task_id-1]
-                                calls = zip(rec.events["LINE"], rec.events["CALL"])
-                                calls = map(lambda x: (x[0].line,x[1].call_name
-                                    ,x[0].file,None), calls)
-                                calls = list(calls); calls.reverse()
-                                mainindex = 0
-                                for i,c in enumerate(calls):
-                                    if c[1] == "main" or c[1] == "MAIN__":
-                                        mainindex = i
-
-                                calls = calls[mainindex:]
-                                calls.append((0,rec.events["MPI"][0].call_name,"libmpi", None))
-
-                                calls = map(lambda x: call(x[0],x[1],x[2],x[3]), calls)
-                                cs = callstack(rec.task_id-1, rec.time, list(calls))
-
-                                cs.burst_metrics[rec.task_id-1].update({x.type:x.value 
-                                    for x in burst_last[rec.task_id-1].events["HWC"]})
-                                cs.burst_metrics[rec.task_id-1]["burst_duration"] = \
-                                    rec.time - burst_last[rec.task_id-1].time
-
-                                # Send communication
-                                if rec.time in comm_hashmap[rec.task_id-1]:
-                                    comm = comm_hashmap[rec.task_id-1][rec.time]
-                                    cs.set_partner(comm.task_recv_id-1)
-                                    cs.add_mpi_msg_size(comm.size)
-                                    if comm_hashmap[rec.task_id-1][rec.time].recv_merged:
-                                        del comm_hashmap[rec.task_id-1][rec.time]
-                                else:
-                                    mpi_init_hashmap[rec.task_id-1].update({rec.time: cs})
-
-                                # Loopid information
-                                cs.loop_info = copy.copy(loop_stack[rec.task_id-1])
-
-                                callstack_last[rec.task_id-1] = cs
-                                mpi_opened[rec.task_id-1] = True
-
-                        if len(rec.events["HWC"]) > 0:
-                            if mpi_opened[rec.task_id-1]: # MPI call HWC
-                                callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
-                                        .update({x.type:x.value for x in rec.events["HWC"]})
-                            else : # Burst HWC
-                                burst_last[rec.task_id-1] = rec
-
-                        if len(rec.events["GLOP"]) > 0:
-                            assert mpi_opened[rec.task_id-1]
-                            assert callstack_last[rec.task_id-1][-1].mpi_call_coll
-
-                            callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
-                                    .update({x.type:x.value for x in rec.events["GLOP"]})
-                        if len(rec.events["LOOP"]) > 0:
-                            for loop in rec.events["LOOP"]:
-                                if loop.loopid == "0":
-                                    loop_stack[rec.task_id-1].pop()
-                                else:
-                                    loop_stack[rec.task_id-1].append(loop.loopid)
-
-        for rank in self.get_taskids():
-            if len(comm_hashmap[rank]) > 0:
-                logging.warning("[{1}] {0} communications with no matching!!"
-                        .format(len(comm_hashmap[rank]),rank))
-
-            if len(mpi_init_hashmap[rank]) > 0:
-                logging.warning("[{1}] {0} mpi_init with no matching!!"
-                        .format(len(mpi_init_hashmap[rank]),rank))
-
-            if len(mpi_fini_hashmap[rank]) > 0:
-                logging.warning("[{1}] {0} mpi_fini with no matching!!"
-                        .format(len(mpi_fini_hashmap[rank]),rank))
-
-        return callstack_pool[:self.get_ntasks()]
+                        self.__record_event_callback(rec)
+                    elif rec.type == TYPE_STATE:
+                        self.__record_state_callback(rec)
+                    bar_completed += len(line)
+                    bar.update(bar_completed)
+        return None
 
     def _parse_parallel(self, nprocesses):
         assert False, "Not available. TODO: comms buffer should lie on shared memory"
@@ -481,36 +367,6 @@ class trace(object):
         if self.splittrace:
             return list(map(lambda x: int(x.split(".")[-1]), self.prv_files))
         return list(range(self.tasks))
-
-    def __monitor_callstack_pool(self, time, callstack_pool):
-        global last_monitor_time, n_monitor
-        period = time - last_monitor_time
-        last_monitor_time = time
-
-        data=[]
-        if period < MONITOR_PERIOD:
-            return data
-
-        print ("TIME: {0} Preiod: {1}/{2}".format(time, period,MONITOR_PERIOD))
-
-        for rank,callstacks in enumerate(callstack_pool):
-            for signature,cs in callstacks.items():
-                if cs.repetitions[cs.rank] > 1:
-                    data.append([
-                        cs.repetitions[cs.rank], 
-                        numpy.mean(self.__get_distances(cs.instants)),
-                        n_monitor
-                    ])
-        n_monitor += 1
-        return data
-
-    def __get_distances(self, times):
-        dist=[]
-        for i in range(1,len(times)):
-            dist.append(times[i]-times[i-1])
-        return dist
-
-
 
 # Testing
 #basename = sys.argv[1]

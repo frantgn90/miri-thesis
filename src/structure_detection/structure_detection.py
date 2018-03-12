@@ -8,8 +8,7 @@ import numpy
 import logging
 import argparse, argcomplete
 
-from trace import trace
-#from trace_parsing import *
+from callstacks_parser import callstacks_parser
 from callstack_distribution import *
 from delta_calculation import *
 from clustering import *
@@ -192,8 +191,8 @@ def main(argc, argv):
     ''' 1. Parsing trace -------------------------------------------------- '''
     logging.info("Parsing trace..."); 
     wfprof.step_init(1)
-    traceobj = trace(tracename)
-    callstacks_pool = traceobj.parse(1)
+    traceobj = callstacks_parser(tracename)
+    callstacks_pool = traceobj.parse()
     constants.TOTAL_TIME = traceobj.total_time
     wfprof.step_fini(1)
 

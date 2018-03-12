@@ -63,7 +63,6 @@ class callstack(object):
         self.repetitions={}
         self.repetitions[self.rank]=1
         self.instants=[int(instant)] 
-        # TODO: Merge also different rank callstack instants
         self.instants_distances=[]
         self.instants_distances_mean=None
         self.instants_distances_median=None
@@ -93,17 +92,10 @@ class callstack(object):
 
         for call in calls:
             call.my_callstack = self
-
         signature=""
-        shash=0
-        cnt=len(self.calls)+1
         for call in self.calls:
-            call_signature = call.get_signature()
-            signature += call_signature
-            shash += hash(call_signature)*10**cnt
-            cnt -= 1
+            signature += call.get_signature()
         
-        self.signature_hash = shash
         self.signature = str(self.rank)+"#"+signature
         self.loop_info = None
         self.already_with_size = 1
@@ -160,8 +152,8 @@ class callstack(object):
         return self.signature
 
     def merge(self, other):
-        ''' This merging is for merging different repetitions of the same callstack '''
-        ''' so same path and same rank '''
+        ''' This merging is for merging different repetitions of the same '''
+        ''' callstack so same path and same rank '''
         assert self.reduced == False
         assert self.get_signature() == other.get_signature()
         self.repetitions[self.rank]+=1
