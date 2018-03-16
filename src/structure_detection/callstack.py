@@ -62,7 +62,9 @@ class callstack(object):
         self.rank=rank
         self.repetitions={}
         self.repetitions[self.rank]=1
-        self.instants=[int(instant)] 
+        self.instants=[int(instant)]
+        self.iteration_cycles=[]
+        self.iteration_cycles_mean=None
         self.instants_distances=[]
         self.instants_distances_mean=None
         self.instants_distances_median=None
@@ -158,6 +160,7 @@ class callstack(object):
         assert self.get_signature() == other.get_signature()
         self.repetitions[self.rank]+=1
         self.instants.extend(other.instants)
+        self.iteration_cycles.extend(other.iteration_cycles)
         self.partner.update(other.partner)
         
         for self_dtomerge, other_dtomerge in \
@@ -204,6 +207,7 @@ class callstack(object):
         self.instants_distances=self.__get_distances(self.instants)
         self.instants_distances_median=numpy.median(self.instants_distances)
         self.instants_distances_mean=numpy.mean(self.instants_distances)
+        self.iteration_cycles_mean=numpy.mean(self.iteration_cycles)
 
         for dtomerge in self.dicts_to_merge:
             for rank in dtomerge:

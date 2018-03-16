@@ -44,6 +44,7 @@ class callstacks_parser(object):
         self.burst_last = [ None for i in range(self._trace.tasks) ]
         self.callstack_last = [ None for i in range(self._trace.tasks) ]
         self.loop_stack = [ [] for i in range(self._trace.tasks) ]
+        self.mpi_acumm_cycles = [ {} for i in range(self._trace.tasks) ]
     def get_ntasks(self):
         return self._trace.get_ntasks()
     def get_taskids(self):
@@ -98,6 +99,14 @@ class callstacks_parser(object):
         self.callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                 .update({x.type:x.value for x in rec.events["GLOP"]})
     def __hwc_handler(self, rec):
+        hwc_record = list(filter(lambda x: x.type_name == "PAPI_TOT_CYC",
+                rec.events["HWC"]))
+        if len(hwc_record) > 0:
+            assert len(hwc_record) == 1
+            hwc_record = hwc_record[0]
+            for signature in self.mpi_acumm_cycles[rec.task_id-1].keys():
+                self.mpi_acumm_cycles[rec.task_id-1][signature] += hwc_record.value
+
         if self.mpi_opened[rec.task_id-1]: # MPI call HWC
             self.callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                     .update({x.type:x.value for x in rec.events["HWC"]})
@@ -107,10 +116,8 @@ class callstacks_parser(object):
         assert len(rec.events["MPI"]) == 1
         if rec.events["MPI"][0].value == "0":
             assert self.mpi_opened[rec.task_id-1]
-            
             cs = self.callstack_last[rec.task_id-1]
             cs.metrics[rec.task_id-1]["mpi_duration"] = rec.time - cs.instants[0]
-            
             # On-line merge. It is better in terms of memory usage because 
             # we are compressing information from very beginning
             if not cs.get_signature() in self.callstack_pool[rec.task_id-1]:
@@ -118,11 +125,10 @@ class callstacks_parser(object):
             else:
                 self.callstack_pool[rec.task_id-1][cs.get_signature()].merge(cs)
                 cs = self.callstack_pool[rec.task_id-1][cs.get_signature()]
-                                                                                  
                 # Update self.mpi_init_hashmap with merged callstack
                 if cs.instants[-1] in self.mpi_init_hashmap[rec.task_id-1]:
                     self.mpi_init_hashmap[rec.task_id-1][cs.instants[-1]] = cs
-                                                                                  
+
             # Recv communication
             if rec.time in self.comm_hashmap[rec.task_id-1]:
                 comm = self.comm_hashmap[rec.task_id-1][rec.time]
@@ -132,7 +138,8 @@ class callstacks_parser(object):
                     del self.comm_hashmap[rec.task_id-1][rec.time]
             else:
                 self.mpi_fini_hashmap[rec.task_id-1].update({rec.time: cs})
-                                                                                  
+
+            self.mpi_acumm_cycles[rec.task_id-1][cs.get_signature()] = 0
             self.mpi_opened[rec.task_id-1] = False
             self.callstack_last[rec.task_id-1] = None
             self.burst_last[rec.task_id-1] = None
@@ -152,6 +159,11 @@ class callstacks_parser(object):
                                                                                   
             calls = map(lambda x: call(x[0],x[1],x[2],x[3]), calls)
             cs = callstack(rec.task_id-1, rec.time, list(calls))
+            if cs.get_signature() in self.mpi_acumm_cycles[rec.task_id-1]:
+                cs.iteration_cycles.append(
+                        self.mpi_acumm_cycles[rec.task_id-1][cs.get_signature()])
+            else:
+                self.mpi_acumm_cycles[rec.task_id-1].update({cs.get_signature():0})
                                                                                   
             cs.burst_metrics[rec.task_id-1].update({x.type:x.value 
                 for x in self.burst_last[rec.task_id-1].events["HWC"]})

@@ -187,10 +187,13 @@ def clustering(fcallstacks_pool, show_plot, total_time, delta, bound):
     ''' 1. Preparing data '''
     data=[]
     for cs in fcallstacks_pool:
-        data.append([cs.repetitions[cs.rank], cs.instants_distances_mean])
+        data.append([
+            cs.repetitions[cs.rank], 
+            cs.instants_distances_mean,
+            cs.iteration_cycles_mean])
 
     normdata=normalize_data(data)
-    #plot_data(normdata)
+    plot_data(normdata)
     
     ''' 2. Perform clustering '''
     db = DBSCAN(eps=constants._eps, min_samples=constants._min_samples).fit(normdata)

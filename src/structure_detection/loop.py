@@ -63,7 +63,7 @@ class callstack_ordered_list(object):
         if isinstance(common_callstack, callstack_ordered_list):
             common_callstack = common_callstack.common_callstack
 
-        common_callstack = copy.deepcopy(common_callstack)
+        common_callstack = copy.copy(common_callstack)
 
         if common_callstack.calls[-1].mpi_call:
             common_callstack.calls = common_callstack.calls[:-1]
