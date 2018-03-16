@@ -1,11 +1,24 @@
 \chapter{Introduction}
 
-On the context of this thesis and the motivations that encourage for this work.
+On the context of this thesis the motivations that encourage for this work and
+the objectives.
 
 \section{Context}
-\lettrine{A}{typical} configuration for high performance machines are clusters.
-It means a team of individual processors or multiprocessors 
-(and lately more specific 
+\lettrine{F}{rom} several decades to nowadays the science have been evolving
+dramatically in a wide variety of fields, one of the main reasons is because now we
+have the technology to provide the enough computational power for face problems
+which were typically imposible to solve. The vanguard of this technological
+revolution is represented on the huge computers called high performance
+computers.
+In Computer Science the discipline in charge to drive research in this field is 
+the High Performance Computing, i.e. HPC. HPC has been increasing in importance 
+and nowadays can be said it is the third support of science with theory and 
+mathematics. The science that can be done thanks to this big machines goes from 
+earthquake predictions to the analysis of the DNA of a carcinogenic cell, from
+weather forecast to material physics simulation.
+
+A typical configuration for high performance machines are clusters. It means a 
+team of individual processors or multiprocessors (and lately more specific 
 hardware like GPUs) working together, interconnected by a super-fast network. 
 The fundamental idea behind these big machines is getting speedup by mean of
 partitioning the problem and parallelize the execution. So all processors (or a 
@@ -13,29 +26,24 @@ subset) in the cluster will be dealing with different parts of the same problem
 and communicating between them in order to end up with a solution. For example 
 imagine we have a weather forecast software, in order to speedup the forecast 
 we can partition the surface of the earth and hold every portion to one individual
-processor. The communication will be needed because the weather will also depend 
+processor. The communications will be needed because the weather will also depend 
 on surroundings, so every partition will need also information of other partitions 
 results.
 
-In Computer Science the discipline in charge to drive research in this field is 
-the High Performance Computing, i.e. HPC. HPC has been increasing in importance 
-and nowadays can be said it is the third support of science with theory and 
-mathematics. The science that can be done thanks to this big machines goes from 
-earthquake predictions to the analysis of the DNA of a carcinogenic cell, from
-weather forecast to material physics simulation. HPC research is not just limited
-to the hardware layer but drive research in all layers in the Transformation 
-Hierarchy\cite{transformationHierarchy} in figure \ref{transformationHierarchyImg}.
-
 \begin{figure}
-  \caption{Levels of transformation}
-  \label{transformationHierarchyImg}
+  \caption{Gordon Moore's prediction done in 1965}
+  \label{moore-prediction}
   \centering
-    \includegraphics[width=100px]{transformationhierarchy.png}
+    \includegraphics[width=150px]{moore_prediction.png}
 \end{figure}
 
-Resources are limited and expensive, so we have to be smart and use them in an
-efficient way. Improving the efficiency is not just a matter that affects to one
-layer of the stack but can be applied to every one of them. For example the
+
+Resources are limited and expensive so we have to use them as efficiently
+as its possible. Improving the performance and the efficiency is not just a 
+matter that affects to one
+layer of the Transformation Hierarchy (proposed by
+\cite{transformationHierarchy}, figure \ref{fig:transformation_hierarchy}) 
+but can be applied to every one of them. For example the
 tremendous evolution of the last fourty years were improvements done mostly on
 circuits layer what have been following the Moore's law \cite{moore:1965}. The
 manufacturers have been reducing the size of transistors by a ratio of 2 every
@@ -47,221 +55,172 @@ what is indeed out-of-order execution with in-order retirement.}
 branch prediction or even memory access value speculation,
 VLIW\footnote{Very Long Instruction Word} or TLP\footnote{Thread Level
 Parallelism} with multi-threading. Improvements on memory hierarchy like cache 
-associativity, non-blocking cache or trace cache. The last
-big revolution affected both architecture and program layers and was the 
-multicore revolution. Was specially important because until then, programmers were 
-agnostics, just feel their programs went faster but now, programs have to be 
-architecture aware. With this last revolution a new effort for hide machine stuff
-from programmers arise and end up with programming models like OpenMP
-\cite{openmp_new}, OpenACC\cite{openacc_new} or OmpSs\cite{ompss_new}. A relatively
-recent example is shown is this paper \cite{Alvarez:2015:CPT:2872887.2750411}
-where they are trying to automatically use the fast scraptchpad memories by
-means of compilers procedures and extra hardware support instead
-of let programmers to deal with this piece of hardware directly. So be 
-always faster and faster is a big deal and is even more pressing in HPC because 
-as it is sayd, it is fact an important science driver.
+associativity, non-blocking cache or trace cache. The last revolution affected 
+ microarchitecture, architecture and program layers and was the introduction
+of multicores (early 2000s). It is basically a revolution in commodity hardware because HPC
+have been used to use shared memory paradigm for a while like for example with
+Transputers (1980s). Anyway it is important even in HPC since the trend have
+been to move from ad-hoc systems to commodity hardware because the goodnesses of
+mass production. On last years researchers have been concerned about the
+consumption because the trend is to have bigger machines so the need of be more
+energy efficient is a big deal for the next-generation exascale systems.
+Heterogeneity of systems seems to be the trend, i.e. near the typical general
+purpose chips install new specific purpose hardware like GPUs or ASICs like
+TPUs \cite{jouppi2017datacenter} evolving to an even more complex systems. This
+innovation affects to almost all layers of the stack from Program to below. 
 
 \begin{figure}
-  \caption{Gordon Moore's prediction done in 1965}
-  \label{moore-prediction}
+  \caption{Levels of transformation}
+  \label{fig:transformation_hierarchy}
   \centering
-    \includegraphics[width=150px]{moore_prediction.png}
+    \includegraphics[width=100px]{transformationhierarchy.png}
 \end{figure}
 
+Program layer\footnote{The program layer bring together the program itself, 
+programming models, frameworks and libraries.} is the interface between pure 
+algorithm and the machine architecture. 
+It is the actual implementation of the algorithm, i.e. where programmers
+transforms algorithm to semantic code that can be transformed lately into
+executable binary by compilers. Having an efficient algorithm mathematically 
+speaking is not enforcing having an efficient program because at algorithm level 
+we do not care about the machine. Pushing on with the business to be always more 
+faster and efficient, the tools that aims to this end in program layer are the 
+performance analysis tools that allows to detect the bottlenecks presents in the 
+application that prevents from better behaviour.
 
-This thesis is centered on program layer\footnote{The program layer 
-bring together the program itself, programming models, frameworks and libraries.}. 
-This layer is the actual implementation of the algorithm, i.e. where programmers
-transforms algorithm to  semantic code that can be transformed lately into
-executable binary by compilers. This layer is indeed the interface between pure 
-algorithm and the machine architecture. Having an efficient algorithm
-mathematically speaking is not enforcing having an efficient program 
-because at algorithm level we do not care about the machine. 
-The mechanism to assess the quality in terms of performance are the performance 
-analysis tools that allows to analyze and detect the bottlenecks. 
-There are two main trends, by one hand we have the profilers and by other hand trace
-tools. Profiler tools generates performance summaries that provides 
-coarse-grain information, with low-overhead. It means that you can feel the problem 
-and infer what could be the origin but the information is not enough if you want 
-to be sure. For gather more detail, the other typical approach are the tracing 
-tools. High accurate and detailed information can be obtained, but it needs 
-more resources in terms of cpu, disk and analyst effort because more data implies 
-more complexity. This demand of resources becomes worst since the capacity in 
-terms of parallelism is increasing, so the number of tasks to monitor makes 
-tracing by one hand hardly scalable and by the other hand tricky to analyze
+Once the big picture have been briefly introduced now we can zoom in and go a
+bit further into details. This thesis belongs to the application performance 
+analysis field of research contributing to ease the analysis and the report. 
+On the next section a more wide description on performance analysis tools is made.
+
+\subsection{Performance analysis tools}
+
+There are two main trends on analysis tools:
+\begin{enumerate}[label=\roman*)]
+    \item Profiler tools 
+      generates performance summaries that provides coarse-grain information, 
+      with low-overhead. It is suitable for these analysis where you do not care
+      about the fine grain details so you just want a general overview of the
+      behavior of the application.
+    \item If your goal is to do a fine-grain analysis more detail is needed. The 
+      other typical approach are the tracing tools. High accurate and detailed 
+      information can be obtained, but it needs more resources in terms of disk 
+      and analyst effort because more data implies more complexity.
+\end{enumerate}
+There is not a general best choice but is just about the needs. One
+disadvantage of profiles is that the high degree of aggregation used to hide
+variability, for example if there is the case where one single function
+behaves different depending on the phase of the execution. In this direction
+research has been drived, e.g. phase-base profiling \cite{malony2005phase} or
+CCG \cite{knupfer2005construction}. Other one is
+that profilers discard the temporal dimension so the execution sequence is lost.
+About the advantages, it is a general summary that allows the user to take a
+peek about what is going on, e.g. if the user want to speedup a code a profiler
+is a good starting point to figure out where to center the efforts. If you look
+at tracing tools the obvious advantage is that there is a lot of information
+available, in fact with not a lot of effort profiler information can be derived
+from traces like is done in Cube \cite{saviankou2015cube}. It can be considered
+profiler capabilities as a subset of trace analysis capabilities so there should
+be a drawback for tracing because tracing is not always the correct choice. The
+main drawback is the scalability for both:
+\begin{enumerate*}[label=\roman*)]
+  \item In tracing time and
+  \item in analysis time.
+\end{enumerate*}
+
+The problem is becoming worst since the capacity in 
+terms of parallelism is increasing\footnote{As have been said High performance 
+computers become more complex every generation, e.g. the current number one on 
+the Top500 list is the Sunway TaihuLight with 10,649,600 cores\cite{top500_2017} 
+.} so the number of tasks to monitor makes 
+tracing techniques by one hand hardly scalable and by the other hand tricky to analyze
 because the huge quantity of data and because the increasing response times
-during the interactive exploration of analysis results. 
-
-Researchers are currently facing this two drawbacks. There are currently several
-specialists driving research in the scalability field, they are trying to reduce 
+during the interactive exploration of analysis results. Researchers are currently 
+facing the scalability problems in this two forms. 
+There are currently several specialists driving research in the tracing
+scalability, they are trying to reduce 
 the overhead of tracing in terms of time and trace sizes by mean of several 
 techniques like machine learning, data-mining and so on like in 
 \cite{llort2015intelligent} or by on-line compression like in
-\cite{noeth2009scalatrace}. About analysis field, the complexity of the analysis 
-can be overcome by adding intelligence to performance analysis tools, last 
-trend is to provide an automatic smart layer that automate an important part 
-of the analysis. Some examples of this 
+\cite{noeth2009scalatrace}. About analysis time, the complexity of the analysis 
+can be overcome by adding some sort of automatization. Some examples of this 
 research line are automatic performance analysis \cite{wolf2003automatic}, 
 automatic structure extraction \cite{casas2007automatic}, phases detection 
 \cite{gonzalez2013application} fundamental factors models \cite{casas2008aass}, 
 automatic analysis throw deep learning \cite{simon:2017:perfdp} and so on.
+Following to this ambition this thesis is focused on the analysis field and is 
+devoted to contribute to ease the work of the analyzers by aid part of the analysis. 
 
-This thesis is focused on the analysis field and is devoted to humbly contribute 
-to ease the work of the analyzers by
-automate part of the analysis. The goal of this work is to automatically detect
-the internal structure of an application and correlate it with performance metrics by
-mean of a post-mortem trace analysis that will help to have a general
-overview about what is actually going on. So instead of deal with whole
-information from the very beggining, this approach let the analyzer to figure
-out to what part of the gathered information focus on, speeding up the process of
-analysis. Also will help to correlate performance analysis with source code
-since the detected application structure would be similar as
-code structure. Furthermore it will contain source code information that will allow to
-easly pinpoint one metric to the code. The structure representation will ignore 
-implementation details what therefore will contribute to faster and therefore better 
-quality reports for developers. 
-
-This sort of analysis have been done tipically by using sequential pattern mining
-techniques what is in principle the set of techniques that better fits to this
-problem since a trace is just a sequence of events ordered by time. The main
-drawback of these techniques is the complexity of the algorithms that behaves
-linearly in the best case and exponentially in the worst. Since the size of
-traces are increasing dramatically, this problem has to be revisited. 
-The main contribution of this thesis is to see structure detection problem as a 
-classification problem such that non-supervised classification algorithms like 
-clustering can be used taking profit of their quasi-lineal complexity in the 
-general case.
-
-% TODO: Un par de lineas sobre los resultados
-
-% TODO
-% He visto que todos los trabajos anteriores han intentado resolver el problema
-% tirando de una forma o de otra de tecnicas de pattern mining. El coste de este
-% tipo de algoritmos es presumiblemente alto, por lo que recuerdo haber leido de
-% suele ser cuadrático. De todos modos tengo un survey sobre pattern minning que
-% quiero repasar para poder atinar más sobre los costes de los algoritmos
-% existentes. Esto es una motivacion desde que el tamaño de las trazas crece
-% constantemente y necesitamos algoritmos más eficientes. La tesis que se
-% sostiene aquí es que la detección de la estructura interna de las aplicaciones
-% puede entenderse como un problema de clasificacion, es decir, clasificar los
-% callstacks en conjuntos que vendrian a ser los bucles. El algoritmo por
-% excelencia de clasificacion (en base a unas metricas) es el clustering, el
-% cual tiene un coste, en el caso del density based clustering de casi-lineal.
-
-
-\section{Motivation}
-
-High performance computers becomes more complex every generation. The number of 
-processors is increasing dramatically, e.g. the current number one on the Top500
- list\footnote{Top500 is the list of the top 500 most powerful high performance 
-computers in the world. It is updated two times per year.} is the Sunway TaihuLight 
-with 10,649,600 cores\cite{top500_2017} and the trend is even increment this
-numbers because the exa-scale era. Analyze application with this quantity 
-of processes with fine-grain detail becomes a really tough task when not
-impossible because of the huge amount of information. The typical tools like 
-visualizers are not enough responsiveness so one of the major challenges is the 
-identification of the hot spots to just focus on these subsets of information. 
-Researchers demands 
-tools that ease the process of performance analysis so taking all of this into 
-account the main motivation of this work is to ease the analysis by means of 
-reducing execution traces to the minimal and meaningful expression.
-
-We can say that HPC applications shares a common idiosyncrasy between them. 
-Mathematic solvers needs to iterate again and again until the result converge and 
-simulation software are used to be programed to evolve over timesteps. So in 
-general, HPC applications consists on a big outer loop that is being executed 
-again and again the same code but with evolving data, i.e. SPMD\footnote{Single
-Program Multiple Data} programs. Additionally this kind of workloads are used
-to be burst syncrhonous, i.e. all ranks are executing computation and
-communication phases in a syncrhonous manner. For these so regular executions a
-relatively simple representation of the whole execution could be extracted, i.e.
-the trace could be reduced to a minimum pseudo-code expression
-with aggregated data for the whole loop so its somehow folding all the iterations
-space. This pseudo-code expresses indeed the actual internal structure of the 
-application.
-
-There are previous works (discussed widely on section \ref{related_work})  that 
-tries to represent the internal structure of an application but they are used to
-use directed graphs like in \cite{aguilar2016event} or just callstack trees like
-in \cite{saviankou2015cube}. The drawback of represent the application structure
-just with directed graphs is that it is a so simplified view, in the referenced
-case it is impossible to pinpoint a given loop (directed graph cycle) to the
-actual code because the lack of callstack information. In case of the
-referenced approach that uses callstacks tree, the lack of information becomes
-from the fact that there is no representation for loops (although you have fuzzy
-clues like see the number of calls). The identification of this lack of clarity
-on the structure representation motivates as well this thesis. The proposal is to 
-generate a pseudo-code with loop and conditional structures that can be easily 
-pinpointed to source code and additionally can show aggregated metrics
-that will allow the analyzer to detect the interesting parts to analyze in next
-steps. So it can be understood as a sort of mix of the two approaches references
-above.
-
-About the used methodology, it can be considered a disruption in this field. The
-previous proposals are used to drive this problem using pattern mining
-techniques (the basic idea of these algorithms are exposed on section
-\ref{pattern_mining}). That is the obvious choice because a trace is basically a
-sequence of events sorted by time. The problem with these sort of algorithm are
-the complexity. So the last motivation is about reducing the complexity. 
-Taking into account the exponential increassing of traces sizes 
-this thesis contribution is the idea to perform intern structure analysis 
-instead of as a pattern mining problem, as a classification problem. 
-Classification algorithms like clustering presents much better performance with 
-about quasy-lineal costs.
-
-%\section{Performance analysis tools environment and workflow}\label{s:pt_evironment}
-\section{Performance analysis tools}\label{s:pt_evironment}
+\section{Environment}\label{s:pt_evironment}
 
 This thesis has been developed in the Performance Tools team at Barcelona
-Supercomputing Center and therefore the tool and techniques explained in this
-document have been designed to fit in this environment. 
+Supercomputing Center and therefore the developments explained in this
+document have been designed to fit in this environment, nevertheless the
+techniques are general so could be applied to any other environment.
+
+\subsection{Software}
 
 The main tools designed and developed in the BSC Performance Tools Team are 
-Extrae, Paraver and Dimemas although other satellite tools are also in the environment they will not be
-explained because are out of the scope of this project. These tools are: 
-Clustering, Tracking, Folding, Spectral and Basic Analysis.
+Extrae, Paraver and Dimemas although other satellite tools are also in the 
+environment they will not be explained because are out of the scope of this 
+project. These tools are: 
+\begin{enumerate*}[label=\roman*)]
+  \item Clustering
+  \item Tracking
+  \item Folding
+  \item Spectral and 
+  \item Basic Analysis.
+\end{enumerate*}
 
-\subsection{Extrae}
+\subsubsection{Extrae}
 
-Like it name (in spanish) indicates, it is about extracting information. Extrae is
+Like its name (in spanish) indicates, it is about extracting information. Extrae is
 the piece of software in charge of inject monitors to the application to
 be studied and
 extract valuable information for the analysis. Different mechanism for
 monitoring are available being the most used the interposition mechanism by
 means of the {\tt LD\_PRELOAD} environment variable present in UNIX systems.
-By this mechanism just calls to a given framework can be instrumented because
-what it does is to divert a framework calls by the program to extrae, then extrae get
-the information and calls the actual framework function. It supports several frameworks: 
-\begin{enumerate*}[label=(\roman*)]
+By this mechanism just calls to a given dynamic library can be instrumented because
+what it does is to divert shared library calls by the program to extrae, then 
+extrae get the information and calls the actual library function. It supports 
+several frameworks: 
+\begin{enumerate*}[label=\roman*)]
   \item MPI (for several implementations)
   \item OpenMP
   \item OMPSs
   \item CUDA
   \item OpenCL
   \item pThreads
+\end{enumerate*}
+and virtual machine instrumentation: 
+\begin{enumerate*}[label=\roman*)]
   \item Java
   \item and Python.
 \end{enumerate*}
-
 The information that can be collected by Extrae is not just timming what is maybe
 the most important one but also some hardware counters by means of PAPI
 interface. All of this information can be complemented by user events that can
 push the desired information to the tracefile by means of the Extrae API. One
 possible use of the Extrae API is to extract information about how different
-iterations from a given loop are behaving.
+iterations from a given loop are behaving.All these gathered information from 
+all threads/processes in the target application is finally merged and presented 
+to the analizer as an ASCII tracefile. Since the task of analyze a ASCII file 
+is a tough work, a visualizer has been developed, that is Paraver.
 
-All these gathered information from all threads/processes in the target
-application is finally merged and presented to the analizer as an ASCII
-tracefile. Since the task of analyze a super-huge ASCII file is a tough work, a
-visualizer has been developed, that is Paraver.
+The methodology presented in this thesis is about post-mortem trace analysis and
+this traces will be generated by extrae so it is an important piece of the
+overall workflow. Further Extrae API is used for the validation step in order to
+unambiguously detect loops in code and compare the actual structure with the
+inferred one automatically without the need of inspect manually the source code.
 
-\subsection{Paraver}
+\subsubsection{Paraver}
 
-The task of analyze numbers is tough when there is a huge quantity so
-the natural choice is to represent them visually since we as humans are very
+The task of analyze raw numbers is tough so the natural choice is to represent 
+them visually since we as humans are very
 good understanding visual patterns. For example in mathematics
 is usual to use plots. In the field of performance analysis, visualizer tools
-also has been developed, having in BSC the Paraver tool that as its name indicates
+also has been developed, having in BSC the Paraver (PARAllel Visualization and
+Events Representation) tool that as its name indicates
 (in spanish) is  about ``to see''. Paraver allows to have a qualitative global 
 perception of the application behavior by visual inspection and then to be able 
 to focus on the detailed quantitative analysis of the problems.
@@ -283,7 +242,13 @@ syndrome''\footnote{https://en.wikipedia.org/wiki/Writer\%27s\_block\#Blank\_pag
 sort of problems the Paraver package provides a set of configuration files of
 the most used views that perform all the filters and derivations for you.
 
-\subsection{Dimemas}
+Even if paraver is not the most important piece of this thesis workflow is
+important to introduce it since Paraver traces is what we use and  there is an
+interaction between Paraver and the proposed development in the sense that the
+second one is capable to identify and communicate with paraver for show up where
+in trace are the detected phases.
+
+\subsubsection{Dimemas}
 
 Like the other tools Dimemas also have a so descriptive name, it means (in
 spanish) ``tell me more'' but is fine to use the acronim that is ``DIstributed
@@ -291,7 +256,7 @@ MEmory MAchine Simulator''. It is a high-abstracted trace-driven MPI simulator
 perfect to perform the called ``what if'' experiments. It is capable to simulate
 the interconection network of a distributed memory machine by means of a high
 abstracted model that consists on three fundamental parameters:
-\begin{enumerate*}[label=(\roman*)]
+\begin{enumerate*}[label=\roman*)]
   \item Latency (s) that models the actual latency of the network and also the
     possible overhead because the software stack before arrives to the NIC
   \item Bandwidth (mb/s) that models the bandwidth of the network and
@@ -304,9 +269,8 @@ abstracted model that consists on three fundamental parameters:
 Dimemas as Paraver is Extrae-dependant software since they need traces to work.
 In the Dimemas case it needs to perform a conversion by means of the {\tt
 prv2dim} converter in order to ease the simulation. As an output it builds up a
-new Paraver trace that can be analyzed as the original.
-
-Only communication times are simulated through the Dimemas models so CPU times
+new Paraver trace that can be analyzed as the original. Only communication times 
+are simulated through the Dimemas models so CPU times
 remain the same on the output tracefile. Even if it is a minor detail, since it
 is important to introduce because the usefulness of it for the purposses of this
 thesis, actually there is a mechanism to modify CPU burst times. At parsing time
@@ -323,15 +287,22 @@ execution\footnote{Noise intruced by O.S. can be detected in Paraver by a fall
   any other source like DVFS so it works only when we can assume the frequency
 of the processor is quite stable.}.
 
-\subsection{Analysis workflow}
+Can be considered that Dimemas is completely orthogonal to this thesis objetives
+but have been considered interesting to introduce it since in some situations a
+Dimemas simulation will be needed in order to remove noise from trace since
+noise affects quite enough to the proposed methodology because it rely on some
+scalar values like timing instead of just an ordered sequence of events.
 
-In an application-centric
-approach, the performance analysis is a cyclic process consisting of observing 
-the behaviour of the application so as to hypothesize the possible problems 
-that affect its performance and finally translate these hypotheses to 
-improvements in the application re-starting the cycle to validate them as is
-depicted in figure \ref{fig:perf_analysis_workflow}.
-Obviously, the less number of iterations of this cycle the less time wasted and it directly depends on the quality of the hypothesis that is strongly related with the possibilities the analysis tools provides.
+\subsection{Analysis workflow}\label{ss:analysis_workflow}
+
+In an application-centric approach, the performance analysis is a cyclic process 
+consisting of observing the behaviour of the application so as to hypothesize the 
+possible problems that affect its performance and finally translate these 
+hypotheses to improvements in the application re-starting the cycle to validate 
+them as is depicted in figure \ref{fig:perf_analysis_workflow}. Obviously, the 
+less number of iterations of this cycle the less time wasted and it directly 
+depends on the quality of the hypothesis that is strongly related with the 
+possibilities the analysis tools provides.
 
 \begin{figure}[]
   \centering
@@ -340,22 +311,12 @@ Obviously, the less number of iterations of this cycle the less time wasted and 
   \label{fig:perf_analysis_workflow}
 \end{figure}
 
-\begin{figure}[]
-  \centering
-  \includegraphics[width=80px]{analysis_subphases.png}
-  \caption{Analysis subphases}
-  \label{fig:analysis_subphases}
-\end{figure}
-
-This work is centered on the analysis phase of the workflow and more accuratelly on
-the initial phases of the analysis where all the non important information is
-tried to be filtered and rejected in order to work with these regions of
-interest from where more valuable information can be gathered. The current
-approach is  a craftwork where the experience of the analyzer is crucial to have
-a good quality results since this is not an easy task because information 
-obtained from the trace extraction phase used to be huge. Analysis phase is
-typical subdivided into the following subphases (see figure
-\ref{fig:analysis_subphases}):
+This work is centered on the analysis phase, so lets go further and look at its
+subphases. When dealing with little and medium size traces, visualizers used to
+be responsiveness enough to perform analysis directly to the traces but when the 
+size surpass a given thresshold several previous steps should be done. In last 
+cases analysis phase is typically subdivided into the following 
+subphases (see figure \ref{fig:analysis_subphases}):
 \begin{enumerate}[label=\roman*)]
   \item Filter as much as possible irrelevant information. Before this phase is
     used to be impossible to work with visualizers so the main goal is to end up
@@ -367,24 +328,144 @@ typical subdivided into the following subphases (see figure
     the more interesting parts of the execution e.g. an iteration or a set of
     iterations that seems to presents interesting information because its 
     extremelly bad performance.
-  \item Last and most important, the analysis. Once one part of the execution is
+  \item Last and most important, the inspection. Once one part of the execution is
     detected to be interesting it is then gathered from the original trace i.e.
     with all the original information.
 \end{enumerate}
-This work could be very difficult and tedious and used to drive to repeat the
-same process several times and since every one of the steps is potentially very 
-time consumed when dealing with huge trace, it could be a waste of time. Both first and second subphases could need to be repeated
-several times because the first filter is not good enough or because on the last
-phase analyzer realize the cut is not as interesting as looked like.
 
-Summing up there is a lot of repetitive craftwork that can be and even have to
-be automatized leading the work more efficient and effective, making available
-more time to the actual real work that is figure out what is going on with the
-performance that is the imaginative and human work. In this thesis this problem
-has been identified and studied and is trying to solve it by proposing
-an alternative way to deal with analysis phase. As has been introduced before, 
-the proposal consist basically 
-on instead of playing and try to figure out what to filter what to cut and what
-to analyze, ease this process by providing the minimal and meaningful expression
-of the trace, transforming it to a pseudocode with performance information 
-attached that will leads to an easy decission to what to analyze first.
+\begin{figure}[]
+  \centering
+  \includegraphics[width=80px]{analysis_subphases.png}
+  \caption{Analysis subphases}
+  \label{fig:analysis_subphases}
+\end{figure}
+
+This work could drive to repeat the same process several times and since every 
+one of the steps is potentially very time consumed when dealing with huge trace. 
+Both first and second subphases could need to be repeated several times because 
+the first filter is not good enough or because on the last phase analyzer realize 
+the cut is not as interesting as looked like. The intuition of a high skilled
+analyist plays an important role in this process.
+
+As has been covered in motivations (section \ref{s:motivations}) this thesis
+approach can be used for improve the inspection subphase but also to help to the
+decission or at least give some clues to the analyzer to what region is the most
+interesting to cut reducing the number of iterations over the subphases of the
+analysis giving more time to the inspection work.
+
+\section{Motivations}\label{s:motivations}
+
+We can say that HPC applications shares a common idiosyncrasy between them. 
+Mathematic solvers needs to iterate until the result converge and 
+simulation software are used to be programed to evolve over timesteps. So in 
+general, HPC applications consists on a big outer loop that is being executed the 
+same code but with evolving data, i.e. SPMD\footnote{Single
+Program Multiple Data} programs. Additionally this kind of workloads are used
+to be burst syncrhonous, i.e. all ranks are executing computation and
+communication phases in a syncrhonous manner. For these so regular executions a
+relatively simple representation of the whole execution could be extracted, i.e.
+the trace could be reduced to a minimum pseudo-code expression
+with aggregated data for the whole loop so its somehow folding all the iterations
+space. This pseudo-code expresses indeed the actual internal structure of the 
+application.
+
+There are several factors that motivates for the extraction of the internal
+structure of an application.
+
+
+\subsection{About improve understandability of execution}
+
+Even if performance tools have been demonstrated to be valuable on detection of
+bottlenecks for a long time, since it demands high skilled profiles for the
+analysis, developers are not used to use them but delegate this work to the
+actual specialist. One example is the POP programme\footnote{The POP
+  (Performance Optimisation and Productivity) center of excellence in computing
+  applications provides performance optimisation and productivity services for
+academic and industrial codes in all domains. https://pop-coe.eu/}. What it
+means is that analyzers are not used to work with its own code so they are used
+to be agnostics about the structure of the program and it difficults the process
+of relate performance metrics to program code. Having the structure of the
+program will lead to better understand the application by allowing to analyzer
+to have a mental schema about what the program does and allows to relate
+differencies in terms on performance to different program phases. This aid on
+the understandability will lead to better and faster analysis while also drives
+to better reports to the developer.
+
+There are previous works (discussed widely on section \ref{related_work})  that 
+tries to represent the internal structure of an application but they are used to
+use directed graphs like in EFG \cite{aguilar2016event} or just callstack trees like
+in Cube \cite{saviankou2015cube}. The drawback of represent the application structure
+just with directed graphs is that it is a so simplified view, in the referenced
+case it is impossible to pinpoint a given loop (directed graph cycle) to the
+actual code because the lack of callstack information. In case of the
+referenced approach that uses callstacks tree, the lack of information becomes
+from the fact that there is no representation for loops (although you have fuzzy
+clues like see the number of calls). The identification of this lack of clarity
+on the structure representation motivates as well this thesis. The proposal is to 
+generate a pseudo-code with loop and conditional structures that can be easily 
+pinpointed to source code and additionally can show aggregated metrics so it can 
+be understood as a sort of mix of the two approaches references above.
+
+\subsection{About identify regions of interest}
+
+The typical tools like visualizers are not enough responsiveness when dealing
+with traces with several GB of information so analyzers needs to first
+preprocess the trace before go ahead with the actual inspection. This preprocess
+consists basically on filter and cut the trace (widely explained on
+\ref{ss:analysis_workflow}) for identify and inspect just these interesting 
+hotspots where the bottlenecks seems to be. Automatically extract the structure
+of the application will give the possibility to agregate information by phases
+and loops so it can aid to analyzer into the work of find out the
+hotspots. In this paper \cite{trahay2015selecting} they present an automatic
+tool that extract this points automatically based on the criteria that
+iterations that behave different from the mean are the interesting ones. The
+problem with the approach presented on the cited paper is that the methodology
+is difficultly scalable since it presents a complexity of $O(n^2)$ and is I/O
+intensive since the data should be readed repeatedly and it is a problem
+when dealing with big traces what are in fact the goal of this methodology so
+the next motivation is about be scalable.
+
+\subsection{About be scalable}
+
+Current approaches about extract the intern structure (syntactic but not
+behavioral, more details in \ref{related_work}) based on a post-mortem trace
+analysis rely on pattern mining techniques (the basic idea of these algorithms 
+are exposed on section \ref{pattern_mining}) that is the obvious choice because 
+a trace is basically a sequence of events sorted by time. The problem with these 
+sort of algorithm is the complexity. So the last motivation is about reducing the 
+complexity of this task. The performance of the proposed algorithms are
+prohibitive like in \cite{trahay2015selecting} \cite{Safyallah2006}
+\cite{Lopez-Cueva2012} so taking into account the exponential increassing of 
+traces sizes this thesis contribution is the idea to perform intern structure 
+analysis instead of as a pattern mining problem, as a classification problem. 
+Classification algorithms like clustering presents about quasy-lineal costs.
+
+
+\section{Expectations}
+
+The goal of this work is to automatically detect the internal structure of an 
+application and correlate it with performance metrics by mean of a post-mortem 
+trace analysis that will help to have a general overview about the phases of the 
+execution. This will allow the analyst to build up a mental schema about the
+application and understand more easily what could be going on. Furthermore it will 
+contain source code information that will allow to easly pinpoint one metric to 
+the actual code providing an enhacenement on the analyst-developer
+understanding. Additionally this structure extraction can help to analyzer to 
+decide what part of the trace analyze first since it will allow to know the loops 
+and iterations boundaries.
+
+This sort of analysis have been done tipically by using sequential pattern mining
+techniques what is in principle the set of techniques that better fits to this
+problem since a trace is just a sequence of events ordered by time.
+By using data mining clustering techniques we expect to have an scalable
+solution since it is used to present quasy-lineal complexity with the number of 
+elements to clusterize. The mapping between elements to clusterize and events on
+a trace is not bijective but exaustive, so every element potentially represents 
+several trace events, what is in fact the same instruction presenting its dynamic
+aspect because the execution of loops. Further the reduction of the tracefile
+events to the set of elements to clusterize is not needed to be sequential but 
+can be done in parallel by spliting the trace into several files and process
+them by multiple processes (assuming also multiple HDDs). 
+
+Assuming repetitive executions, the number of elements to clusterize would be 
+about constant despite the increasing of the exeuction time.
