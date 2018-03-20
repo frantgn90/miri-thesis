@@ -419,16 +419,12 @@ sequences mining for avoid candidate generation.
 
 \section{Previous and related work}\label{related_work}
 
-\lettrine{T}{he problem} of the analysis scalability is not faced for the first 
-time in 
-this paper but there is a quite extensive previous work in what this thesis is 
-rely and is 
-supported on. Several tools are actually being used in order to ease the analyst
+\lettrine{S}{everal} tools are actually being used in order to ease the analyst
 work. Talking about structure analysis we can split previous works into two main
 subsets. By one hand we have the behavioral structure that want to expose the
 different phases on an execution in terms of performance and by the other hand
 the syntactic structure that provide information about the actual program
-structure such as profiling.
+structure.
 
 \subsection{Behavioral structure}
 
@@ -448,12 +444,12 @@ end up identifying different parts of the code as the same phase.
 Even if the goal of the approaches explained below does not match perfectly with
 goal of this thesis, they provide a really useful insights as a related work.
 
-In \cite{casas2007automatic} they propose, similarly to this paper, 
+In \cite{casas2007automatic} they propose 
 automatically extract the internal structure of an MPI application from a
 Paraver tracefile and provide to analyst just representative phases and they 
 rely on signal analysis for this propose. 
-Their analysis consists on two main phases:
-\begin{enumerate*}[label=(\roman*)]
+Their analysis consists on two main steps:
+\begin{enumerate*}[label=\roman*)]
     \item The first is to clean-up the trace by identify the perturbed regions.
 Perturbed regions are those parts of the trace that has been perturbed nor by
 the application nor by architecture but by external factors such that unknown
@@ -461,7 +457,7 @@ system activity or tracing package. Their clean-up phase is centered on remove
 noise from tracing package, i.e. flush to disk. By building up a signal based
 on flushing events and transform it by Closing morphological filter they end up
 with this perturbed phases. 
-    \item The second phase is the identification of the
+    \item The second step is the identification of the
 phases. It is done by means of autocorrelation and periodicity analysis of a
 signal. This signal is build up from any metric like instantaneous FLOPs but
 they use number of MPI point to point calls being executed. Once the period is
@@ -470,23 +466,24 @@ periods. This allows to have a hierarchical structure.
 \end{enumerate*}
 Finally the output is
 basically information about the different phases like number of iteration and
-timing plus some representative cuts of the original trace. The main drawback is
-even if they mention the O.S. noise harms de analysis they are not proposing any 
-method for filter it so same phase on code can be detected as different phases.
-The solution they found out was to use the number of point-to-point MPI being
-executed instead of any other metric so they are assuming SPMD and burst
-syncrhonized applications. It is an interesting approach since they
-are introducing to performance analysis the signals treatment that is more
-common on other fields like telecommunications.
+timing plus some representative cuts of the original trace. 
 
-Similarly with the previous approach, in 
-\cite{gonzalez2013application} is proposed to apply clustering techniques in
-order to identify the different execution phases. Different parts of the
+Its true that if the number of point-to-point MPI calls are used for extract the
+structure, no behavioral information is taken into account, nevertheless since
+any performance metric can be used has been decided to put this approach as a
+behavioral structure analysis tool. The motivation of this work math with the
+second motivation explained in \ref{ss:mot_regions_of_interest}.
+
+In \cite{gonzalez2013application} propose a
+technique to identify the different execution phases using clustering 
+techniques. Different parts of the
 execution are considered as the same phase depending on the behavior,
 so an analysis using some hardware metrics is
-performed. The first phase is about reducing the complexity of the clustering by
+performed. The first step is about reducing the complexity of the clustering by
 filtering the less relevant computation burst, i.e. little bursts according
-with a given threshold. In order to reduce the dimensionality the proposal is to
+with a given threshold. The second step is the clustering itself made with the 
+CPU burst with hardware counters information attached. In order to 
+reduce the dimensionality the proposal is to
 use two different dimension sets: The first one is Completed Instructions
 against IPC\footnote{Instructions per cycle}. This configuration provides a
 performance view. The second is Completed instructions against L1 and L2 cache
@@ -503,16 +500,17 @@ paths.
 
 As it can be seen on the literature presented for behavioral structure signal
 processing and general data mining techniques used to be used. The reason is
-because the behaviour is expressed with scalar values and in this kind of
-problems, sequences pattern mining is not suitable.
+because the behaviour is expressed with scalar values instead of syntactic
+information and in this kind of problems, sequences pattern mining is not 
+suitable.
 
 \subsection{Syntactic structure}
 
-Syntactic structure is centered on providing the actual program code structure so
-it needs to use some debug information about symbols and about the position of
-the instruction is being executed, i.e. the callstack.
+%Syntactic structure is centered on providing the actual program code structure so
+%it needs to use some debug information about symbols and about the position of
+%the instruction is being executed, i.e. the callstack.
 
-The main interest on having the syntactic structure of an application is to be
+One of the main interest on having the syntactic structure of an application is to be
 aware about not just what but where. This is important in the process of who to
 blame in code and provides insights of the actual application that with just
 behavioral structure can not be presented like for example where do we have
@@ -523,16 +521,28 @@ syntactic structure. Although this is a scalable
 solution for performance monitoring, they are used to discard temporal order so
 structures like loops are just exposed indirectly by the number of calls metric.
 Additionally some sort of bottlenecks like late-sender problems are difficult to
-detect without time order information. These following approaches presents the
-information in a way that are in the midway between profilers and tracers. In
+detect without time order information. In
 general starts from a huge trace and by means of summarizing and aggregating
 data tries to present the minimum and meaningful information to the analyst.
+This section has been divided into two subsections. The first is about
+algorithms used on an on-line structure analysis, i.e. the overall trace is not 
+available from the beginning.
+The works presented in this sections are concerned about reduce the size of the
+trace so they are facing the tracing scalability problem. The second section is 
+about off-line structure analysis, that unlike before, trace is available so a 
+post-mortem analysis is done. 
+
+%Even if they use different algorithms on-line
+%analysis algorithms can be easily applied to the off-line scenario just adding a
+%simple layer before trace that feeds the algorithms event by event.
+
+%These following approaches presents the
+%information in a way that are in the midway between profilers and tracers.
 
 \subsubsection{Online structure analysis}
 
 In \cite{noeth2009scalatrace} they are concerning about the scalability of the
-tracing part. Even if they are centered on the logging (or tracing) part their
-work is really useful for this thesis purposes. They claim reductions of about a
+tracing part. They claim reductions of about a
 thousand in terms of trace size just by detecting the structure of the
 application, e.g. If the same thing is repeated 100 times, just saving it once
 and tagging with the number of times it is executed should be enough. They
@@ -570,13 +580,7 @@ limiting the algorithm search (first step) with a windows size. They claim that
 with a windows of 500 is used to be enough. A clear limitation of the use of the
 windows workaround is that it limits the recognition of large patterns.
 
-The approach just presented differs from the techniques presented in
-\ref{ss:temporal_sequences} since in this case they are not working with static
-data but with online or streaming data so the approach is quite different.
-
-In \cite{aguilar2014mpi} they present the Event Flow Graphs (EFG). In this case 
-they are centered on
-syntactic structure but just focused on MPI operations. EFG are
+In \cite{aguilar2014mpi} they present the Event Flow Graphs (EFG). EFG are
 weighted directed graphs where every node is an MPI call and edges the
 transitions between them being the weight the number of transitions done
 from one node to the other, so the program code blocks executed between them.
@@ -598,11 +602,8 @@ two basic actions:
     is taken. This set of transitions are the edges of the EFG.
 \end{enumerate*}
 
-Now let's imagine we have a loop where there are three MPI calls $A$, $B$ and
-$C$ and $B$ and $C$ are mutual exclusively executed so if we have 10 
-iterations we have $A*10$, $B*5$ and $C*5$. In order to reconstruct the execution
-we need information about in what iterations B and C have been executed.
-So additionally they present in \cite{aguilar2016event} temporal-EFG that 
+So far no information about order is taken into account
+so additionally they present in \cite{aguilar2016event} temporal-EFG that 
 introduce more
 information for these cases where the execution order can not be reconstructed
 with the previous EFG. They claim this technique can be used for trace
@@ -613,55 +614,150 @@ and once cycles are detected the graph is transformed to a hierarchical tree
 where loops and subloops are showed up. Statistics about loops can be gathered
 like number of iterations, total time in loops and so on.
 
-The construction of the graph have a complexity of $O(n)$ with the number of MPI
-calls in the execution and the cycle detection also can be considered to have a
-lineal cost but now is not over $n$ MPI calls but over $m$ being it the number
-of unique (so after compression) MPI calls, i.e. number of nodes in EFG. 
-
-% TODO: Alguna valoración
+%The construction of the graph have a complexity of $O(n)$ with the number of MPI
+%calls in the execution and the cycle detection also can be considered to have a
+%lineal cost but now is not over $n$ MPI calls but over $m$ being it the number
+%of unique (so after compression) MPI calls, i.e. number of nodes in EFG. 
 
 \subsubsection{Offline structure analysis}
 
-Compressed Complete Call Graphs (cCCG) was
-presented by \cite{knupfer2005construction}. It is about finding repetitive 
-patterns for loosely or lossless compression but instead of at tracing time, 
-over an already traced huge trace. 
-This compression will allow to analyst to analyze whole huge traces 
-interactively, difficult business when dealing with this amounts of information. 
-CCG is basically a graph of function calls of a program so the main structure is
-defined by the function call hierarchy while additional information are appended
-usually as leaf nodes. The construction phase is quite simple. The trace is
-traversed in a sequential manner, every time a function enter event is detected,
-new node is generated and append to the current active node. The
-other way around when exit function event is read, the current active node is
-finalized and all information concerning to this node is presented e.g.
-duration. Additionally, while constructing, the graph is compressed. The basic 
-idea is to replace $n$ repeated sub-trees that are equal or similar with a 
-reference to a single instance saving $n-1$ remaining copies. For similar is
-understood that when comparing nodes not all properties must be equal for
-example is not needed some scalar values like duration match perfectly (some
-configured deviation is acceptable) but properties like function id must. They
-claim compression ratio about 200 can be achieved with this approach.
-Additionally this compression technique does not need to uncompress anything, the
-user (or any analysis algorithm) just can traverse the graph and gather
-information. This approach improves profiling in the sense that same function 
-with same call
-path and different time behaviour is exposed to analyst but still presents a lack 
-of information on the order of the execution of the different graph paths so
-application structure is exposed just partially. 
+%Compressed Complete Call Graphs (cCCG) was
+%presented by \cite{knupfer2005construction}. It can be said it is about 
+%profilizing a trace. It consist on finding repetitive 
+%patterns for loosely or lossless compression. This compression will allow to 
+%analyst to analyze whole huge traces 
+%interactively, difficult business when dealing with this amounts of information. 
+%CCG is basically a graph of function calls of a program so the main structure is
+%defined by the function call hierarchy while additional information are appended
+%usually as leaf nodes. The construction phase is quite simple. The trace is
+%traversed in a sequential manner, every time a function enter event is detected,
+%new node is generated and append to the current active node. The
+%other way around when exit function event is read, the current active node is
+%finalized and all information concerning to this node is presented e.g.
+%duration. Additionally, while constructing, the graph is compressed. The basic 
+%idea is to replace $n$ repeated sub-trees that are equal or similar with a 
+%reference to a single instance saving $n-1$ remaining copies. For similar is
+%understood that when comparing nodes not all properties must be equal for
+%example is not needed some scalar values like duration match perfectly (some
+%configured deviation is acceptable) but properties like function id must. They
+%claim compression ratio about 200 can be achieved with this approach.
+%%Additionally this compression technique does not need to uncompress anything, the
+%%user (or any analysis algorithm) just can traverse the graph and gather
+%%information. 
+%This approach improves profiling in the sense that same function with same call
+%path and different time behaviour is exposed to analyst but still presents a lack 
+%of information on the order of the execution of the different graph paths so
+%application structure is exposed just partially. The cost of this algorithm is 
+%lineal since no back search is needed. It is
+%because the entry and exit function information is actually on the trace. If it
+%were not, the only manner to be sure if the next event belongs to the same
+%iteration or to the next is by means of a back search similarly to the presented
+%in \cite{noeth2009scalatrace} and as have been argued before it can lead to
+%quadratic costs. The fact of having the entry/exit information in traces adds a
+%non negligible overhead what implies the poor scalability of this
+%method in terms of tracing.
 
-The cost of this algorithm is lineal since no back search is needed. It is
-because the entry and exit function information is actually on the trace. If it
-were not, the only manner to be sure if the next event belongs to the same
-iteration or to the next is by means of a back search similarly to the presented
-in \cite{noeth2009scalatrace} and as have been argued before it can lead to
-quadratic costs. The fact of having the entry/exit information in traces adds a
-non negligible overhead what implies the poor scalability of this
-method in terms of tracing.
+%% TODO: Talk about Cube???
+
+There are some works examined in this section that are out of the HPC field,
+this is because the structure extraction is also useful for other purposes like
+reverse engineering on interative software nevertheless they are actually useful
+since the objective is quite the same.
+
+Starting with \cite{Safyallah2006} they propose analyze execution
+traces of software systems in order to extract the intern structure for
+improving reverse engineering process. For
+that end they first instrument the application (the entry/exit of functions) and 
+a set of relevant task scenarios (actions) are selected, that examine a 
+single software feature, called feature-specific scenario set. These scenarios
+are executed and traces are collected. Second step is the execution pattern
+analysis that extract both, intra-scenario set where patterns that are specific
+to a single software feature and inter-scenario set where more general
+patterns appears, i.e. no feature specific structure so the main structure of 
+the application. For pattern analysis they rely on sequential pattern mining
+techniques using a modified version from \cite{Agrawal_seqpatt} what is a
+slightly different from what has been explained on \ref{ss:temporal_sequences} 
+and is also using candidates generation approach. They are able to find inter
+and intra-scenario patterns by tuning the Minimum support such that for detect
+feature-specific patterns it is reduced to about 5\% and to find out
+inter-scenario patterns it is incremented to about 25\%.
+
+Similarly in \cite{Zhao2008} they present an approach to extract the intern
+structure of software systems, mainly interactive, but using graph-based 
+substructure mining algorithms instead of sequential based mining techniques.
+They propose a four step methodology: 
+\begin{enumerate*}[label=\roman*)]
+  \item Trace collection
+  \item Trace preprocessing
+  \item Grammar induction
+  \item and Grammar parsing.
+\end{enumerate*}
+Traces have several information but the most important is the enter and exit
+from methods that allows to derive the call-graphs. These call-graphs are saved
+as a linked list of caller-callee relations. Following, to facilitate the
+grammar induction step, the data is simplified by remove some repetitive and
+fine-grain details such that low-level methods. Note
+the difference in this point, we rely on the analysis of repetitive patterns as
+a source for infer the internal structure while they identify loops repetitions
+as a phenomena that do not contribute to the structural feature. It can be
+explained taking into account the different targeted kind of software. The
+result of trace preprocessing feeds the grammar induction step that rely on
+VEGGIE (Visual Environment for Graph Grammars: Induction and Engineering). 
+Induction algorithm iteratively finds common substructures from a
+given set of data, and organizes the hidden hierarchical substructures in a
+gramatical way. When a common frequent substructure is found, a grammar
+production will be created.
+
+This paper considers to use a different approach from sequential pattern mining
+and it is also interesting since the last seems is the dominant approach. They show up
+some results being maybe acceptable for the targeted analysis but not for this
+thesis objectives since they report execution times of about 70 seconds for
+traces with about 90 events.
+
+% In \cite{Zou2010} \ldots
+
+In a bit different scenario, \cite{Lopez-Cueva2012} they talk about debugging 
+and optimization process of
+software for SoCs\footnote{System on Chip} by means of traces post-mortem
+analysis. They explain the complexity of SoCs drives the analysis of these
+traces difficult because the high quantity of information that they are used to
+collect so they are facing the problem about scalability on analysis. They argue
+that the manual analysis of execution traces is becoming an unmanageable task so
+this task has to be aided by automatically extract pertinent information, what
+is in fact the structure of the application, and for
+that they rely on pattern mining techniques, specifically frequent periodic
+pattern mining. As has been explained in section \ref{pattern_mining} this sort
+of algorithms are used to work with set of transactions so in order to adapt
+trace mining to that algorithms they have chosen to split the trace into a set
+of subtraces (by time intervals or by function name). They say \textit{``we are
+interested in discovering sets of events that occur periodically [\ldots] but
+the order is not taken into account [\ldots] the order can change according to
+the scheduler (in a multi-thread environment)''}. It remembers to the algorithm
+explained at section \ref{ss:temporal_sequences} in the sense that the events in
+windows were not assesed to be in order since they could happen in parallel.
+Furthermore the split of the trace into transactions remembers to the windows
+explained in that same section. Additionally to the classical temporal sequence
+mining they introduce the definition of cycles as \textit{``When an itemset  occurs over 
+a set of transactions and the distance between any two consecutive transactions 
+is constant''} and periodic pattern as \textit{``a set of consecutive cycles over the
+same itemset and the same period''}. One of the interesting concepts that is a
+bit out of the scope of this thesis is that another of the goals of this paper
+is to recognize the gaps, i.e. the disruptions into the periodicity of a
+pattern. They have these information because trace information is not just from
+application point of view but from a whole SoC point of view. 
+
+The minig consists on a four step algorithm where the first one is the
+responsible of find out all the cycles of all possible periods (from 1 to n. of
+transactions / min. support) containing a selected item. The rest of steps are
+responsible to refine the output in order to end up with the minimum useful
+information. First step is intuitively slow and generates a highly redundant
+information so is hardly scalable.
 
 
-In \cite{trahay2015selecting} they present an approach for select points of
-interest automatically, understanding as points of interest these iterations that
+Returning to the HPC field, in \cite{trahay2015selecting} they present an 
+approach for select points of
+interest automatically from an execution trace, understanding as points of 
+interest these iterations that
 behave different from the majority. The first phase is a post-mortem analysis of
 a given trace. This analysis is about finding patterns of events that are
 repeated, i.e. folding loops that has been unfolded during the
@@ -694,9 +790,4 @@ This algorithms can be classified as a pattern growing algorithm (described in
 section \ref{ss:projection_based}) but without the projection step so all data
 is traversed again and again. They said their algorithm is dominated by the
 first step that presents a complexity of $O(n^2)$.
-
-Next approach is about “profilization” of traces.
-In \cite{saviankou2015cube} 
-\dots
-
 
