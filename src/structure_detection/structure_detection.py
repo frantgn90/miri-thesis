@@ -35,7 +35,6 @@ def main(argc, argv):
             help="The Paraver trace to be analyzed.",
             metavar="PRVTRACE",
             dest="prv_trace")
-
     parser.add_argument("--random-iterations",
             action="store",
             nargs=1,
@@ -45,12 +44,10 @@ def main(argc, argv):
             help="Number of random iterations to show for every detected loop.",
             metavar="NRANDIT",
             dest="nrandits")
-
     parser.add_argument("--show-clustering",
             action="store_true",
             help="Whether you want the clustering shows up.",
             dest="show_clustering")
-
     parser.add_argument("--temp-files-dir",
             action="store",
             nargs=1,
@@ -60,7 +57,6 @@ def main(argc, argv):
             help="Whether you want to use already generated temporal data.",
             metavar="TMPFILESDIR",
             dest="tmp_files")
-
     parser.add_argument("--bottom-bound",
             action="store",
             nargs=1,
@@ -71,7 +67,6 @@ def main(argc, argv):
                     " be ignored",
            metavar="BOUND",
            dest="bottom_bound")
-
     parser.add_argument("--epsilon",
             action="store",
             nargs=1,
@@ -80,7 +75,6 @@ def main(argc, argv):
             default=[0.01],
             help="When delta analysis is performed, the epsilon is the relative"\
                     " tolerated area.")
-
     parser.add_argument("--log",
             action="store",
             nargs=1,
@@ -90,13 +84,11 @@ def main(argc, argv):
             help="Log level",
             metavar="LOG",
             dest="log_level")
-
     parser.add_argument("--cplex",
             action="store_true",
             help="Whether you want that the delta calculation will be done by"\
                     " CPLEX optimization engine or by a heuristics.",
-           dest="use_cplex")
-
+            dest="use_cplex")
     parser.add_argument("--cplex-input",
             action="store",
             nargs=1,
@@ -107,7 +99,6 @@ def main(argc, argv):
                     "must specify here the path to it.",
            metavar="CPLEXINPUT",
            dest="cplex_input")
-
     parser.add_argument("--delta-accuracy",
             action="store",
             nargs=1,
@@ -115,13 +106,11 @@ def main(argc, argv):
             required=False,
             default=[0.1],
             help="Inverse of number of deltas provided to cplex.")
-
     parser.add_argument("--only-mpi",
             action="store_true",
             help="Whether you want to see just MPI calls or the "\
                     "whole callstack",
             dest="only_mpi")
-
     parser.add_argument("--in-mpi-metric",
             action="store",
             nargs='+',
@@ -130,23 +119,25 @@ def main(argc, argv):
             default=[],
             dest="in_mpi_events",
             help="In MPI Paraver event type(s) to gather information.")
-
     parser.add_argument("--html-gui",
             action="store_true",
             dest="html_output",
             help="Whether you want to display the output in an enriched"\
                     " html format")
-
     parser.add_argument("--in-time-order",
             action="store_true",
             help="Whether you want pseudocode callstacks in time order"\
                     " or in program order",
             dest="in_time_order")
-
     parser.add_argument("--burst-info",
             action="store_true",
             help="Whether you want burst info be showed or not",
             dest="show_burst_info")
+    parser.add_argument("--with-loop-info",
+            action="store_true",
+            help="Whether you want to use info from Mercurium"\
+                    " (if available) or not",
+            dest="with_loop_info")
 
 
     argcomplete.autocomplete(parser)
@@ -227,26 +218,47 @@ def main(argc, argv):
     for cs in callstacks_pool:
         del cs.calls[-2]
 
-    ''' 4. Phases recognition --------------------------------------------- '''
-    logging.info("Phases recognition...")
-    wfprof.step_init(3)
-    deltas = calcule_deltas_clustering(callstacks_pool, constants.TOTAL_TIME)
-    logging.info("{0} deltas detected: {1}".format(len(deltas), deltas))
-    wfprof.step_fini(3)
-    logging.info("Done")
+    if arguments.with_loop_info:
+        assert all(map(lambda x: x.with_loop_info(), callstacks_pool))
+        clusters = dict()
+        cluster_id = 0
+        logging.info("Clustering by loop id")
+        wfprof.step_init(4)
+        for cs in callstacks_pool:
+            if not cs.loop_id() in clusters:
+                cs.cluster_id = cluster_id
+                clusters[cs.loop_id()] = cluster(cluster_id)
+                clusters[cs.loop_id()].add_callstack(cs)
+                cluster_id += 1
+            else:
+                cs.cluster_id = clusters[cs.loop_id()].cluster_id
+                clusters[cs.loop_id()].add_callstack(cs)
+        clusters_pool = clusters.values()
+        wfprof.step_fini(4)
+        plot_thread=None
+        logging.info("Done")
+    else:
+        ''' 4. Phases recognition --------------------------------------------- '''
+        logging.info("Phases recognition...")
+        wfprof.step_init(3)
+        deltas = calcule_deltas_clustering(callstacks_pool, constants.TOTAL_TIME)
+        logging.info("{0} deltas detected: {1}".format(len(deltas), deltas))
+        wfprof.step_fini(3)
+        logging.info("Done")
 
-    ''' 5. Clustering ----------------------------------------------------- '''
-    logging.info("Performing clustering...")
-    wfprof.step_init(4)
+        ''' 5. Clustering ----------------------------------------------------- '''
+        logging.info("Performing clustering...")
+        wfprof.step_init(4)
+        clusters_pool,plot_thread=clustering(callstacks_pool, 
+                arguments.show_clustering, 
+                constants.TOTAL_TIME, deltas, arguments.bottom_bound[0])
+        wfprof.step_fini(4)
 
-    clusters_pool,plot_thread=clustering(callstacks_pool, 
-            arguments.show_clustering, 
-            constants.TOTAL_TIME, deltas, arguments.bottom_bound[0])
-
-    for cluster in clusters_pool:
-        cluster.run_loops_generation()
+    ''' Perform loops generation ------------------------------------------- '''
     logging.debug("{0} clusters detected".format(len(clusters_pool)))
-    wfprof.step_fini(4)
+    logging.debug("Generating loops from callstacks")
+    for cl in clusters_pool:
+        cl.run_loops_generation()
 
     for cl in clusters_pool:
         logging.debug("Cluster {0} have {1} loops".format(cl.cluster_id,
@@ -295,13 +307,13 @@ def main(argc, argv):
     ''' -------------------------------------------------------------------'''
  
     ''' Testing for aliasing '''
-    for cluster in clusters_pool:
-        if not cluster.check_loop_id():
+    for cl in clusters_pool:
+        if not cl.check_loop_id():
              logging.error("Missarrangement of callstacks for cluster {0}"
-                     .format(cluster.cluster_id))
+                     .format(cl.cluster_id))
         else:
             logging.debug("Nice clustering for cluster {0}"
-                    .format(cluster.cluster_id))
+                    .format(cl.cluster_id))
 
 
     #for cluster in clusters_pool:

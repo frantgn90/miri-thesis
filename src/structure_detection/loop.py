@@ -541,8 +541,8 @@ class loop (callstack_ordered_list):
         sub_times = None
 
         if self.iterations == other.iterations:
-            logging.warning("Think little bit more about it!!")
-            return True
+            logging.warning("Merging loops with same number of iterations!!!")
+        #    return True
 
         # Could be the situation where self of other just have subloops
         # w/o callstacks when temp_matrix detect a hidden superloop

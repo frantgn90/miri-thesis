@@ -118,6 +118,17 @@ class callstack(object):
 
         return cls(rank, instant, calls_obj)
 
+    def loop_id(self):
+        res = ""
+        for loopid in self.loop_info:
+            res += str(loopid)
+        return res[:-1]
+
+    def with_loop_info(self):
+        if self.loop_info == None:
+            return False
+        return len(self.loop_info) > 0
+
     def add_mpi_msg_size(self,size):
         if self.repetitions[self.rank] == 1:
             self.metrics[self.rank]["mpi_msg_size"] = size
