@@ -62,7 +62,7 @@ have been used to use shared memory paradigm for a while like for example with
 Transputers (1980s). Anyway it is important even in HPC since the trend have
 been to move from ad-hoc systems to commodity hardware because the goodnesses of
 mass production. On last years researchers have been concerned about the
-consumption because the trend is to have bigger machines so the need of be more
+power consumption because the trend is to have bigger machines so the need of be more
 energy efficient is a big deal for the next-generation exascale systems.
 Heterogeneity of systems seems to be the trend, i.e. near the typical general
 purpose chips install new specific purpose hardware like GPUs or ASICs like
@@ -116,7 +116,9 @@ CCG \cite{knupfer2005construction}. Other one is
 that profilers discard the temporal dimension so the execution sequence is lost.
 About the advantages, it is a general summary that allows the user to take a
 peek about what is going on, e.g. if the user want to speedup a code a profiler
-is a good starting point to figure out where to center the efforts. If you look
+is a good starting point to figure out where to center the efforts. 
+
+If you look
 at tracing tools the obvious advantage is that there is a lot of information
 available, in fact with not a lot of effort profiler information can be derived
 from traces like is done in Cube \cite{saviankou2015cube}. It can be considered
@@ -127,7 +129,6 @@ main drawback is the scalability for both:
   \item In tracing time and
   \item in analysis time.
 \end{enumerate*}
-
 The problem is becoming worst since the capacity in 
 terms of parallelism is increasing\footnote{As have been said High performance 
 computers become more complex every generation, e.g. the current number one on 
@@ -202,7 +203,7 @@ the most important one but also some hardware counters by means of PAPI
 interface. All of this information can be complemented by user events that can
 push the desired information to the tracefile by means of the Extrae API. One
 possible use of the Extrae API is to extract information about how different
-iterations from a given loop are behaving.All these gathered information from 
+iterations from a given loop are behaving. All these gathered information from 
 all threads/processes in the target application is finally merged and presented 
 to the analizer as an ASCII tracefile. Since the task of analyze a ASCII file 
 is a tough work, a visualizer has been developed, that is Paraver.
@@ -341,7 +342,8 @@ subphases (see figure \ref{fig:analysis_subphases}):
 \end{figure}
 
 This work could drive to repeat the same process several times and since every 
-one of the steps is potentially very time consumed when dealing with huge trace. 
+one of the steps potentially have a very time consumption, when dealing with
+huge trace, it can be a waste of time. 
 Both first and second subphases could need to be repeated several times because 
 the first filter is not good enough or because on the last phase analyzer realize 
 the cut is not as interesting as looked like. The intuition of a high skilled
@@ -421,10 +423,9 @@ hotspots. In this paper \cite{trahay2015selecting} they present an automatic
 tool that extract this points automatically based on the criteria that
 iterations that behave different from the mean are the interesting ones. The
 problem with the approach presented on the cited paper is that the methodology
-is difficultly scalable since it presents a complexity of $O(n^2)$ and is I/O
+is difficultly scalable since it presents high complexity and is I/O
 intensive since the data should be readed repeatedly and it is a problem
-when dealing with big traces what are in fact the goal of this methodology so
-the next motivation is about be scalable.
+when dealing with big traces. 
 
 \subsection{About be scalable}
 
@@ -455,10 +456,20 @@ understanding. Additionally this structure extraction can help to analyzer to
 decide what part of the trace analyze first since it will allow to know the loops 
 and iterations boundaries.
 
-This sort of analysis have been done tipically by using sequential pattern mining
-techniques what is in principle the set of techniques that better fits to this
-problem since a trace is just a sequence of events ordered by time.
-By using data mining clustering techniques we expect to have an scalable
+The main objective is to detect those sets of events in trace that are being
+repeated toghether several times (above a given threshold) and agrupate them into 
+loops. Since several subsets can appear because an application used to have 
+dozens of loops, those detected events subsets also will be arranged (in a 
+hierarchical manner) in a way that represents faithfully the actual internal 
+structure. This sort of analysis have been done tipically by using sequential 
+pattern mining techniques what is in principle the set of techniques that better 
+fits to this problem since a trace is just a sequence of events ordered by time.
+
+Based on previous works and on the premise that HPC applications used to present
+the same idiosincracy (SPMD, burst syncrhonous,\ldots) has been decided to
+explore a new way to detect those patters, motivated mainly for the fact that
+pattern mining techniques are in general computationally expensive. By using data 
+mining clustering techniques we expect to have an scalable
 solution since it is used to present quasy-lineal complexity with the number of 
 elements to clusterize. The mapping between elements to clusterize and events on
 a trace is not bijective but exaustive, so every element potentially represents 
@@ -466,7 +477,10 @@ several trace events, what is in fact the same instruction presenting its dynami
 aspect because the execution of loops. Further the reduction of the tracefile
 events to the set of elements to clusterize is not needed to be sequential but 
 can be done in parallel by spliting the trace into several files and process
-them by multiple processes (assuming also multiple HDDs). 
+them by multiple processes (assuming also multiple HDDs). Assuming repetitive 
+executions, the number of elements to clusterize would be about constant despite 
+the increasing of the exeuction time.
 
-Assuming repetitive executions, the number of elements to clusterize would be 
-about constant despite the increasing of the exeuction time.
+In this work is not expected to end up with a completelly functional and
+performance refined tool but demonstrate how this approach can present valuable 
+results with a good scalability on increasing trace sizes.
