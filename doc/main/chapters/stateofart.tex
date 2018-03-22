@@ -10,18 +10,18 @@ application. In a more abstract way, we can define traces just as a sequences
 of time ordered events. The fundamentals of recognize the intern structure of an
 application is about recognize loops that are those structures in code that
 repeats the code into their body as many times as programmer want. Loops in
-traces has been unroled and presents its dynamic aspect so we can define loops
-as a subsequences of instructions that are repeated several times. The work of
-identifying loops in traces is about identifying these repetitive subsequences.
+traces has been unrolled and presents its dynamic aspect so we can define loops
+as a sub-sequences of instructions that are repeated several times. The work of
+identifying loops in traces is about identifying these repetitive sub-sequences.
 
 \section{Sequential pattern mining}\label{pattern_mining}
 
 \lettrine{S}{equential} pattern mining can be defined as: \textit{``Given a set of data sequences, the
-problem is to discover subsequences that are frequent, that is, the percentage of
+problem is to discover sub-sequences that are frequent, that is, the percentage of
 data sequences containing them exceeds a user-specified minimum support.''}. Note 
 this definition fits pretty well with our objective of loops recognition in traces 
 so sequential pattern mining is the natural choice. Furthermore there is another
-definition that fits even better for our problem. It is, refering to patterns to
+definition that fits even better for our problem. It is, referring to patterns to
 analyze in a temporal sequences:\textit{``\ldots a collection of events that
 occur relatively close to each other in a given partial order, and \ldots
 frequent episodes as a recurrent combination of events''}.
@@ -470,11 +470,11 @@ use two different dimension sets: The first one is Completed Instructions
 against IPC\footnote{Instructions per cycle}. This configuration provides a
 performance view. The second is Completed instructions against L1 and L2 cache
 misses. This combination reflects the impact of the architecture on the
-application structure. Once the CPU burst have been clusterized this information
+application structure. Once the CPU burst have been clustered, this information
 can be sent back to the trace and can be visualized by the analyst. Additionally
 an interesting analysis can be done with the shape of clusters like for example,
 working with IPC vs. Number of instructions if the shape of a given cluster is
-flat on the second axis it means that there is an inbalance on instructions.
+flat on the second axis it means that there is an imbalance on instructions.
 Clustering in the field of performance analysis was used before this proposal 
 just for classify processes that behaves similar so its utilization by
 identifying different phases on temporal dimension opened the door to new research
@@ -531,7 +531,7 @@ single-node compressions are merged forming the whole application trace.
 They maintain two sequences the ``target'' that contains the already detected
 sequences sets and the ``match'' sequence that is formed by the newly acquired
 trace records. The compression algorithm maintains a queue of MPI events and 
-attempts to greedly compress the first matching by  in four steps procedure:
+attempts to greedily compress the first matching by  in four steps procedure:
 \begin{enumerate}[label=\roman*)]
   \item Head and tail of the match sequence is determined by traversing the
     queue backwards such that the last item is the tail named ``target tail''
@@ -566,7 +566,7 @@ two basic actions:
   \item Every time an MPI call is detected gather all information and store it
     in a hashmap indexed by the MPI call signature. The signature is a k-tuple
     of components which represents relevant metrics like MPI call type and
-    source code possition. Every entry of the hashmap is directly related with
+    source code position. Every entry of the hashmap is directly related with
     one node.
   \item Also on every MPI call detection a transition from one node to other has
     to be stored, it is what they called ``signature history'' and it consists
@@ -842,3 +842,19 @@ the number of candidates needs to be generated for a relatively long itemsets is
 really huge and presents an exponential growth with the number of items in the
 itemset. Additionally for every one of these candidates, data needs to be
 traversed again on the test phase.
+
+If we look closer, one can realize that the complexity of the algorithm mostly 
+depends on the expectations of the complexity of the betrayed patterns. 
+About studied literature in syntactic 
+structure \cite{Safyallah2006} \cite{Zhao2008} talks about get the 
+internal structure at level of entry/exit functions, and as they talk it can 
+leads to a high complex structures that needs post-process, for them 
+pattern mining algorithms is the natural choice. In \cite{trahay2015selecting}
+they talk about find patterns of events that are both, MPI calls and function
+calls in general and following the former, rely on pattern mining. 
+\cite{noeth2009scalatrace} also use some sort of sequential pattern mining but 
+the feeling is that their needs drivers to a more simple algorithm. Finally in
+\cite{aguilar2016event} they just perform a directed graph building because they
+just get MPI calls information, so simpler patterns will be detected. Strong
+reason for prefer a simplified analysis is they are working online, so they are
+trying to decrease the overhead as much as possible.

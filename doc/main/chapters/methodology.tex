@@ -5,8 +5,75 @@ On the previous considerations and the proposed methodology
 
 \section{Previous considerations}
 
-\subsection{Pattern mining by classification}
-\subsection{Scalability}
+Before entering to the description of the developed work, in this section it is
+going to be explained the previous considerations that finally drivers to the
+proposed approach.
+
+\subsection{Application structure by classification}
+
+Taking into account the motivations, exposed in \ref{s:motivations}, and the
+previous works studied and discussed in \ref{related_work} the idea to introduce
+a new approach arise, even if as always based on previous foundations.  
+ 
+Our intention is just use information from MPI calls, mainly for two 
+reasons:
+\begin{enumerate*}[label=\roman*)]
+  \item It does not needs to instrument the source code of the target
+    application since exploit the \texttt{LD\_PRELOAD} capabilities of extrae
+  \item and the trace size is small compared with traces with more information
+    like entry/exit from functions.
+\end{enumerate*}
+
+The proposal presented in this thesis is to explore a new way to detect these
+patterns by applying clustering techniques. The essential point is that the 
+problem has been converted in to a classification problem. 
+Instead of looking for these itemsets that are being
+repeated several times during the execution, close enough one each other, lets
+face the problem of group these MPI calls that belongs to the same loop to the
+same cluster. By this way is quite easy to construct a representation of the 
+internal structure of an application. The scalability resides on the fact that
+HPC applications are strongly repetitive over the time, so the number of unique
+MPI calls to clustering remains constant despite the growth of the execution
+time (as is demonstrated on \ref{ss:scalability}), additionally clustering
+algorithm such that K-means presents an attractive linear complexity and DBSCAN a
+quasi-lineal.
+
+\subsection{Loops characterization}
+
+The first study that should be drive before face the clustering algorithm is to
+figure out what defines a loop. Without a lot of effort we can think that its
+position on code, understanding as position the line and the file where the loop
+lies, is the metric that will give us more information but the reality is that 
+we do not have this information on trace. Remember on trace we just have 
+information about the MPI calls (and its parameters) performed by the application 
+with additional information like the call-path and some hardware metrics such 
+that number of instructions and number of cycles. Being aware of that, the next
+obvious metrics that in principle can characterize a loop is the number of
+iterations it performs but for sure in an application there used to be dozens of
+loops and is not ridiculous to think that clustering just with this metric will
+leads to a lot of aliasing. That would be true if we think in static number of
+iterations but lets think about dynamic number of iterations: The dynamic
+iterations of a given loop does not depends only on the number of iterations in
+its definition but also on the number of iterations on the definition of the
+parent loops such that if there are two loops having $n$ and $n$ iterations (so
+having aliasing on static number of iterations) being one in the body on the
+other, in the dynamic domain, they will have $n$ and $n^2$ undoing the aliasing.
+This is just an starting point, nested loops will be unambiguously identified so
+it is okay for most of the applications (the most simple) but there still some
+situations where we can have aliasing. The situation where two loops
+lies on the same loop nesting level and have the same number of static
+iterations will drive to aliasing. This situation is not so probable (at least
+on the NPB benchmarks that is the set of benchmarks used for validation) but
+since it has been detected in some cases it has to be covered. Further, the next
+metric that can identificate a given loop is the work that does, i.e. the
+iteration time. 
+
+%It has been understood that a good way of represent the intern structure of an
+%application is by means of a pseudo-code because it can represent both, the
+%structure and the temporal ordering of the events with clarity but this is not
+%the key point since it is just about the interface with user and other 
+
+\subsection{Scalability}\label{ss:scalability}
 
 \section{Proposed methodology}
 

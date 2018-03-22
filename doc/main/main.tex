@@ -28,6 +28,8 @@
 \usepackage[inline]{enumitem}
 \usepackage{draftwatermark}
 \usepackage{fancyhdr}% http://ctan.org/pkg/fancyhdr
+\usepackage{framed}
+
 \pagestyle{fancy}% Change page style to fancy
 
 %\renewcommand{\headrulewidth}{0.4pt}% Default \headrulewidth is 0.4pt
@@ -36,24 +38,100 @@
 \SetWatermarkText{DRAFT}
 \SetWatermarkScale{5}
 \SetWatermarkColor[rgb]{0.95,0.95,0.95}
-
 \graphicspath{ {imgs/} }
-
-\title{
-%  {\Huge Inferring program structure from an execution trace}
-  {\Huge Efficient Application Structure Detection by means of Clustering
-  technique}
-}
-\author{
-  {Juan Francisco Martínez Vera}\\
-  {\tt juan.martinez@bsc.es}
-}
-\date{\today}
 
 \begin{document}
 
-\maketitle
+\frontmatter 
+\pagestyle{plain} 
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\begin{titlepage}
+\begin{center}
+
+\vspace*{.06\textheight}
+{\scshape\LARGE Universitat Polit\'ecnica de Catalunya\par}\vspace{1.5cm} % University name
+\textsc{\Large Master Thesis}
+\vspace{1.5cm}
+\hrule
+\vspace{0.4cm}
+{\huge \bfseries Inferring program structure from execution traces\par}
+\vspace{0.4cm}
+\hrule
+\vspace{1.5cm}
+ 
+\begin{minipage}[t]{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Author:}\\
+Juan Francisco Mart\'inez Vera \\
+{\tt juan.martinez@bsc.es} % Author name - remove the \href bracket to remove the link
+\end{flushleft}
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+\begin{flushright} \large
+\emph{Supervisor:} \\
+Jes\'us Labarta Mancho\\
+{\tt jesus.labarta@bsc.es} % Supervisor name - remove the \href bracket to remove the link  
+\end{flushright}
+\end{minipage}\\[3cm]
+ 
+\vfill
+
+\large \textit{A thesis submitted in fulfillment of the requirements\\ for the
+degree of Master in Research and Innovation}\\[0.3cm] % University requirement text
+\textit{in the}\\[0.4cm]
+Performance tools team\\Barcelona Supercomputing Center\\[2cm] % Research group name and department name
+ 
+\vfill
+
+{\large \today}\\[4cm] % Date
+%\includegraphics{Logo} % University/department logo - uncomment to place it
+ 
+\vfill
+\end{center}
+\end{titlepage}
+
+%----------------------------------------------------------------------------------------
+%	QUOTATION PAGE
+%----------------------------------------------------------------------------------------
+
+
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+\vspace*{0.2\textheight}
+
+{\large \textit{ {\huge ``}Compr\'o Geometr\'ia de Descartes y la ley\'o por si mismo.
+Cuando hab\'ia le\'ido dos o tres p\'aginas, se sinti\'o incapaz de seguir
+adelante. Empez\'o de nuevo y avanz\'o tres o cuatro p\'aginas m\'as, hasta
+llegar a otro punto dificil. Volvi\'o a empezar y avanz\'o un poco m\'as. Y
+continu\'o as\'i hasta hacerse dueño de todo su significado.{\huge ''}}}
+\begin{flushright}
+  Richard S. Westfall -- Isaac Newton: Una vida
+\end{flushright}
+
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT PAGE
+%----------------------------------------------------------------------------------------
+
+%\begin{abstract}
+%\addchaptertocentry{\abstractname} % Add the abstract to the table of contents
+%The Thesis Abstract is written here (and usually kept to just this page). The page is kept centered vertically so can expand into the blank space above the title too\ldots
+%\end{abstract}
+
+%----------------------------------------------------------------------------------------
+%   CONTENT
+%----------------------------------------------------------------------------------------
+
+
 \tableofcontents
+
+\mainmatter % Begin numeric (1,2,3...) page numbering
+\pagestyle{fancy} % Return the page headers back to the "thesis" style
 
 \input{chapters/introduction.tex}
 \input{chapters/stateofart.tex}
