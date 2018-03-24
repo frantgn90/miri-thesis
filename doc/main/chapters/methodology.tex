@@ -45,7 +45,7 @@ figure out what defines a loop. Without a lot of effort we can think that its
 position on code, understanding as position the line and the file where the loop
 lies, is the metric that will give us more information but the reality is that 
 we do not have this information on trace. Remember on trace we just have 
-information about the MPI calls (and its parameters) performed by the application 
+information about the MPI calls (and its parameters) 
 with additional information like the call-path and some hardware metrics such 
 that number of instructions and number of cycles. Being aware of that, the next
 obvious metrics that in principle can characterize a loop is the number of
@@ -56,8 +56,8 @@ iterations but lets think about dynamic number of iterations: The dynamic
 iterations of a given loop does not depends only on the number of iterations in
 its definition but also on the number of iterations on the definition of the
 parent loops such that if there are two loops having $n$ and $n$ iterations (so
-having aliasing on static number of iterations) being one in the body on the
-other, in the dynamic domain, they will have $n$ and $n^2$ undoing the aliasing.
+having aliasing on static number of iterations) being one in the body of
+other, in the dynamic domain, they will have $n$ and $n^2$ iterations, undoing the aliasing.
 This is just an starting point, nested loops will be unambiguously identified so
 it is okay for most of the applications (the most simple) but there still some
 situations where we can have aliasing. The situation where two loops
@@ -65,8 +65,85 @@ lies on the same loop nesting level and have the same number of static
 iterations will drive to aliasing. This situation is not so probable (at least
 on the NPB benchmarks that is the set of benchmarks used for validation) but
 since it has been detected in some cases it has to be covered. Further, the next
-metric that can identificate a given loop is the work that does, i.e. the
-iteration time. 
+metric that can identify a given loop is the work that does, i.e. the
+iteration time. Two different loops used to execute different work so it is
+likely to have a different duration per iteration. An appropriate metric for
+quantify this value is to take an aggregate of all iterations duration, i.e.
+the mean. Again we are assuming very stable applications. So, in this first 
+qualitative approach, the conclusion is we can identify with high probability of 
+unambiguity the loops with two metrics:
+\begin{enumerate*}[label=\roman*)] 
+  \item Number of dynamic iterations
+  \item Iterations mean time
+\end{enumerate*}
+
+Additionally to this qualitative analysis, it is crucial to drive a quantitative
+one that confirms or reject our hypothesis. The selected technique to drive these
+experiments has been the Principal Component Analysis (PCA): It is a way of
+identifying patterns in data and expressing the data in such a way to highlight
+their similarities and differences. Once these patterns are found data can be
+compressed by reducing the number of dimensions with not much loss of
+information. The idea is to give to PCA as
+much as metrics (dimensions) as possible per loop and conclude what of them are 
+the most representative and can identify with more detail every loop. For improve
+the understandability of the PCA output the Variable factor map is used: It
+presents a view of the projection of the observed variables projected into the
+plane spanned by the first two principal components. This shows us the
+structural relationship between the variables and the components. The projection
+of a variable vector onto the component axis allows us to directly read the
+correlation between the variable and the component.
+
+\subsubsection{Data collection}
+
+First of all it needs to figure out what metrics about loops can potentially
+identify it, always taking into account the information that traces provides. In
+the previous section have been discussed how number of dynamic iterations and
+iterations mean time can help. Additionally to these information, mean number of 
+instructions and mean number of cycles per iterations has been considered. The
+reason is that they maybe can contribute because some differences in the
+performance between loops (IPC); even if in previous sections have been argued
+performance information is not optimal for syntactic analysis, we can not
+discard it categorically because in some situations can help. Additionally to
+these metrics we also want to collect an unambiguously identification of loops
+because we want to be able to accurately relate these metrics to a given loop.
+
+As has been introduced above, trace does not have explicit information about 
+loops so it has been collected from other sources. For this purpose a new
+compilation phase has been added to the Mercurium source-to-source compiler
+(introduced in section \ref{ss:mercurium}) that detects and instrument loops in
+the user
+code adding monitors that will expose to the trace the required information
+allowing to a trace post-process that will perform the needed calculations. The
+transformations are depicted in pseudocode \ref{pc:mercurium_loops_trans}.
+
+\begin{pseudocode}{Loops monitors injections}{ }
+\label{pc:mercurium_loops_trans}
+    MonitorLoopInit(loop_{line}, loop_{file})\\
+    \FOR i \in I \DO
+	\BEGIN
+        MonitorIterInit(chance)\\
+        SomeWork()\\
+        MonitorIterFini(chance)\\
+	\END\\
+    MonitorLoopFini(loop_{line}, loop_{file})\\
+\end{pseudocode}
+
+What we can see at these pseudo-code is that there is entry and exit calls both on
+loops and iterations. In case of loops the arguments are the needed for identify
+the loop unambiguously. In case of iterations loop identifier is not needed
+because since trace holds temporal information is quite easy to determine to
+what loop every iteration belongs, instead of it the argument is the chance to a
+given iteration, and all its subloops, to be instrumented or not. The decision of
+instrument an iteration given a probability arise from the fact that extract
+information of all loops at level of iterations adds an unmanageable overhead to
+the trace size, in annex \ref{ann:iterations_sampling} an empirical demonstration 
+about the quality of data is not degrading because this sampling mechanism is 
+showed as well as further information about how this development have
+been done it is explained in more detail in annex 
+
+\subsubsection{Data analysis}
+
+\ldots
 
 %It has been understood that a good way of represent the intern structure of an
 %application is by means of a pseudo-code because it can represent both, the
