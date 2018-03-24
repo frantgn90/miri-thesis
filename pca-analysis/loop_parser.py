@@ -31,8 +31,8 @@ Copyright © 2018 Juan Francisco Martínez Vera <juan.martinez[AT]bsc.es>
 
 
 import sys
-#from trace import trace
-from trace_mp import trace_mp
+from trace import trace
+#from trace_mp import trace_mp
 import numpy as np
 from collections import defaultdict
 
@@ -212,7 +212,7 @@ def merge(loops_by_rank):
 
 def main(argc, argv):
     tracefile = argv[1]
-    parser = trace_mp(tracefile)
+    parser = trace(tracefile)
 
     def event_handler(record):
         # Is important to maintain the order of the
