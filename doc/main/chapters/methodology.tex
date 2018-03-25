@@ -38,7 +38,7 @@ time (as is demonstrated on \ref{ss:scalability}), additionally clustering
 algorithm such that K-means presents an attractive linear complexity and DBSCAN a
 quasi-lineal.
 
-\subsection{Loops characterization}
+\subsection{Loops characterization}\label{ss:loops_characterzation}
 
 The first study that should be drive before face the clustering algorithm is to
 figure out what defines a loop. Without a lot of effort we can think that its
@@ -83,8 +83,8 @@ experiments has been the Principal Component Analysis (PCA): It is a way of
 identifying patterns in data and expressing the data in such a way to highlight
 their similarities and differences. Once these patterns are found data can be
 compressed by reducing the number of dimensions with not much loss of
-information. The idea is to give to PCA as
-much as metrics (dimensions) as possible per loop and conclude what of them are 
+information. The idea is to give to PCA a set of iterations aggregate metrics
+ (dimensions) grouped by loop and conclude what of them are 
 the most representative and can identify with more detail every loop. For improve
 the understandability of the PCA output the Variable factor map is used: It
 presents a view of the projection of the observed variables projected into the
@@ -93,11 +93,9 @@ structural relationship between the variables and the components. The projection
 of a variable vector onto the component axis allows us to directly read the
 correlation between the variable and the component.
 
-\subsubsection{Data collection}
-
-First of all it needs to figure out what metrics about loops can potentially
-identify it, always taking into account the information that traces provides. In
-the previous section have been discussed how number of dynamic iterations and
+Before the data collection, we need to figure out what metrics about loops can potentially
+identify it, always taking into account the information that traces will provide. In
+the previously have been discussed how number of dynamic iterations and
 iterations mean time can help. Additionally to these information, mean number of 
 instructions and mean number of cycles per iterations has been considered. The
 reason is that they maybe can contribute because some differences in the
@@ -106,13 +104,21 @@ performance information is not optimal for syntactic analysis, we can not
 discard it categorically because in some situations can help. Additionally to
 these metrics we also want to collect an unambiguously identification of loops
 because we want to be able to accurately relate these metrics to a given loop.
+The identitification is done by hash function with code line and file.
+
+\subsubsection{Data collection}
 
 As has been introduced above, trace does not have explicit information about 
-loops so it has been collected from other sources. For this purpose a new
-compilation phase has been added to the Mercurium source-to-source compiler
-(introduced in section \ref{ss:mercurium}) that detects and instrument loops in
-the user
-code adding monitors that will expose to the trace the required information
+loops so it should be collected from other sources. The reason is that the typical
+tracing method is by means of the {\tt LD_PRELOAD} mechanism so tracer library just
+can get information at shared library call (like MPI, GOMP, \dots). The alternative
+is to manually instrument the user code and fire events with the desired information
+by means of the tracer library API, in this case Extrae. Since the process of
+manually instert monitors presents to be tough for large codes has been decided
+to do it manually using a source-to-source compiler that does it for us. For this 
+purpose a new compilation phase has been added to the Mercurium source-to-source 
+compiler (explained in section \ref{ann:automatic_loops_charac}) that detects and instrument 
+loops adding monitors that will expose to the trace the required information
 allowing to a trace post-process that will perform the needed calculations. The
 transformations are depicted in pseudocode \ref{pc:mercurium_loops_trans}.
 
@@ -128,7 +134,7 @@ transformations are depicted in pseudocode \ref{pc:mercurium_loops_trans}.
     MonitorLoopFini(loop_{line}, loop_{file})\\
 \end{pseudocode}
 
-What we can see at these pseudo-code is that there is entry and exit calls both on
+It can be seen that there is entry and exit calls both on
 loops and iterations. In case of loops the arguments are the needed for identify
 the loop unambiguously. In case of iterations loop identifier is not needed
 because since trace holds temporal information is quite easy to determine to
@@ -136,9 +142,11 @@ what loop every iteration belongs, instead of it the argument is the chance to a
 given iteration, and all its subloops, to be instrumented or not. The decision of
 instrument an iteration given a probability arise from the fact that extract
 information of all loops at level of iterations adds an unmanageable overhead to
-the trace size, in annex \ref{ann:iterations_sampling} an empirical demonstration 
+the trace size, in annex \ref{ann:loops_data_quality} an empirical demonstration 
 about the quality of data is not degrading because this sampling mechanism is 
-showed as well as further information about how this development have
+showed.
+
+as well as further information about how this development have
 been done it is explained in more detail in annex 
 
 \subsubsection{Data analysis}

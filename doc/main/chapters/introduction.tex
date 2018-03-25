@@ -296,7 +296,32 @@ scalar values like timing instead of just an ordered sequence of events.
 
 \subsubsection{Mercurium}\label{ss:mercurium}
 
-Blah Blah Blah
+Mercurium\footnote{https://pm.bsc.es/mcxx} is a source-to-source compilation 
+infrastructure aimed at fast prototyping. Current supported languages are C, C++
+and Fortran. Mercurium is mainly used in Nanos environment to implement OpenMP but
+since it is quite extensible it has been used to implement other programming models
+or compiler transformations, examples include Cell Superscalar, Software Transactional
+Memory, Distributed Shared Memory or the ACOTES project, just to name a few. 
+
+In this thesis it is an important piece since it has been used both for loops
+characterization (explained in section \ref{ss:loops_characterzation}) and for
+validation phases (explained in section \ref{}). The reason of use for the former point
+is that there were the need of gather information at iterations level and link them
+unambiguously to a given loop. This information was impossible to take by means of
+typical {\tt LD_PRELOAD} mechanism so the alternative was to instrument user code and
+fire events to trace with the desired information. Since this work is tough when
+dealing with large codes, a source-to-source compiler, responsible for doing all the
+transformations is ideal. For the validation phase, the reasoning is quite similar but
+instead fire hardware information, the automatic code instrumentation just fire loops
+boundaries.
+
+There are some other source-to-sorce compiler infrastructures over there like
+LVMM\footnote{http://llvm.org/} or Rose\footnote{http://rosecompiler.org/} but finally
+Mercurium have been choosen because advantages derived from the proximity since it is
+under maintenance and development by the Programming Model team in 
+BSC\footnote{https://pm.bsc.es/}.
+
+For more details about the work done with mercurium go to \ref{ann:automatic_code_instr}.
 
 \subsection{Analysis workflow}\label{ss:analysis_workflow}
 
