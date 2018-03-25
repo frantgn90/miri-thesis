@@ -1,0 +1,71 @@
+\chapter{Loops automatic instrumentation}\label{ann:iterations_sampling}
+
+\begin{pseudocode}{MonitorLoopInit}{loop_{file}, loop_{line}}
+\label{pc:mercurium_monitor_loop_init}
+    instrumentLoop \GETS True\\
+    \IF size(decissionStack) > 0 \THEN
+    \BEGIN
+      \COMMENT{Depends on if parent iteration is not instrumented}\\
+      instrumentLoop \GETS top(decissionStack)\\
+    \END\\
+    \IF instrumentLoop \THEN
+    \BEGIN
+      \COMMENT{Fire loop init event}\\
+        ExtraeEvent(LOOPINIT, hash(loop_{file},loop_{line}))\\
+        push(iterCounterStack, 0)\\
+    \END
+\end{pseudocode}
+
+\begin{pseudocode}{MonitorLoopFini}{loop_{file}, loop_{line}}
+\label{pc:mercurium_monitor_loop_fini}
+    instrumentLoop \GETS True\\
+    \IF size(decissionStack) > 0 \THEN
+    \BEGIN
+      \COMMENT{Depends on if parent iteration is not instrumented}\\
+      instrumentLoop \GETS top(decissionStack)\\
+    \END\\
+    \IF instrumentLoop \THEN
+    \BEGIN
+      \COMMENT{Fire loop fini event and number of static iterations}\\
+        ExtraeEvent(LOOPITERS, pop(iterCounterStack)\\
+        ExtraeEvent(LOOPFINI, hash(loop_{file},loop_{line}))\\
+    \END
+\end{pseudocode}
+
+\begin{pseudocode}{MonitorIterInit}{chance}
+\label{pc:mercurium_monitor_iter_init}
+    instrumentIter \GETS True\\
+    topInstrumentIter \GETS True\\
+    r \in U(0,1)\\
+    \IF size(decissionStack) > 0 \THEN
+    \BEGIN
+      \COMMENT{Depends on if parent iteration is not instrumented}\\
+      topInstrumentIter \GETS top(decissionStack)\\
+    \END\\
+    \IF topInstrumentIter \THEN
+    \BEGIN
+        instrumentIter \GETS (r < chance)\\
+        top(iterCounterStack)++\\
+        \IF instrumentIter \THEN
+        \BEGIN
+            \COMMENT{Fire extrae event with HWC attached}\\
+            ExtraeEventAndCounters(ITERINIT, top(iterCounterStack))\\
+        \END\\
+    \END\\
+    push(decissionStack, instrumentIter \&  topInstrumentIter)\\
+\end{pseudocode}
+
+\begin{pseudocode}{MonitorIterFini}{chance}
+\label{pc:mercurium_monitor_iter_fini}
+    instrumentIter \GETS pop(decission_stack)\\
+    \IF size(decissionStack) > 0 \THEN
+    \BEGIN
+      \COMMENT{Depends on if parent iteration is not instrumented}\\
+      ExtraeEventAndCounters(ITERFINI)
+    \END\\
+\end{pseudocode}
+
+
+In this appendix there will be demonstrated how the degradation of the sampled
+data is minimum for different ``chances'' because the high regularity of HPC
+applications.
