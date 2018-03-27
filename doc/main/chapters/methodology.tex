@@ -77,9 +77,46 @@ unambiguity the loops with two metrics:
   \item Iterations mean time
 \end{enumerate*}
 
-Additionally to this qualitative analysis, it is crucial to drive a quantitative
-one that confirms or reject our hypothesis. The selected technique to drive these
-experiments has been the Principal Component Analysis (PCA): It is a way of
+Additionally to this qualitative analysis, it is crucial to drive also  a quantitative
+analysis that confirms or reject our hypothesis. On next sections it will be explained how the data have been gathered and the analysis performed over it.  
+
+\subsubsection{Data collection}
+
+Before the data collection, we need to figure out what metrics about loops can 
+potentially identify it, always taking into account the information that traces 
+will provide. In the previously have been discussed how number of dynamic 
+iterations and iterations mean time can help. Additionally to these information, 
+mean number of instructions and mean number of cycles per iterations has been 
+considered. The reason is that they maybe can contribute because some 
+differences in the performance between loops (IPC), it is interesting how this 
+metric can capture microarchitectural implications; even if in previous sections 
+have been argued
+performance information is not optimal for syntactic analysis, we can not
+discard it categorically because in some situations can help. Additionally to
+these metrics we also want to collect an unambiguously identification of loops
+because we want to be able to accurately relate these metrics to a given loop.
+The identification is done by hash function with code line and file.
+
+As has been introduced above, trace does not have explicit information about 
+loops so it should be collected from other sources. The reason is that the typical
+tracing method is by means of the {\tt LD\_PRELOAD} mechanism so tracer library just
+can get information at shared library call (like MPI, GOMP, \dots). The alternative
+is to manually instrument the user code and fire events with the desired information
+by means of the tracer library API, in this case Extrae. Since the process of
+manually insert monitors presents to be tough for large codes has been decided
+to do it automatically using a source-to-source compiler, in this case
+Mercurium. The monitors injected now fires the desired information to trace that
+can be analyzed by means of a trace post-process. All developments done for this
+purpose is widely explained in annex \ref{ann:automatic_loops_charac}
+
+After data have been gathered to traces, post-process is needed in order to
+aggregate iterations metrics. On next section will be explained how this data
+have been analyzed. 
+
+\subsubsection{Data analysis}
+
+The selected technique to drive these
+analysis has been the Principal Component Analysis (PCA): It is a way of
 identifying patterns in data and expressing the data in such a way to highlight
 their similarities and differences. Once these patterns are found data can be
 compressed by reducing the number of dimensions with not much loss of
@@ -93,65 +130,7 @@ structural relationship between the variables and the components. The projection
 of a variable vector onto the component axis allows us to directly read the
 correlation between the variable and the component.
 
-Before the data collection, we need to figure out what metrics about loops can potentially
-identify it, always taking into account the information that traces will provide. In
-the previously have been discussed how number of dynamic iterations and
-iterations mean time can help. Additionally to these information, mean number of 
-instructions and mean number of cycles per iterations has been considered. The
-reason is that they maybe can contribute because some differences in the
-performance between loops (IPC); even if in previous sections have been argued
-performance information is not optimal for syntactic analysis, we can not
-discard it categorically because in some situations can help. Additionally to
-these metrics we also want to collect an unambiguously identification of loops
-because we want to be able to accurately relate these metrics to a given loop.
-The identitification is done by hash function with code line and file.
-
-\subsubsection{Data collection}
-
-As has been introduced above, trace does not have explicit information about 
-loops so it should be collected from other sources. The reason is that the typical
-tracing method is by means of the {\tt LD_PRELOAD} mechanism so tracer library just
-can get information at shared library call (like MPI, GOMP, \dots). The alternative
-is to manually instrument the user code and fire events with the desired information
-by means of the tracer library API, in this case Extrae. Since the process of
-manually instert monitors presents to be tough for large codes has been decided
-to do it manually using a source-to-source compiler that does it for us. For this 
-purpose a new compilation phase has been added to the Mercurium source-to-source 
-compiler (explained in section \ref{ann:automatic_loops_charac}) that detects and instrument 
-loops adding monitors that will expose to the trace the required information
-allowing to a trace post-process that will perform the needed calculations. The
-transformations are depicted in pseudocode \ref{pc:mercurium_loops_trans}.
-
-\begin{pseudocode}{Loops monitors injections}{ }
-\label{pc:mercurium_loops_trans}
-    MonitorLoopInit(loop_{line}, loop_{file})\\
-    \FOR i \in I \DO
-	\BEGIN
-        MonitorIterInit(chance)\\
-        SomeWork()\\
-        MonitorIterFini(chance)\\
-	\END\\
-    MonitorLoopFini(loop_{line}, loop_{file})\\
-\end{pseudocode}
-
-It can be seen that there is entry and exit calls both on
-loops and iterations. In case of loops the arguments are the needed for identify
-the loop unambiguously. In case of iterations loop identifier is not needed
-because since trace holds temporal information is quite easy to determine to
-what loop every iteration belongs, instead of it the argument is the chance to a
-given iteration, and all its subloops, to be instrumented or not. The decision of
-instrument an iteration given a probability arise from the fact that extract
-information of all loops at level of iterations adds an unmanageable overhead to
-the trace size, in annex \ref{ann:loops_data_quality} an empirical demonstration 
-about the quality of data is not degrading because this sampling mechanism is 
-showed.
-
-as well as further information about how this development have
-been done it is explained in more detail in annex 
-
-\subsubsection{Data analysis}
-
-\ldots
+% TODO: Add all PCA images for all NPB and comment them
 
 %It has been understood that a good way of represent the intern structure of an
 %application is by means of a pseudo-code because it can represent both, the

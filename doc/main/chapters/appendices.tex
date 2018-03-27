@@ -5,85 +5,209 @@ of an automatization of the user source code instrumentation. It is for sure an
 important piece of this thesis but since it is not the main development have been
 decided to include it as annex.
 
-As have been previously introduced, this work is done in the Mercurium source-to-source
-compiler infrastructure by adding a new phase on the source-to-source compilation workflow
-and it basically consists on inject calls to the Extrae API in order to fire events that
+As have been previously introduced, this work is done in the Mercurium 
+source-to-source compiler infrastructure by adding a new phase on the 
+source-to-source compilation workflow and it basically consists on inject 
+calls to the Extrae API in order to fire events that
 \begin{enumerate*}[label=\roman*)]
     \item determine the loops boundaries for the validation
     \item and additionally fire iteration-level metrics to trace for loops characterization
 \end{enumerate*}
-Further on next sections this process is going to be explained with more details.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=350px]{mercurium_internals.png}
+  \caption{Mercurium internals overview}
+  \label{fig:mercurium_internals_overview}
+\end{figure}
+
+Before going further, it is the moment to introduce a brief overview about the
+Mercurium internal structure. In figure \ref{fig:mercurium_internals_overview} 
+it can be seen the different phases that tooks place when compiling with
+mercurium. The process starts with one or more than one input source file that
+are parsed by the parser engine to AST\footnote{Abstract Syntax Tree} (one per
+file) that is a commonly used structure for syntax analysis that represents the 
+code in a given file in a hierarchical manner such that every tree level
+corresponds to a nested level in code. Every one of these ASTs are then modified
+by the different phases on the Compiler phase pipeline. 
+After all AST modifications are done, it is checked for
+correctness and parsed to code again (prettyprinting) that leads to the ``Output
+Source''. Finnaly output file/s are compiled as usual by the backend compiled
+(such as GCC, ICC, \ldots) and the executable file is ready to be executed.
+
+The developments presented in this chapter are done exclusively on the
+``Compiler phases pipeline'' by adding a new phase. The infrastructure provides
+an input and expects an output, both are AST so the work to do is to traverse the
+AST looking for those target parts (target pieces of code) to
+transform, made modifications on them and return it as the output. Since we are
+concerned about loops we just need to look for loops (for, while, do
+while,\ldots), for this purpose Mercurium infrastructure provides a useful
+mechanism that traverse the tree and gives you a way to program callbacks that 
+will be called every time the structure you are aware on is encountered. These
+callbacks transforms the AST such a way calls that will monitor loops are
+injected. For simplify the transformations, these calls are not done directly to
+the trace library but to an intermediate helper library that will do all stuff
+and just expose simple calls.
+
+On next sections the work done for the two developments are deeply explained.
 
 \section{Instrumentation for loops characterization}\label{ann:automatic_loops_charac}
 
-\begin{pseudocode}{MonitorLoopInit}{loop_{file}, loop_{line}}
-\label{pc:mercurium_monitor_loop_init}
-    instrumentLoop \GETS True\\
-    \IF size(decissionStack) > 0 \THEN
-    \BEGIN
-      \COMMENT{Depends on if parent iteration is not instrumented}\\
-      instrumentLoop \GETS top(decissionStack)\\
-    \END\\
-    \IF instrumentLoop \THEN
-    \BEGIN
-      \COMMENT{Fire loop init event}\\
-        ExtraeEvent(LOOPINIT, hash(loop_{file},loop_{line}))\\
-        push(iterCounterStack, 0)\\
-    \END
-\end{pseudocode}
+For loops characterization what is needed is gather information from loops and
+its iterations so the transformations done looks like the transformation of
+pseudo-code \ref{pc:mercurium_loops_original} to \ref{pc:mercurium_loops_trans}.
 
-\begin{pseudocode}{MonitorLoopFini}{loop_{file}, loop_{line}}
-\label{pc:mercurium_monitor_loop_fini}
-    instrumentLoop \GETS True\\
-    \IF size(decissionStack) > 0 \THEN
-    \BEGIN
-      \COMMENT{Depends on if parent iteration is not instrumented}\\
-      instrumentLoop \GETS top(decissionStack)\\
-    \END\\
-    \IF instrumentLoop \THEN
-    \BEGIN
-      \COMMENT{Fire loop fini event and number of static iterations}\\
-        ExtraeEvent(LOOPITERS, pop(iterCounterStack)\\
-        ExtraeEvent(LOOPFINI, hash(loop_{file},loop_{line}))\\
-    \END
-\end{pseudocode}
+\begin{multicols}{2}
+  \begin{pseudocode}{Original loop}{ }
+  \label{pc:mercurium_loops_original}
+      \FOR i \in I \DO
+      \BEGIN
+          SomeWork()\\
+      \END\\
+  \end{pseudocode}
 
-\begin{pseudocode}{MonitorIterInit}{chance}
-\label{pc:mercurium_monitor_iter_init}
-    instrumentIter \GETS True\\
-    topInstrumentIter \GETS True\\
-    r \in U(0,1)\\
-    \IF size(decissionStack) > 0 \THEN
-    \BEGIN
-      \COMMENT{Depends on if parent iteration is not instrumented}\\
-      topInstrumentIter \GETS top(decissionStack)\\
-    \END\\
-    \IF topInstrumentIter \THEN
-    \BEGIN
-        instrumentIter \GETS (r < chance)\\
-        top(iterCounterStack)++\\
-        \IF instrumentIter \THEN
-        \BEGIN
-            \COMMENT{Fire extrae event with HWC attached}\\
-            ExtraeEventAndCounters(ITERINIT, top(iterCounterStack))\\
-        \END\\
-    \END\\
-    push(decissionStack, instrumentIter \&  topInstrumentIter)\\
-\end{pseudocode}
+  \begin{pseudocode}{Transformed loop}{ }
+  \label{pc:mercurium_loops_trans}
+      MLoopInit(loop_{line}, loop_{file})\\
+      \FOR i \in I \DO
+      \BEGIN
+          MIterInit(chance)\\
+          SomeWork()\\
+          MIterFini()\\
+      \END\\
+      MLoopFini(loop_{line}, loop_{file})\\
+  \end{pseudocode}
+\end{multicols}
 
-\begin{pseudocode}{MonitorIterFini}{chance}
-\label{pc:mercurium_monitor_iter_fini}
-    instrumentIter \GETS pop(decission_stack)\\
-    \IF size(decissionStack) > 0 \THEN
-    \BEGIN
-      \COMMENT{Depends on if parent iteration is not instrumented}\\
-      ExtraeEventAndCounters(ITERFINI)
-    \END\\
-\end{pseudocode}
+It can be seen that there are entry and exit calls both on
+loops and iterations. In case of loops the arguments are the needed for identify
+the loop unambiguously. In case of iterations loop identifier is not needed
+because since trace holds temporal information is quite easy to determine to
+what loop every iteration belongs, instead of it the argument is the
+chance\footnote{This chance can be set statically at compilation time and
+dynamically at execution time by means of an environment variable.} to a
+given iteration, to be instrumented or not. The decision of
+instrument an iteration given a probability arise from the fact that extract
+information of all loops at level of iterations adds an unmanageable overhead to
+the trace size, in annex \ref{ann:loops_data_quality} an empirical demonstration 
+about the quality of data is not degrading because this sampling mechanism is 
+showed. Summarizing, the main ideas for the instrumentation are:
+\begin{enumerate}[label=\roman*)]
+  \item For every loop entry and exit are marked in trace.
+  \item Additionally, before the exit event, the total number of iterations
+    performed is fired to trace.
+  \item An iteration will be instrumented or not depending on a given
+    probability.
+  \item For every instrumented iteration entry and exit are marked in trace 
+    with additional information such as some hardware counters.
+  \item Nested loops will be instrumented depending on the decission taken for
+    the parent iteration. Take into account that this fact implies that the
+    probability for a nested loop iteration to be instrumented is not $chance$
+    but $chance^{nestedLevel}$ with $chance \in [0,1)$.
+\end{enumerate}
+
+In pseudo-codes \ref{pc:mercurium_monitor_loop_init} and
+\ref{pc:mercurium_monitor_loop_fini} it can be seen how the calls that marks
+loops boundaries works and on pseudo-codes
+\ref{pc:mercurium_monitor_iter_init} and \ref{pc:mercurium_monitor_iter_fini}
+calls that determines the iterations boundaries can be found. 
+
+\begin{multicols}{2}
+  \begin{pseudocode}{MLoopInit}{file, line}
+  \label{pc:mercurium_monitor_loop_init}
+      instrumentLoop \GETS True\\
+      \IF size(decissionStack) > 0 \THEN
+      \BEGIN
+%        \COMMENT{If parent iteration is instrumented}\\
+        ds \GETS top(decissionStack)\\
+        instrumentLoop \GETS ds\\
+      \END\\
+      \IF instrumentLoop \THEN
+      \BEGIN
+%        \COMMENT{Fire loop init event}\\
+          hash \GETS hash(loop_{file},loop_{line})\\
+          ExtraeEvent(LOOPINIT, hash)\\
+          push(iterCounterStack, 0)\\
+      \END
+  \end{pseudocode}
+
+  \begin{pseudocode}{MLoopFini}{file, line}
+  \label{pc:mercurium_monitor_loop_fini}
+      instrumentLoop \GETS True\\
+      \IF size(decissionStack) > 0 \THEN
+      \BEGIN
+%        \COMMENT{Depends on if parent iteration is not instrumented}\\
+        instrumentLoop \GETS top(decissionStack)\\
+      \END\\
+      \IF instrumentLoop \THEN
+      \BEGIN
+%        \COMMENT{Fire loop fini event and number of static iterations}\\
+          ic \GETS pop(iterCounterStack)\\
+          hash \GETS hash(loop_{file},loop_{line})\\
+          ExtraeEvent(LOOPITERS, ic)\\
+          ExtraeEvent(LOOPFINI, hash)\\
+      \END
+  \end{pseudocode}
+\end{multicols}
+\begin{multicols}{2}
+  \begin{pseudocode}{MIterInit}{chance}
+  \label{pc:mercurium_monitor_iter_init}
+      instrumentIter \GETS True\\
+      topInstrumentIter \GETS True\\
+      r \in U(0,1)\\
+      \IF size(decissionStack) > 0 \THEN
+      \BEGIN
+%        \COMMENT{Depends on if parent iteration is not instrumented}\\
+        ds \GETS top(decissionStack)\\
+        topInstrumentIter \GETS ds\\
+      \END\\
+      \IF topInstrumentIter \THEN
+      \BEGIN
+          instrumentIter \GETS (r < chance)\\
+          top(iterCounterStack)++\\
+          \IF instrumentIter \THEN
+          \BEGIN
+%              \COMMENT{Fire extrae event with HWC attached}\\
+              ic \GETS top(iterCounterStack)\\
+              ExtraeEventHWC(IINIT, ic)\\
+          \END\\
+      \END\\
+      d \GETS instrumentIter \&  topInstrumentIter\\
+      push(decissionStack, d)\\
+  \end{pseudocode}
+
+  \begin{pseudocode}{MIterFini}{ }
+  \label{pc:mercurium_monitor_iter_fini}
+      instrumentIter \GETS pop(decissionStack)\\
+      \IF size(decissionStack) > 0 \THEN
+      \BEGIN
+%        \COMMENT{Depends on if parent iteration is not instrumented}\\
+        ExtraeEventAndCounters(IFINI)
+      \END\\
+  \end{pseudocode}
+\end{multicols}
+
+The nesting level
+of a given loop can not be determined statically since every file have its own
+AST so it have to be managed dynamically. In order to do that we rely on the use
+of stacks that seems to be the natural choice, there are two stacks needed
+here:
+\begin{enumerate*}[label=\roman*)]
+  \item decissionStack that holds the information whether one iteration is
+    instrumented or not
+  \item and iterCounterStack that holds the number of total iterations.
+\end{enumerate*}
+Former is used to decide if a given iteration and its subloops (and its 
+iterations) should be instrumented or not, while the last is used to fire the
+number of actual iterations performed whether have been instrumented or not.
+
+
 
 \subsection{Data quality assesment}\label{ann:loops_data_quality}
 
-In this appendix there will be demonstrated how the degradation of the sampled
+% TODO: Comment how the chance to instrument a nested loop is chance^nestedlevel
+
+In this section there will be demonstrated how the degradation of the sampled
 data is minimum for different ``chances'' because the high regularity of HPC
 applications.
 

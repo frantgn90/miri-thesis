@@ -161,17 +161,19 @@ techniques are general so could be applied to any other environment.
 
 \subsection{Software}
 
-The main tools designed and developed in the BSC Performance Tools Team are 
-Extrae, Paraver and Dimemas although other satellite tools are also in the 
-environment they will not be explained because are out of the scope of this 
-project. These tools are: 
-\begin{enumerate*}[label=\roman*)]
-  \item Clustering
-  \item Tracking
-  \item Folding
-  \item Spectral and 
-  \item Basic Analysis.
-\end{enumerate*}
+In this section the most important pieces of software used for this thesis
+purposes are described. 
+%The main tools designed and developed in the BSC 
+%Performance Tools Team are Extrae, Paraver and Dimemas although other satellite 
+%tools are also in the environment they will not be explained because are out of 
+%the scope of this project. These tools are: 
+%\begin{enumerate*}[label=\roman*)]
+%  \item Clustering
+%  \item Tracking
+%  \item Folding
+%  \item Spectral and 
+%  \item Basic Analysis.
+%\end{enumerate*}
 
 \subsubsection{Extrae}
 
@@ -308,7 +310,7 @@ characterization (explained in section \ref{ss:loops_characterzation}) and for
 validation phases (explained in section \ref{}). The reason of use for the former point
 is that there were the need of gather information at iterations level and link them
 unambiguously to a given loop. This information was impossible to take by means of
-typical {\tt LD_PRELOAD} mechanism so the alternative was to instrument user code and
+typical {\tt LD\_PRELOAD} mechanism so the alternative was to instrument user code and
 fire events to trace with the desired information. Since this work is tough when
 dealing with large codes, a source-to-source compiler, responsible for doing all the
 transformations is ideal. For the validation phase, the reasoning is quite similar but

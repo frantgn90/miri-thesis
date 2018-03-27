@@ -27,13 +27,18 @@
 \usepackage{lettrine}
 \usepackage[inline]{enumitem}
 \usepackage{draftwatermark}
-\usepackage{fancyhdr}% http://ctan.org/pkg/fancyhdr
+\usepackage{fancyhdr}
 \usepackage{framed}
 \usepackage[toc,page]{appendix}
+\usepackage{multicol}
+
+\fancyfoot{}
+\fancyhead[RO,LE]{\thepage}
+\fancyhead[LO]{\leftmark}
+\fancyhead[RE]{\rightmark}
 
 \pagestyle{fancy}% Change page style to fancy
 
-%\renewcommand{\headrulewidth}{0.4pt}% Default \headrulewidth is 0.4pt
 \linespread{1.1}
 
 \SetWatermarkText{DRAFT}
