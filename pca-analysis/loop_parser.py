@@ -153,6 +153,8 @@ def loop_handler(loop_record):
             loop_hmap[loop_record.task_id-1][loopobj.loopid] = loopobj
 
 
+# TODO Cada vez que entra un HWC añadir el valor a todas las iteraciones
+# del stack (stacked value) ya que los HWC se resetean para cada evento
 def iter_handler(iter_record, hwc_record_set):
     if iter_record.entry:
         itobj = iteration(iter_record.iterid)
@@ -244,87 +246,37 @@ def main(argc, argv):
             loopobj.calcule()
     
     import csv
-    if (True):
-        merged_loops=merge(loop_hmap)
-        hwc_keys = set()
-        for loopid, loopobj in merged_loops.items():
-            hwc_keys.update(loopobj.hwc_keys)
-        with open(tracefile.replace(".prv","_loops_merged.csv"), "w", 
-                newline='')as csvfile:
-            loopswriter = csv.writer(csvfile,quoting=csv.QUOTE_MINIMAL)
-            loopswriter.writerow([
-                "Loop loc.",
-                "Total iters",
-                #"Iters",
-                #"Iters med", 
-                #"Iters std", 
-                "Iter time m", 
-                #"Iter time med", 
-                "Iter time std"] 
-                + list(map(lambda x: x+"_mean", hwc_keys))
-                #+ list(map(lambda x: x+"_median", task_hwc_keys))
-                #+ list(map(lambda x: x+"_std", taskhwc_keys))
-                )
+    with open(tracefile.replace(".prv","_loops_info.csv"), "w", newline='')\
+        as csvfile:
 
-            for loopid,loopobj in merged_loops.items():
-                if loopobj.niters_mean <= 1: continue
-                loopswriter.writerow(
-                          [loopobj.code_loc]
-                        + [loopobj.total_iters]
-                #        + [loopobj.niters_mean]
-                #        + [loopobj.niters_median]
-                #        + [loopobj.niters_std]
-                        + [loopobj.ittime_mean]
-                #        + [loopobj.ittime_median]
-                        + [loopobj.ittime_std]
-                        + [ loopobj.hwc_mean[key] for key in hwc_keys 
-                            if key in loopobj.hwc_mean]
-                #       + [ loopobj.hwc_median[key] for key in hwc_keys ]
-                #        + [ loopobj.hwc_std[key] for key in hwc_keys ]
-                )
-
-
-    else:
+        all_hwc_keys = set()
         for task in parser.get_taskids():
-            task_hwc_keys = set()
             for loopid, loopobj in loop_hmap[task].items():
-                task_hwc_keys.update(loopobj.hwc_keys)
+                all_hwc_keys.update(loopobj.hwc_keys)
+        all_hwc_keys = list(all_hwc_keys)
 
-            with open(tracefile.replace(".prv","_loops_{0}.csv"
-                .format(task)), 
-                    "w", newline='') as csvfile:
-                loopswriter = csv.writer(csvfile,quoting=csv.QUOTE_MINIMAL)
-                loopswriter.writerow([
+        loopswriter = csv.writer(csvfile,quoting=csv.QUOTE_MINIMAL)
+        loopswriter.writerow(
+                [
+                    "Rank",
                     "Loop loc.",
                     "Total iters",
-                    #"Iters",
-                    #"Iters med", 
-                    #"Iters std", 
                     "Iter time m", 
-                    #"Iter time med", 
-                    "Iter time std"] 
-                    + list(map(lambda x: x+"_mean", task_hwc_keys))
-                    #+ list(map(lambda x: x+"_median", task_hwc_keys))
-                    #+ list(map(lambda x: x+"_std", taskhwc_keys))
-                    )
+                    "Iter time std"
+                ] 
+                + list(map(lambda x: x+"_mean", all_hwc_keys)))
 
-                for loopid,loopobj in loop_hmap[task].items():
-                    if loopobj.niters_mean <= 1: continue
-                    loopswriter.writerow(
-                              [loopobj.code_loc]
-                            + [loopobj.get_total_iters()]
-                    #        + [loopobj.niters_mean]
-                    #        + [loopobj.niters_median]
-                    #        + [loopobj.niters_std]
-                            + [loopobj.ittime_mean]
-                    #        + [loopobj.ittime_median]
-                            + [loopobj.ittime_std]
-                            + [ loopobj.hwc_mean[key] for key in task_hwc_keys 
-                                if key in loopobj.hwc_mean]
-                    #       + [ loopobj.hwc_median[key] for key in task_hwc_keys ]
-                    #        + [ loopobj.hwc_std[key] for key in task_hwc_keys ]
-                    )
-
+        for task in parser.get_taskids():
+            for loopid,loopobj in loop_hmap[task].items():
+                if loopobj.niters_mean <= 1: continue
+                loopswriter.writerow(
+                        [task]
+                      + [loopobj.code_loc]
+                      + [loopobj.get_total_iters()]
+                      + [loopobj.ittime_mean]
+                      + [loopobj.ittime_std]
+                      + list(map(lambda x: loopobj.hwc_mean[x] 
+                          if x in loopobj.hwc_mean else "", all_hwc_keys)))
 
 if __name__ == "__main__":
     argc = len(sys.argv)
