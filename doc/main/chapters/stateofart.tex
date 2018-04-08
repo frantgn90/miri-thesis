@@ -1,521 +1,31 @@
 \chapter{State of the Art review}
 
-On how the pattern mining techniques has been the typical algorithms used for
-structure detection on the performance analysis field. Before entering to the 
-state of the art have been considered interesting to introduce briefly the 
-fundamentals on pattern mining techniques for better understanding.
-
-Traces are basically logs that gather information of the execution of an
-application. In a more abstract way, we can define traces just as a sequences
-of time ordered events. The fundamentals of recognize the intern structure of an
-application is about recognize loops that are those structures in code that
-repeats the code into their body as many times as programmer want. Loops in
-traces has been unrolled and presents its dynamic aspect so we can define loops
-as a sub-sequences of instructions that are repeated several times. The work of
-identifying loops in traces is about identifying these repetitive sub-sequences.
-
-\section{Sequential pattern mining}\label{pattern_mining}
-
-\lettrine{S}{equential} pattern mining can be defined as: \textit{``Given a set of data sequences, the
-problem is to discover sub-sequences that are frequent, that is, the percentage of
-data sequences containing them exceeds a user-specified minimum support.''}. Note 
-this definition fits pretty well with our objective of loops recognition in traces 
-so sequential pattern mining is the natural choice. Furthermore there is another
-definition that fits even better for our problem. It is, referring to patterns to
-analyze in a temporal sequences:\textit{``\ldots a collection of events that
-occur relatively close to each other in a given partial order, and \ldots
-frequent episodes as a recurrent combination of events''}.
-
-Sequential pattern mining is a technique applied on a wide range of problems
-like for example predicting systems failure by analyzing a sequence of logs,
-characterize suspicious behaviour in users by analyzing the sequence of commands
-entered, for automatically determine “best practices” by analyzing the sequences
-of actions of an expert, etc so the evolution on this area has been quietly
-ad-hoc to every problem. On this section pattern mining is introduced and three
-main classes of algorithms are explained always from an abstracted point of
-view, i.e. without entering into details for specific implementations. This
-explanations were taken from \cite{mooney2013sequential}. Even if the temporal
-sequences algorithms described in section \ref{ss:temporal_sequences} seems to
-be the better choice for structure detection, it has been considered to explain
-briefly the other types since most of the ideas were first proposed by them.
-
-\subsection{Formal notation}\label{ss:formal_notation}
-
-Items are literals that belongs to a given alphabet $I=\{i_{1}, i_{2}, \dots,
-i_{m}\}$. Then an event is stated as a non-empty unordered set of items
-$(i_{1}, i{2}, \dots, i_{k})$. Finally a sequence is an ordered list of
-events $\langle\alpha_{1} \rightarrow \alpha_{2} \rightarrow \dots \rightarrow
-\alpha_{q}\rangle$. The ordered metric can be time, space or other. When a
-sequence is refered as a $k-sequence$ means that this sequence contains $k$
-items. A sequence $\langle\alpha_{1} \rightarrow \alpha_{2} \rightarrow \dots 
-\rightarrow \alpha_{n}\rangle$ is a subsequence of $\langle\beta_{1} \rightarrow 
-\beta_{2} \rightarrow \dots \rightarrow \beta_{m}\rangle$ if there exists
-integers $i_{1}, i_{2}, \dots i_{n}$ s.t. $\alpha_{1} \subseteq \beta_{i_{1}}, 
-\alpha_{2} \subseteq \beta_{i_{2}}, \dots, \alpha_{n} \subseteq \beta_{i_{n}}$.
-So for example $\langle B \rightarrow AC\rangle$ is a subsequence of 
-$\langle AB \rightarrow E \rightarrow ACD \rangle$ being the set of integers 1
-and 3.
-
-Having a set of sequences $D$, {\it support} or {\it frequency} of a sequence,
-denoted as $\sigma(\alpha, D)$, is defined as the number of input sequences in $D$
-that contain $\alpha$. A sequence is {\it frequent} or not depending on a
-threshold named {\it minimum support}, so is frequent if it happens more than
-{\it minimum support} times. The set of frequent k-sequences is denoted as
-$L_{k}$. Moving on, a frequent sequence is {\it maximal} if it is not subsequence
-of any other frequent sequence. The task becomes to find all maximal frequent
-sequences from $D$.
-
-% REMOVE ?????
-%This definition is a general abstracted definition and can be adapted for
-%ad-hoc algorithms so for example for the topic we are aware of, items can be the
-%MPI calls. In this case the
-%definition of subsequence can be transformed to “if there exists integers 
-%$i_{1}, i_{2}, \dots i_{n}$ s.t. $\alpha_{1} = \beta_{i_{1}}, 
-%\alpha_{2} = \beta_{i_{2}}, \dots, \alpha_{n} = \beta_{i_{n}}$” because all
-%events are sets of one item. If we use the whole callpath instead of just the
-%MPI call and items are the different calls, now events can not be unordered set
-%of items but ordered. 
-% ????????????
-
-\subsection{Apriori-based algorithms}\label{ss:apriori_based}
-
-Mining frequent itemsets is the core of later analysis like mining association
-rules, correlations, sequential patterns and so on. Apriori first proposal was
-about discover intra-transaction associations used
-in database mining, also called knowledge discovery.
-Being $I=\{i_{1}, i_{2}, \dots,i_{m}\}$ a set of literals called items and T a
-transaction $T \subseteq I$ is said T contains X if $X \subseteq T$. Further, an
-association rule is an implication of the form $X \Rightarrow Y$ where $X
-\subset I$, $Y \subset I$ and $X \cap Y = \emptyset$. Apriori algorithm was
-presented in the following paper \cite{agrawalfast}. The basis of this algorithm
-is presented here and several later algorithms were based on this like for
-example AprioriAll, AprioriSome, DynamicSome, GSP (Generalized Sequential
-Patterns), PSP and so on. Every one of them are introducing several
-optimizations and varying mainly the candidates generation step (explained on
-section \ref{ss:discovering_large_itemsets}) but maintains 
-the basic core.
-
-The algorithm consists on two fundamental steps being the first the most
-challenging one:
-\begin{enumerate}
-  \item Find all sets of items (itemsets) that have transaction support above
-    minimum support.
-  \item Use the large itemsets (itemsets above minimum support) to generate the
-    desired rules.
-\end{enumerate}
-
-\subsubsection{Discovering large itemsets}\label{ss:discovering_large_itemsets}
-
-The large itemsets discovering implies several passes over the data. The first
-pass is to find out individual items that are actually large, so which of them
-appears more than minimum support. 
-On next pass these large items are the seeds, with these
-seeds the candidate itemsets are generated and the data is passed again in order 
-to find out the large itemsets among the candidates. The same process is repeated 
-until no new large itemsets are found. The basic intuition is that any subset of
-a large itemset must be large. The algorithm looks like as in pseudocode
-\ref{pc:apriori}.
-
-The key point in this algorithm is the candidates generation. It is formed by
-two steps. The first step is to generate all the candidates and the second is to
-prune those candidates that for sure will not be large itemsets. First step is
-represented in pseudocode \ref{pc:apriori_candidate_generator1} and it can be
-seen that seed itemsets (from previous pass) are merged in pairs by adding last
-item from first itemset to the second. Last phase depicted in
-\ref{pc:apriori_candidate_generator2} is about prune the candidates
-that contain (k-1)-itemsets that do not exists on $L_{k-1}$. The idea behind
-that is what has been exposed before, i.e. any subset of a large itemset must
-be large. This property leads to a powerful pruning. By doing that, the 
-number of candidates is reduced considerably. By this approach is achieved 
-that $C_{k} \supseteq L_{k}$. Ideally $C_{k} = L_{k}$
-so as better the candidates generation is, less verifications (whether the minimum
-support is achieved or not) will be done and so better performance.
-
-\begin{pseudocode}{Apriori algorithm}{D}
-\label{pc:apriori}
-    L_{1} \GETS large \quad 1-itemset
-	\\
-    \FOR k=2; L_{k} \neq \emptyset; k++ \DO
-	\BEGIN
-        \COMMENT{New candidates} \\
-        C_{k} \GETS aprioriGen(L_{k-1})\\
-        \FORALL transactions \quad t \in D \DO
-        \BEGIN
-            \COMMENT{Candidates contained in t} \\
-            C_{t} \GETS subset(C_{k}, t)\\
-            \FORALL candidates \quad c \in C_{t} \DO
-            \BEGIN
-                c.count++\\
-            \END\\
-        \END\\
-        L_{k} \GETS \{c \in C_{k} \mid c.count \geq minsup\}
-	\END\\
-	\\
-
-    \RETURN \bigcup_{k}L_{k}
-\end{pseudocode}
-
-\begin{pseudocode}{Apriori Candidate Generator 1}{L_{k-1}-itemsets}
-\label{pc:apriori_candidate_generator1}
-\text{ {\bf insert into}} \quad C_{k}\\
-\text{ {\bf select}} \quad p.item_{1},\ldots,p.item_{k-1},q.item_{k-1}\\
-\text{ {\bf from}} \quad L_{k-1} \quad p,L_{k-1} \quad q\\
-\text{ {\bf where}} \quad p.item_{1},\ldots,p.item_{k-2} = q.item_{k-2}, 
-p.item_{k-1} < q.item_{k-1}\\
-\COMMENT{Last condition is for ensuring no duplicates}
-\end{pseudocode}
-
-
-\begin{pseudocode}{Apriori Candidate Generator 2}{L_{k-1}-itemsets, C_{k}}
-\label{pc:apriori_candidate_generator2}
-    \FORALL itemsets \quad c \in C_{k} \DO
-    \BEGIN
-        \FORALL (k-1)-subsets \quad s \in c \DO
-        \BEGIN
-            \IF s \not\in  L_{k-1} \THEN
-                delete \quad c \quad from \quad C_{k}\\
-        \END
-    \END
-\end{pseudocode}
-
-%Names used to be so descriptive and therefore can explain quite a lot about the
-%reality of the entity. Apriori meaning (by oxford dictonary) is {\it “using facts or
-%principles that are known to be true in order to decide what the probable
-%effects or results of something will be [\dots]”}. In this case, the name comes
-%from the generation-and-test technique. A priori, all candidates formed by
-%(k-1)-itemsets combinations are k-itemsets but it have to be tested.
-
-\subsection{Projection-based pattern growth
-algorithms}\label{ss:projection_based}
-
-Candidates generation presents to be critical for apriori algorithms and even if
-optimizations in the prune process has been introduced, the generated candidates
-follows an exponential grow. For example for detect a maximal sequence of 100
-elements, $2^{100} \approx 10^{30}$ candidates will be generated. The next
-problem is that for every step, data needs to be revisited to check out whether 
-new candidates are large itemsets or not. 
-
-Pattern growth paradigm presented in \cite{han2000mining1} remove
-completelly the necessity of candidates generation. They achieve improvements on
-performance for about one order of magnitude respect Apriori-like algorithms
-explained on previous section by adding two key concepts. 
-\begin{enumerate*}[label=(\roman*)]
-  \item Frequent pattern tree or FP-tree for short
-  \item and FP-tree based pattern mining called FP-growth.
-\end{enumerate*}
-Following, this two concepts are explained in more detail.
-
-\subsubsection{Frequent pattern tree}\label{ss:frequent_pattern_tree}
-
-The following observations can be used for introduce FP-trees and have been used
-for its construction. This structure dramatically decrease the size of data to be 
-scanned but maintains all the need information for the mining.
-
-\begin{enumerate}[label=\roman*)]
-  \item One important rule learned from apriori approach is that frequent
-    $(k+1) itemsets$ only can be done from frequent $(k-1) itemsets$. This observacion
-    leads to the idea of just taking into account frequent $(1) itemsets$ given a
-    minimum support.
-  \item These discovered frequent intemsets could be stored in some compact
-    structure, avoiding repeatedly scanning the DB.
-  \item Continuing with the idea of compacting important data, it can be said
-    that identical frequent itemsets from different transactions can be merged
-    into one with information about number of occurrences.
-  \item And for these partially identical frequent itemsets, shared prefixes can
-    be merged as well.
-\end{enumerate}
-
-For improve understandability lets drive a construction of an FP-tree following an
-example. Imagine we have a database with several transactions like the depicted
-in figure \ref{fig:fp_tree_db} (left hand side column). The process ends up with
-Fp-tree in figure \ref{fig:fp_tree_constructed}. Lets see how it happens. 
-
-First scan of database derives a list of frequent items, i.e. these 1-itemsets 
-above the minimum support value (3 for this example) that is $\langle
-(f:4),(c:4),(a:3),(b:3),(m:3),(p:3) \rangle$. Note the frequent items in every
-transaction are on right hand side column in figure \ref{fig:fp_tree_db}. The
-frequent itemsets here are not sorted by appearance in transaction but by
-frequence. This sorting will allows more compression on FP-tree construction. The 
-second scan is done over these frequent 1-itemsets and drives the
-FP-tree construction. First transaction leads to the construction of the first
-branch (left hand side). Next transaction shares the three first items, so
-it can be partially merged with first branch. The merge process is just about
-update the counters and make the new relations. Same process for all
-transactions. Additionally to the pure tree construction, header table structure 
-is done for ease the task of traverse all possible frequent patterns that 
-contains a given item. 
-
-\begin{figure}
-  \centering
-  \includegraphics[width=250px]{fp_tree_db}
-  \caption{A transaction database as running example}
-  \label{fig:fp_tree_db}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=200px]{fp_tree_constructed}
-  \caption{The FP-tree}
-  \label{fig:fp_tree_constructed}
-\end{figure}
-
-\subsubsection{Mining FP-trees}
-
-After prepare data FP-growth algorithm is the responsible to find out the
-frequent patterns by analyzing the FP-tree. The mining starts with 1-itemset
-analysis. Thanks to the header table all paths for a given item $a_{i}$ can be get
-easily. Once all paths, where the given item is involved on, are retrieved a new 
-subtree is build up. Remember that in this process all items below minimum support 
-are pruned. Unlike before now only these retrieved items are taken into account 
-for the counting. This new structure is named $a_{i}$ conditional pattern base,
-i.e. the sub-pattern base under the condition of $a_{i}$ existence. Next step is
-to call mining function recursively having on every recursive call a large
-conditional pattern base, so it is growing. It can be better understood by means
-of an example. Lets follow the previous one.
-
-Starting from the bottom of the header table, lets mine FP-tree for the $p$ item. Two
-paths arise: $\langle f:4,c:3,a:3,m:2,p:2 \rangle$ and $\langle c:1, b:1, p:1
-\rangle$ (being the number after ``:'' the occurrences). Note that even if $f$
-appears 4 times, only 2 of them appears with $p$, so the path becomes $\langle 
-f:2,c:2,a:2,m:2,p:2 \rangle$. Similarly with second path. Moving on, the
-construction of the $p$ conditional pattern base is done by counting and pruning
-these items below minumum support (3 for the example), so the only branch for the new FP-tree is
-$(c:3)$. Hence only one frequent pattern is derived, i.e. $(cp:3)$. From now to
-the end, $p$ does not need to be taken into account any more, this is because
-all possible patterns containing $p$ has been already analyzed. Similarly we can proceed analyzing paths containing $m$ item. Two paths arise: 
-$\langle f:2,c:2,a:2,m:2 \rangle$ and $\langle f:1,c:1,a:1,b:1,m:1 \rangle$. The
-new conditional FP-tree just contains the path $\langle f:3,c:3,a:3 \rangle$.
-For show how the pattern is growing, lets see in a deph-first way what
-recursive calls are done:
-\begin{enumerate*}[label=(\roman*)]
-  \item mine($\langle f:3,c:3,a:3 \rangle \text{\textbar} m$)
-  \item mine($\langle f:3,c:3 \rangle \text{\textbar} am$)
-  \item mine($\langle f:3 \rangle \text{\textbar} cam$)
-\end{enumerate*}
-The frequent pattern derived from this analysis is $(fcam:3)$.
-
-\subsection{Temporal sequences}\label{ss:temporal_sequences}
-
-In this section will be shown the basis of these algorithms that concers about
-the periodicity of a certain patterns over the time (generalizing, over any
-metric from which the sorting is done). These are obviusly the
-algorithms that best fits to the needs for trace structure detection. First
-developed framework for datasets considered to be episodic was presented by
-\cite{mannila1995discovering}.
-
-Two previous approaches were concerning about the analysis of arbirary ordered
-sequences of data, however, this approach considers order as an inherent
-characteristic of the sequential structure. This main difference leads to a
-slightly different approach of sequential pattern mining and introduce new ideas 
-like sliding windows. Nevertheless some important components are shared among 
-them like:
-\begin{enumerate*}[label=(\roman*)]
-  \item Frequency threshold, that is defined as the minimum number of times a
-    sequence have to appear. It is analogous to minimum support of apriori and
-    pattern-growth algorihtms.
-  \item Relies on generate-and-test paradigm to discover frequent sequences. It
-    is same approach like apriori-like algorithms.
-  \item Finnaly also takes profit from the principle of: all subepisodes are at
-    least as frequent as the superepisode, for candidates generation.
-\end{enumerate*}
-
-The main objective of these sort of algorithms is: Given a class of episodes, an
-input sequence of events, a window width, and a frequency threshold, find all
-episodes of the class that occur frequently enough. Before go to the actual 
-algorithm let's take a look to the main concepts.
-
-\subsubsection{Temporal sequences formal notation}
-
-On section \ref{ss:formal_notation} have been shown the typical formal notation
-for pattern mining, now this notation is extended for explaining the new
-concepts that arise from the temporal sequences minning.
-
-Given a class of elementary event types $E_{0}$, an event is a pair $(e,t)$
-where $e \in E_{0}$ and $t$ is an integer that represents the instant when
-the event appears. An event sequence is a triple $S=(T_{s},T^{s},S)$ where
-$T_{s}$ is the starting time, $T^{s}$ is the closing time and $S$ is an ordered
-sequence of events.
-
-A windows on $S=(T_{s},T^{s},S)$ is a sequence of events $W=(T_{w},T^{w},W')$
-where $T_{s} \leq T_{w}$,$T^{w} \leq T^{s}$ and $W'$ consists on those events
-$(e_{i},t_{i})$ where $T_{w} \leq t_{i} < T^{w}$. The width of windows is
-$width(W)=T^{w}-T_{w}=w$ and the set of all windows in a sequence S is
-$aw(S,w)$. Episodes are collections of events occurring frequently 
-close to each other, in
-general, are partially ordered sets of events that can be described as a
-directed acyclic graph. Are denoted as $\varphi =(V,\le,g)$ where V is a set of
-nodes, a partial order $\le$ on V and a function $g:V \rightarrow E_{0}$
-associating each node with an event type. In general V also can contain other
-episodes forming composite episodes. Episodes can be parallel or sequential.
-Is parallel when the partial order relation is trivial and an episode is
-sequential if the partial order relation is a total order. The crucial
-observation is that all episodes can be described as a composition of parallel
-and sequential episodes. Last definition is the episode frequency that 
-is described as the ratio between the number of windows containing a given 
-episode and the total number of windows:
-$$
-fr(\varphi,S,w)=\frac{|\text{\{}W \in aw(S,w) | \varphi \text{ occurs in }
-W\text{\}}|}{|aw(S,w)|}
-$$
-So an episode is said to be frequent if $fr(\varphi,S,w)$ is above $min\text{\_}freq$
-that is provided by the user.
-
-\subsubsection{Algorithm}
-
-First step is to finding all frequent episodes in the given sequence, given a
-class of episodes and a frequency threshold. This part is just like apriori
-algorithm. The basis of the algorithm presented here is shared with the already 
-presented in section \ref{ss:apriori_based} in the sense that they are based on an
-iterative process that consists on an alternation between building candidates 
-and recognize frequent episodes by scanning the input data. There is a detail
-here that makes this phase potentially outperform the naive Apriori-like
-algorithm. Now we are working with windows, and we consider just patterns than
-fits on windows so there is a non-sense to try to get $k-itemsets$ having $k >
-w$ so the search space is pruned by the windows size. Once all frequent 
-episodes are taken then the second step is about recognizing episodes in 
-sequences. The entire sequence is traversed by a sliding windows and for every one of these windows the analysis looking for episodes is done. 
-Different methods are used for the detection. 
-\begin{enumerate}[label=\roman*)]
-  \item Parallel episodes: For candidate parallel episode there is a counter
-    that indicates how many events of episode appears into the windows. If the
-    counteris equal to $|\varphi|$ the index of windows is saved because it
-    indicates, the episode has been detected. When the counter is decremented
-    it means that we can add one more windows where this episode is.
-  \item Serial episodes: Serial candidat episodes are recognized by using state
-    automata. A new instance of the automata is initialized whenever first event
-    of episode appears on the sliding windows. This automata reach the accepting
-    state when all events are present (and have been arising following a certain
-    order) and is deactivated when the first element
-    that motivates its activation leaves the window. When an automata is removed
-    and there is no other automata for this episode, the number of occurrences
-    is incremented.
-\end{enumerate}
-
-Instead of applying a naïve approach where every windows is scanned
-completelly, episodes are recognized in sequences in an incremental fashion. 
-Two adjacent windows are typically very similar so after
-recognizing episodes in a windows, incremental updates in data structures can be
-done for the next one.
-
-Like previous algorithms, the exposed above is just he basic idea and more
-research has drive to better algorithms but maintaining this fundamental idea.
-Important to mention the Projected Window List presented in
-\cite{huang2004prowl} that it use a sort of pattern-growth fashion for temporal
-sequences mining for avoid candidate generation.
-
+On previous approaches that shares similar motivations with this thesis and a
+discussion about them. 
 
 \section{Previous and related work}\label{related_work}
 
-\lettrine{S}{everal} tools are actually being used in order to ease the analyst
-work. Talking about structure analysis we can split previous works into two main
-subsets. By one hand we have the behavioral structure that want to expose the
-different phases on an execution in terms of performance and by the other hand
-the syntactic structure that provide information about the actual program
-structure.
-
-\subsection{Behavioral structure}\label{ss:behavioral_structure}
-
-If we consider the same bunch of code will behave, in general, in the same
-manner it can be assumed that there is a powerful correlation between the
-behavior and the code. By this way it can be said a behavioral analysis is a
-side-channel analysis because indirectly the internal syntactic structure can be
-betrayed. This consideration could be true in some cases but not in others so the 
-main goal of the different approaches presented in this section is not
-to present a syntactic but a behavioral structure. The motivation is that when
-analyst deals with syntactic structure, like in profilers, time variations of 
-the same functions is
-hidden, this situation can appears for example when calling same function with
-different parameters. For the analyst point of view could be more interesting to
-have this information unfolded. Take into account that this same property can
-end up identifying different parts of the code as the same phase.
-
-Even if the goal of the approaches explained below does not match perfectly with
-goal of this thesis, they provide a really useful insights as a related work.
-
-In \cite{casas2007automatic} they propose 
-automatically extract the internal structure of an MPI application from a
-Paraver tracefile and provide to analyst just representative phases and they 
-rely on signal analysis for this propose. 
-Their analysis consists on two main steps:
-\begin{enumerate*}[label=\roman*)]
-    \item The first is to clean-up the trace by identify the perturbed regions.
-Perturbed regions are those parts of the trace that has been perturbed nor by
-the application nor by architecture but by external factors such that unknown
-system activity or tracing package. Their clean-up phase is centered on remove
-noise from tracing package, i.e. flush to disk. By building up a signal based
-on flushing events and transform it by Closing morphological filter they end up
-with this perturbed phases. 
-    \item The second step is the identification of the
-phases. It is done by means of autocorrelation and periodicity analysis of a
-signal. This signal is build up from any metric like instantaneous FLOPs but
-they use number of MPI point to point calls being executed. Once the period is
-successfully detected the same process is done recursively on one of the
-periods. This allows to have a hierarchical structure. 
-\end{enumerate*}
-Finally the output is
-basically information about the different phases like number of iteration and
-timing plus some representative cuts of the original trace. 
-
-In \cite{gonzalez2013application} propose a
-technique to identify the different execution phases using clustering 
-techniques. Different parts of the
-execution are considered as the same phase depending on the behavior,
-so an analysis using some hardware metrics is
-performed. The first step is about reducing the complexity of the clustering by
-filtering the less relevant computation burst, i.e. little bursts according
-with a given threshold. The second step is the clustering itself made with the 
-CPU burst with hardware counters information attached. In order to 
-reduce the dimensionality the proposal is to
-use two different dimension sets: The first one is Completed Instructions
-against IPC\footnote{Instructions per cycle}. This configuration provides a
-performance view. The second is Completed instructions against L1 and L2 cache
-misses. This combination reflects the impact of the architecture on the
-application structure. Once the CPU burst have been clustered, this information
-can be sent back to the trace and can be visualized by the analyst. Additionally
-an interesting analysis can be done with the shape of clusters like for example,
-working with IPC vs. Number of instructions if the shape of a given cluster is
-flat on the second axis it means that there is an imbalance on instructions.
-Clustering in the field of performance analysis was used before this proposal 
-just for classify processes that behaves similar so its utilization by
-identifying different phases on temporal dimension opened the door to new research
-paths.
+The analyzed literature can be split into two main subsets. By one hand we have 
+the syntactic structure analysis tools that provide information about the actual 
+program structure and by the other hand the behavioral structure analysis tools
+that want to expose the different phases on an execution in terms of performance. 
+The former subset of works is the most related to our goals even if not all of
+them are using the structure detection for improve analysis but also for
+trace compression. The last subset is not so related but it have been considered
+interesting to analyze them since provide valuable insights for our purposes.
 
 \subsection{Syntactic structure}\label{ss:syntactic_structure}
 
-%Syntactic structure is centered on providing the actual program code structure so
-%it needs to use some debug information about symbols and about the position of
-%the instruction is being executed, i.e. the callstack.
-
-One of the main interest on having the syntactic structure of an application is to be
-aware about not just what but where. This is important in the process of who to
-blame in code and provides insights of the actual application that with just
-behavioral structure can not be presented like for example where do we have
-loops and how many iterations performs.
-
-Profile tools are used to present behavior information attached to a 
-syntactic structure. Although this is a scalable
-solution for performance monitoring, they are used to discard temporal order so
-structures like loops are just exposed indirectly by the number of calls metric.
-Additionally some sort of bottlenecks like late-sender problems are difficult to
-detect without time order information. In
-general starts from a huge trace and by means of summarizing and aggregating
-data tries to present the minimum and meaningful information to the analyst.
 This section has been divided into two subsections. The first is about
-algorithms used on an on-line structure analysis, i.e. the overall trace is not 
-available from the beginning.
-The works presented in this sections are mainly concerned about reduce the size of the
-trace so they are facing the tracing scalability problem. The second section is 
-about off-line structure analysis, that unlike before, trace is available so a 
-post-mortem analysis is done. 
-
-%Even if they use different algorithms on-line
-%analysis algorithms can be easily applied to the off-line scenario just adding a
-%simple layer before trace that feeds the algorithms event by event.
-
-%These following approaches presents the
-%information in a way that are in the midway between profilers and tracers.
-
-\subsubsection{Online structure analysis}
+algorithms used on an on-line structure analysis, i.e. Overall trace is not 
+available from the beginning so the structure is being detected while the
+application is being executed. The works presented in this sections are 
+mainly concerned about reduce the size of the trace by compressing these
+repetitive parts so they are facing the tracing scalability problem. The second 
+section is about off-line structure analysis, that unlike before trace is 
+available so a trace post-mortem analysis is done.
+ 
+\subsubsection{On-line structure analysis}
 
 In \cite{noeth2009scalatrace} they are concerning about the scalability of the
 tracing part. They claim reductions of about a
@@ -551,7 +61,7 @@ can detect the most outer loop iterations or timesteps. One of the main
 drawbacks of this approach is that the complexity of intra-node compression 
 can be of $O(n^2)$ nevertheless they are avoiding this by
 limiting the algorithm search (first step) with a windows size. They claim that
-with a windows of 500 is used to be enough. 
+with a windows of 500 events is used to be enough. 
 
 In \cite{aguilar2014mpi} they present the Event Flow Graphs (EFG). EFG are
 weighted directed graphs where every node is an MPI call and edges the
@@ -587,54 +97,11 @@ and once cycles are detected the graph is transformed to a hierarchical tree
 where loops and subloops are showed up. Statistics about loops can be gathered
 like number of iterations, total time in loops and so on.
 
-%The construction of the graph have a complexity of $O(n)$ with the number of MPI
-%calls in the execution and the cycle detection also can be considered to have a
-%lineal cost but now is not over $n$ MPI calls but over $m$ being it the number
-%of unique (so after compression) MPI calls, i.e. number of nodes in EFG. 
-
 \subsubsection{Offline structure analysis}
 
-%Compressed Complete Call Graphs (cCCG) was
-%presented by \cite{knupfer2005construction}. It can be said it is about 
-%profilizing a trace. It consist on finding repetitive 
-%patterns for loosely or lossless compression. This compression will allow to 
-%analyst to analyze whole huge traces 
-%interactively, difficult business when dealing with this amounts of information. 
-%CCG is basically a graph of function calls of a program so the main structure is
-%defined by the function call hierarchy while additional information are appended
-%usually as leaf nodes. The construction phase is quite simple. The trace is
-%traversed in a sequential manner, every time a function enter event is detected,
-%new node is generated and append to the current active node. The
-%other way around when exit function event is read, the current active node is
-%finalized and all information concerning to this node is presented e.g.
-%duration. Additionally, while constructing, the graph is compressed. The basic 
-%idea is to replace $n$ repeated sub-trees that are equal or similar with a 
-%reference to a single instance saving $n-1$ remaining copies. For similar is
-%understood that when comparing nodes not all properties must be equal for
-%example is not needed some scalar values like duration match perfectly (some
-%configured deviation is acceptable) but properties like function id must. They
-%claim compression ratio about 200 can be achieved with this approach.
-%%Additionally this compression technique does not need to uncompress anything, the
-%%user (or any analysis algorithm) just can traverse the graph and gather
-%%information. 
-%This approach improves profiling in the sense that same function with same call
-%path and different time behaviour is exposed to analyst but still presents a lack 
-%of information on the order of the execution of the different graph paths so
-%application structure is exposed just partially. The cost of this algorithm is 
-%lineal since no back search is needed. It is
-%because the entry and exit function information is actually on the trace. If it
-%were not, the only manner to be sure if the next event belongs to the same
-%iteration or to the next is by means of a back search similarly to the presented
-%in \cite{noeth2009scalatrace} and as have been argued before it can lead to
-%quadratic costs. The fact of having the entry/exit information in traces adds a
-%non negligible overhead what implies the poor scalability of this
-%method in terms of tracing.
-
-%% TODO: Talk about Cube???
-
-There are some works examined in this section that are out of the HPC field,
+Some of works in this section are out of the HPC field,
 this is because the structure extraction is also useful for other purposes like
-reverse engineering on interative software nevertheless they are actually useful
+reverse engineering on interactive software nevertheless they are actually useful
 since the objective is quite the same.
 
 Starting with \cite{Safyallah2006} they propose analyze execution
@@ -707,7 +174,7 @@ interested in discovering sets of events that occur periodically [\ldots] but
 the order is not taken into account [\ldots] the order can change according to
 the scheduler (in a multi-thread environment)''}. It remembers to the algorithm
 explained at section \ref{ss:temporal_sequences} in the sense that the events in
-windows were not assesed to be in order since they could happen in parallel.
+windows were not assessed to be in order since they could happen in parallel.
 Furthermore the split of the trace into transactions remembers to the windows
 explained in that same section. Additionally to the classical temporal sequence
 mining they introduce the definition of cycles as \textit{``When an itemset  occurs over 
@@ -719,9 +186,8 @@ is to recognize the gaps, i.e. the disruptions into the periodicity of a
 pattern. They have these information because trace information is not just from
 application point of view but from a whole SoC point of view. 
 
-The minig consists on a four step algorithm where the first one is the
-responsible of find out all the cycles of all possible periods (from 1 to n. of
-transactions / min. support) containing a selected item. The rest of steps are
+The mining consists on a four step algorithm where the first one is the
+responsible of find out all the cycles of all possible periods (from 1 to \#transactions / min. support) containing a selected item. The rest of steps are
 responsible to refine the output in order to end up with the minimum useful
 information. First step is intuitively slow and generates a highly redundant
 information so is hardly scalable.
@@ -737,13 +203,13 @@ repeated, i.e. folding loops that has been unfolded during the
 tracing\footnote{Unfolding in the sense that tracing process represent loops as
 a sequence of a repeated set of events.}. Their algorithm is about finding short
 repeated sequences of events and try to expand the pattern. After detect the
-intern structure of an application, the distribution of durations of the
+intern structure of an application, the analysis of durations of the
 different iterations of the detected loops is an arbitrary construction, once
 done, they filter all iterations that behave similar and
 expose to analyst these iterations that are outliers assuming these are the
 most interesting ones.
 
-They propose a iterative three steps algorihtm:
+They propose a iterative three steps algorithm:
 \begin{enumerate}[label=\roman*)]
   \item Find out a sequence of two consecutive events that appears several
     times. All the subsequences are then replaced with a pattern construct
@@ -751,58 +217,148 @@ They propose a iterative three steps algorihtm:
   \item Next step is about finding loops composed of $p_{1}$. This is done by
     comparing every $p_{1}$ with next event, if they are equal then both are
     grouped into a loop.
-  \item Last step is about expanding the pattern $p_{1}$ by lookin at following
+  \item Last step is about expanding the pattern $p_{1}$ by looking at following
     event. If all $p_{1}$ have the same following event then it is integrated,
     if several of them shares the same following event, new pattern $p_{2}$ is
-    created otherwise the pattern can not be expaneded.
+    created otherwise the pattern can not be expanded.
 \end{enumerate}
 Steps 2 and 3 are repeated until no more expansions can be done. Then the
-process starts again from step 1 until no more paris can be found.
+process starts again from step 1 until no more pairs can be found.
 
 This algorithms can be classified as a pattern growing algorithm (described in
 section \ref{ss:projection_based}) but without the projection step so all data
 is traversed again and again. They said their algorithm is dominated by the
-first step that presents a complexity of $O(n^2)$ with the lenght of the
+first step that presents a complexity of $O(n^2)$ with the length of the
 patterns.
 
-\section{Discussion}
+Compressed Complete Call Graphs (cCCG) was
+presented by \cite{knupfer2005construction}. It can be said it is about 
+profilizing a trace. It consist on finding repetitive 
+patterns for loosely or lossless compression.  
+CCG is basically a graph of function calls of a program so the main structure is
+defined by the function call hierarchy while additional information are appended
+usually as leaf nodes. The construction phase is quite simple. The trace is
+traversed in a sequential manner, every time a function enter event is detected,
+new node is generated and append to the current active node. The
+other way around when exit function event is read, the current active node is
+finalized and all information concerning to this node is presented e.g.
+duration. Additionally, while constructing, the graph is compressed. The basic 
+idea is to replace $n$ repeated sub-trees that are equal or similar with a 
+reference to a single instance saving $n-1$ remaining copies. For similar is
+understood that when comparing nodes not all properties must be equal for
+example is not needed some scalar values like duration match perfectly (some
+configured deviation is acceptable) but properties like function id must. They
+claim compression ratio about 200 can be achieved with this approach.
+This approach improves profiling in the sense that same function with same call
+path and different time behaviour is exposed to analyst but still presents a lack 
+of information on the order of the execution of the different graph paths so
+application structure is exposed just partially. The cost of this algorithm is 
+lineal since no back search is needed. It is
+because the entry and exit function information is actually on the trace. If it
+were not, the only manner to be sure if the next event belongs to the same
+iteration or to the next is by means of a back search similarly to the presented
+in \cite{noeth2009scalatrace} and as have been argued before it can lead to
+quadratic costs. The fact of having the entry/exit information in traces adds a
+non negligible overhead what implies the poor scalability of this
+method in terms of tracing.
 
-Starting with the first set of proposals, those classified as behavioral
-structure approaches (in \ref{ss:behavioral_structure}), it can be seen signal
-processing and general data mining techniques used to be used. The reason is
-because the behaviour is expressed with scalar values like number of
-instructions, cycles, cache misses, etc instead of by a sequence of a 
-defined set of events like MPI calls so sequences pattern mining is not the best
-choice. About \cite{casas2007automatic} its true that if the number of 
-point-to-point MPI calls are used for extract the structure, no behavioral 
-information is taken into account, nevertheless since any performance metric 
-can be used has been decided to put this approach as a behavioral structure 
-analysis tool. The motivation of this work match with the second motivation
-explained in \ref{ss:mot_regions_of_interest}. Additionally they can present a
-hierarchical graph with detected structure but without temporal order
-information. About \cite{gonzalez2013application} it brings the idea of the use
-of clustering for structure detection, using burst clustering with hardware 
-metrics you can have aliasing in the sense that two burst that execute different
-parts of the code can be behave similar and lie on same cluster but with other
-metrics, actual code structure can be betrayed as is demonstrated in this
-thesis.
+%% TODO: Talk about Cube???
+
+\subsection{Behavioral structure}\label{ss:behavioral_structure}
+
+Consider the same bunch of code will behave in the same
+manner in general, it could be assumed that there is a powerful correlation 
+between the behavior and the code structures. From which can be said a 
+behavioral analysis is a side-channel analysis because indirectly the internal 
+syntactic structure can be
+betrayed. This consideration is incorrect in general so the
+main goal of the different approaches presented in this section is not
+to present a syntactic but a behavioral structure. The motivation is that when
+analyst deals with syntactic structure, like in profilers, time variations of 
+the same functions is
+hidden, this situation can appears for example when calling same function with
+different parameters. For the analyst point of view could be more interesting to
+have this information unfolded. Take into account that this same property can
+end up identifying different parts of the code as the same phase.
+
+Even if the goal of the approaches explained below does not match with the
+goal of this thesis, they provide a really useful insights as a related work.
+
+In \cite{casas2007automatic} they propose 
+automatically extract the internal structure of an MPI application from a
+Paraver tracefile and provide to analyst just representative phases and they 
+rely on signal analysis for this propose. 
+Their analysis consists on two main steps:
+\begin{enumerate*}[label=\roman*)]
+    \item The first is to clean-up the trace by identify the perturbed regions.
+Perturbed regions are those parts of the trace that has been perturbed nor by
+the application nor by architecture but by external factors such that unknown
+system activity or tracing package. Their clean-up phase is centered on remove
+noise from tracing package, i.e. flush to disk. By building up a signal based
+on flushing events and transform it by Closing morphological filter they end up
+with this perturbed phases. 
+    \item The second step is the identification of the
+phases. It is done by means of autocorrelation and periodicity analysis of a
+signal. This signal is build up from any metric like instantaneous FLOPs but
+they use number of MPI point to point calls being executed. Once the period is
+successfully detected the same process is done recursively on one of the
+periods. This allows to have a hierarchical structure. 
+\end{enumerate*}
+Finally the output is
+basically information about the different phases like number of iteration and
+timing plus some representative cuts of the original trace. 
+
+In \cite{gonzalez2013application} propose a
+technique to identify the different execution phases using clustering 
+techniques. Different parts of the
+execution are considered as the same phase depending on the behavior,
+so an analysis using some hardware metrics is
+performed. The units to be cluster are segments of the execution to be defined,
+i.e. execution bursts that takes place between a given events such as MPI
+functions or events fired by the user to trace. The first step is about reducing 
+the complexity of the clustering by filtering the less relevant of these 
+computation burst, i.e. little bursts according with a given threshold. The 
+second step is the clustering itself. These defined execution burst will have
+behavioral information attached such as time or hardware counters that will be
+used for cluster them in a user defined N-dimensional space. In order to 
+reduce the dimensionality the typical approach is to
+use two different dimension sets: 
+\begin{enumerate*}[label=\roman*)]
+  \item  Completed Instructions against IPC. This configuration provides a
+        performance view. 
+  \item  The second is Completed instructions against L1 and L2 cache
+        misses. This combination reflects the impact of the architecture on the
+        application structure. 
+\end{enumerate*}
+Once the clustering is done, this information
+can be sent back to the trace and can be visualized by the analyst. Additionally
+an interesting analysis can be done with the shape of clusters like for example,
+working with IPC vs. Number of instructions dimensions if the shape of a given 
+cluster is
+flat on the second axis it means that there is an imbalance on instructions.
+Clustering in the field of performance analysis was used before this proposal 
+just for classify processes that behaves similar so its utilization by
+identifying different phases on temporal dimension opened the door to new research
+paths.
+
+\section{Discussion}\label{s:soa_discussion}
 
 The syntactic structure proposals (in \ref{ss:syntactic_structure}) have been 
 divided into two subsections because has been considered they belongs to a 
 different scenario and so different approaches were proposed. The
 first is about those algorithms that works online with the execution of the
 target software. These algorithms are not dealing with the entire trace but they
-are constantly feeded by the instrumentation package that is currently monitoring 
+are constantly feed by the instrumentation package that is currently monitoring 
 the application. They are discovering the patterns by means of a sort of
 aggregative mechanism. On the first paper explained they are aggregating
 incoming sets of events with current detected patterns, the second papers they
-are aggregating the events and also the transitions. On
+are aggregating the events and also the transitions. Additionally on
 \cite{noeth2009scalatrace} they introduce useful concepts as:
 \begin{enumerate}[label=\roman*)]
   \item Calling sequence identification used for unambiguously identify
-different MPI calls that lie on different code positions. It is an important
-matter because if we do not take into account we would end up having aliasing
-problems, different calls would seems the same. 
+    different MPI calls that lie on different code positions. It is an important
+    matter because if we do not take into account we would end up having aliasing
+    problems, different calls would seems the same. 
   \item Recursion folding signatures for dealing with recursion. If an MPI call 
     is called recursively, the signature based on the callstack would identify
     same call as different. The proposal is to fold the same call on the call
@@ -818,36 +374,38 @@ it seems to be because the figure they show) is that this derived graph loss
 temporal information, so it can be considered a limitation of the methodology
 (also we have to say that this is not the main goal of the proposal). From both
 papers there is a valuable information (most in the second one) about the
-idiosincracy of HPC applications in what this thesis rely.
+idiosyncrasy of HPC applications in what this thesis rely.
 \cite{noeth2009scalatrace} say \textit{``[\ldots] the outermost loop of the code
 that contained repeated MPI calls. This timestep loop is of particular interest
 for performance modeling as convergence algorithms are often based on either
 fixed iteration bounds for the number of timesteps or epsilon-based error 
 constraints resulting in input-specific number of timesteps. [\ldots]''} and in \cite{aguilar2016event} they talk
-about the ``big outer loop hypothesis''. Additionally sais \textit{``[\ldots] by
+about the ``big outer loop hypothesis''. Additionally says \textit{``[\ldots] by
 detecting the graph cycles (nodes are MPI calls), we are detecting the actual
 loops that drive the simulation in the application''}. What it means is that
-monitoring the MPI library is enough for having a clue about the structure of
-the application, they acts as the fundamental pillars.
+monitoring the MPI library is enough for having a clue about the general 
+structure of the application, they acts as the fundamental pillars.
 
-In the last section, offline syntactic structure algorithms are presented, that
+In off-line syntactic structure algorithms, that
 is in fact the approaches what shares more things with our objectives. The
 dominant algorithms here are the sequential pattern mining algorithms with
-variations for every case. Even if the structure of the applications can be
-betrayed successfully, the sequential pattern mining, particulary for candidate 
+variations for every case. Because the importance of these algorithms for this
+field, a previous study of them have been driven. If you want more details go to
+\ref{pattern_mining}. Even if the structure of the applications can be
+betrayed successfully, the sequential pattern mining, particularly for candidate 
 generation-and-test techniques, and when low support is used, performance can 
 degrade dramatically. In apriori algorithm presented in \ref{ss:apriori_based} 
 have been observed that
 the number of candidates needs to be generated for a relatively long itemsets is
 really huge and presents an exponential growth with the number of items in the
 itemset. Additionally for every one of these candidates, data needs to be
-traversed again on the test phase.
+traversed again on the test step.
 
 If we look closer, one can realize that the complexity of the algorithm mostly 
 depends on the expectations of the complexity of the betrayed patterns. 
 About studied literature in syntactic 
 structure \cite{Safyallah2006} \cite{Zhao2008} talks about get the 
-internal structure at level of entry/exit functions, and as they talk it can 
+application structure at level of entry/exit functions, and as they talk it can 
 leads to a high complex structures that needs post-process, for them 
 pattern mining algorithms is the natural choice. In \cite{trahay2015selecting}
 they talk about find patterns of events that are both, MPI calls and function
@@ -856,5 +414,22 @@ calls in general and following the former, rely on pattern mining.
 the feeling is that their needs drivers to a more simple algorithm. Finally in
 \cite{aguilar2016event} they just perform a directed graph building because they
 just get MPI calls information, so simpler patterns will be detected. Strong
-reason for prefer a simplified analysis is they are working online, so they are
-trying to decrease the overhead as much as possible.
+reason for prefer a simplified analysis for the last two is they are working 
+online, so they are trying to decrease the overhead as much as possible.
+
+About last set of proposals, those classified as behavioral
+structure approaches (in \ref{ss:behavioral_structure}), it can be seen signal
+processing and general data mining techniques are used. The reason is
+because the behavior is expressed with scalar values like number of
+instructions, cycles, cache misses, etc instead of by a sequence of a 
+defined set of events like MPI calls so sequences pattern mining is not the best
+choice. About \cite{casas2007automatic} it shares with this thesis the motivation 
+explained in \ref{ss:mot_regions_of_interest}. They can present a
+hierarchical graph with detected structure but without temporal order
+information what is a weak spot. About \cite{gonzalez2013application} it brings 
+the idea of the use
+of clustering for structure detection, using burst clustering with hardware 
+metrics you can have aliasing in the sense that two burst that execute different
+parts of the code can be behave similar and lie on same cluster but with other
+metrics, actual code structure can be betrayed as is demonstrated in this
+thesis.

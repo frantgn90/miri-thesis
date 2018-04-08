@@ -4,12 +4,12 @@ On the context of this thesis the motivations that encourage for this work and
 the objectives.
 
 \section{Context}
-\lettrine{F}{rom} several decades to nowadays the science have been evolving
+\lettrine{F}{rom} several decades to nowadays science have been evolving
 dramatically in a wide variety of fields, one of the main reasons is because now we
-have the technology to provide the enough computational power for face problems
-which were typically imposible to solve. The vanguard of this technological
-revolution is represented on the huge computers called high performance
-computers.
+have the technology to provide the enough computational power to face problems
+which were typically impossible to solve. The vanguard of this technological
+revolution is represented by huge computers with high resources availability
+such as processors, memory, disk or network.
 In Computer Science the discipline in charge to drive research in this field is 
 the High Performance Computing, i.e. HPC. HPC has been increasing in importance 
 and nowadays can be said it is the third support of science with theory and 
@@ -56,10 +56,11 @@ branch prediction or even memory access value speculation,
 VLIW\footnote{Very Long Instruction Word} or TLP\footnote{Thread Level
 Parallelism} with multi-threading. Improvements on memory hierarchy like cache 
 associativity, non-blocking cache or trace cache. The last revolution affected 
- microarchitecture, architecture and program layers and was the introduction
-of multicores (early 2000s). It is basically a revolution in commodity hardware because HPC
+ microarchitecture, architecture and program layers was the introduction
+of multicores (early 2000s). It is basically a revolution in commodity hardware 
+because HPC
 have been used to use shared memory paradigm for a while like for example with
-Transputers (1980s). Anyway it is important even in HPC since the trend have
+Convex (1991s). Anyway it is important even in HPC since the trend have
 been to move from ad-hoc systems to commodity hardware because the goodnesses of
 mass production. On last years researchers have been concerned about the
 power consumption because the trend is to have bigger machines so the need of be more
@@ -91,7 +92,8 @@ application that prevents from better behaviour.
 Once the big picture have been briefly introduced now we can zoom in and go a
 bit further into details. This thesis belongs to the application performance 
 analysis field of research contributing to ease the analysis and the report. 
-On the next section a more wide description on performance analysis tools is made.
+On the next section a more wide description on performance analysis tools is
+presented.
 
 \subsection{Performance analysis tools}
 
@@ -185,7 +187,9 @@ monitoring are available being the most used the interposition mechanism by
 means of the {\tt LD\_PRELOAD} environment variable present in UNIX systems.
 By this mechanism just calls to a given dynamic library can be instrumented because
 what it does is to divert shared library calls by the program to extrae, then 
-extrae get the information and calls the actual library function. It supports 
+extrae get the information and calls the actual library function. It has the
+advantage that the source code is not needed so it can work directly with
+already compiled programs without the need of recompile anything. It supports 
 several frameworks: 
 \begin{enumerate*}[label=\roman*)]
   \item MPI (for several implementations)
@@ -269,9 +273,10 @@ abstracted model that consists on three fundamental parameters:
     node in a given instant.
 \end{enumerate*}
 
-Dimemas as Paraver is Extrae-dependant software since they need traces to work.
-In the Dimemas case it needs to perform a conversion by means of the {\tt
-prv2dim} converter in order to ease the simulation. As an output it builds up a
+Dimemas works with paraver traces but in this case it needs to perform a 
+conversion by {\tt prv2dim} converter that generates a dimemas trace, a
+different trace format that ease simulation.
+As an output it builds up a
 new Paraver trace that can be analyzed as the original. Only communication times 
 are simulated through the Dimemas models so CPU times
 remain the same on the output tracefile. Even if it is a minor detail, since it
@@ -346,23 +351,22 @@ possibilities the analysis tools provides.
 This work is centered on the analysis phase, so lets go further and look at its
 subphases. When dealing with little and medium size traces, visualizers used to
 be responsiveness enough to perform analysis directly to the traces but when the 
-size surpass a given thresshold several previous steps should be done. In last 
+size surpass a given threshold several previous steps should be done. In last 
 cases analysis phase is typically subdivided into the following 
 subphases (see figure \ref{fig:analysis_subphases}):
 \begin{enumerate}[label=\roman*)]
-  \item Filter as much as possible irrelevant information. Before this phase is
+  \item Before filter phase is
     used to be impossible to work with visualizers so the main goal is to end up
     just with the needed information for inspect the structure of the
     application.
-  \item HPC applications are used to have a common idiosincracy that is to
+  \item HPC applications are used to have a common idiosyncrasy that is to
     present very repetitive patterns both in space (different processes) and 
     time dimensions. Exploiting this typical characteristic, next step is cut
     the more interesting parts of the execution e.g. an iteration or a set of
     iterations that seems to presents interesting information because its 
-    extremelly bad performance.
-  \item Last and most important, the inspection. Once one part of the execution is
-    detected to be interesting it is then gathered from the original trace i.e.
+    extremely bad performance. This cut is get from the original trace, i.e.
     with all the original information.
+  \item Last and most important, the inspection. 
 \end{enumerate}
 
 \begin{figure}[]
@@ -378,22 +382,23 @@ huge trace, it can be a waste of time.
 Both first and second subphases could need to be repeated several times because 
 the first filter is not good enough or because on the last phase analyzer realize 
 the cut is not as interesting as looked like. The intuition of a high skilled
-analyist plays an important role in this process.
+analyst plays an important role in this process.
 
 As has been covered in motivations (section \ref{s:motivations}) this thesis
 approach can be used for improve the inspection subphase but also to help to the
-decission or at least give some clues to the analyzer to what region is the most
+decision or at least give some clues to the analyzer to what region is the most
 interesting to cut reducing the number of iterations over the subphases of the
 analysis giving more time to the inspection work.
 
 \section{Motivations}\label{s:motivations}
 
 We can say that HPC applications shares a common idiosyncrasy between them. 
-Mathematic solvers needs to iterate until the result converge and 
-simulation software are used to be programed to evolve over timesteps. So in 
+Mathematics solvers needs to iterate until the result converge and 
+simulation software are used to be programmed to evolve over timesteps. So in 
 general, HPC applications consists on a big outer loop that is being executed the 
-same code but with evolving data, i.e. SPMD\footnote{Single
-Program Multiple Data} programs. Additionally this kind of workloads are used
+same code but with evolving data (time axis), and same code with different data
+for every parallel process (spatial axis), i.e. SPMD\footnote{Single
+Program Multiple Data}. Additionally this kind of workloads are used
 to be burst syncrhonous, i.e. all ranks are executing computation and
 communication phases in a syncrhonous manner. For these so regular executions a
 relatively simple representation of the whole execution could be extracted, i.e.
@@ -411,11 +416,11 @@ structure of an application being the most important the first one.
 Even if performance tools have been demonstrated to be valuable on detection of
 bottlenecks for a long time, since it demands high skilled profiles for the
 analysis, developers are not used to use them but delegate this work to the
-actual specialist. One example is the POP programme\footnote{The POP
+actual specialist. One example is the POP project\footnote{The POP
   (Performance Optimisation and Productivity) center of excellence in computing
   applications provides performance optimisation and productivity services for
 academic and industrial codes in all domains. https://pop-coe.eu/}. What it
-means is that analyzers are not used to work with its own code so they are used
+means is that analyzers are not used to work with their own codes so they are used
 to be agnostics about the structure of the program and it difficults the process
 of relate performance metrics to program code. Having the structure of the
 program will lead to better understand the application by allowing to analyzer
@@ -423,6 +428,19 @@ to have a mental schema about what the program does and allows to relate
 differencies in terms on performance to different program phases. This aid on
 the understandability will lead to better and faster analysis while also drives
 to better reports to the developer.
+
+Profilers are used to present syntactic structure with call path hierarchical 
+views where
+you can easily pinpoint some aggregated behavioral metrics to a point in
+program. Additionally it is a quite scalable solution since the information is
+being aggregated during the execution and not big traces are needed. The
+counterpart is they present the structure in a static way since they
+lost the temporal dimension. It prevents the analyst to have a clear
+representation about dynamic execution like loops iterations and they are
+exposed just indirectly by the number of calls to a given function. Additionally
+some sort of bottlenecks like late-sender problems are difficult to detect. By 
+having the syntactic structure that will presents also the temporal order of
+things a better understandability of the actual execution can be achieved.
 
 There are previous works (discussed widely on section \ref{related_work})  that 
 tries to represent the internal structure of an application but they are used to
@@ -432,8 +450,8 @@ just with directed graphs is that it is a so simplified view, in the referenced
 case it is impossible to pinpoint a given loop (directed graph cycle) to the
 actual code because the lack of callstack information. In case of the
 referenced approach that uses callstacks tree, the lack of information becomes
-from the fact that there is no representation for loops (although you have fuzzy
-clues like see the number of calls). The identification of this lack of clarity
+from the fact that there is no representation for loops. The identification of 
+this lack of clarity
 on the structure representation motivates as well this thesis. The proposal is to 
 generate a pseudo-code with loop and conditional structures that can be easily 
 pinpointed to source code and additionally can show aggregated metrics so it can 
@@ -443,7 +461,7 @@ be understood as a sort of mix of the two approaches references above.
 interest}\label{ss:mot_regions_of_interest}
 
 The typical tools like visualizers are not enough responsiveness when dealing
-with traces with several GB of information so analyzers needs to first
+with traces with several GB of information so analysts needs to first
 preprocess the trace before go ahead with the actual inspection. This preprocess
 consists basically on filter and cut the trace (widely explained on
 \ref{ss:analysis_workflow}) for identify and inspect just these interesting 
@@ -458,7 +476,7 @@ is difficultly scalable since it presents high complexity and is I/O
 intensive since the data should be readed repeatedly and it is a problem
 when dealing with big traces. 
 
-\subsection{About be scalable}
+\subsection{About been scalable}
 
 Current approaches about extract the intern structure (syntactic but not
 behavioral, more details in \ref{related_work}) based on a post-mortem trace
@@ -481,37 +499,37 @@ application and correlate it with performance metrics by mean of a post-mortem
 trace analysis that will help to have a general overview about the phases of the 
 execution. This will allow the analyst to build up a mental schema about the
 application and understand more easily what could be going on. Furthermore it will 
-contain source code information that will allow to easly pinpoint one metric to 
-the actual code providing an enhacenement on the analyst-developer
-understanding. Additionally this structure extraction can help to analyzer to 
+contain source code information that will allow to easily pinpoint one metric to 
+the actual code providing an enhancement on the analyst-developer
+understanding. Additionally this structure extraction can help the analyst to 
 decide what part of the trace analyze first since it will allow to know the loops 
 and iterations boundaries.
 
 The main objective is to detect those sets of events in trace that are being
-repeated toghether several times (above a given threshold) and agrupate them into 
+repeated together several times (above a given threshold) and group them into 
 loops. Since several subsets can appear because an application used to have 
 dozens of loops, those detected events subsets also will be arranged (in a 
 hierarchical manner) in a way that represents faithfully the actual internal 
-structure. This sort of analysis have been done tipically by using sequential 
+structure. This sort of analysis have been done typically by using sequential 
 pattern mining techniques what is in principle the set of techniques that better 
 fits to this problem since a trace is just a sequence of events ordered by time.
 
 Based on previous works and on the premise that HPC applications used to present
-the same idiosincracy (SPMD, burst syncrhonous,\ldots) has been decided to
+the same idiosyncrasy (SPMD, burst synchronous,\ldots) has been decided to
 explore a new way to detect those patters, motivated mainly for the fact that
 pattern mining techniques are in general computationally expensive. By using data 
 mining clustering techniques we expect to have an scalable
 solution since it is used to present quasy-lineal complexity with the number of 
-elements to clusterize. The mapping between elements to clusterize and events on
-a trace is not bijective but exaustive, so every element potentially represents 
+elements to clustering. The mapping between elements to clustering and events on
+a trace is not bijective but exhaustive, so every element potentially represents 
 several trace events, what is in fact the same instruction presenting its dynamic
 aspect because the execution of loops. Further the reduction of the tracefile
-events to the set of elements to clusterize is not needed to be sequential but 
-can be done in parallel by spliting the trace into several files and process
+events to the set of elements to clustering is not needed to be sequential but 
+can be done in parallel by splitting the trace into several files and process
 them by multiple processes (assuming also multiple HDDs). Assuming repetitive 
-executions, the number of elements to clusterize would be about constant despite 
-the increasing of the exeuction time.
+executions, the number of elements to clustering would be about constant despite 
+the increasing of the execution time.
 
-In this work is not expected to end up with a completelly functional and
+In this work is not expected to end up with a completely functional and
 performance refined tool but demonstrate how this approach can present valuable 
 results with a good scalability on increasing trace sizes.

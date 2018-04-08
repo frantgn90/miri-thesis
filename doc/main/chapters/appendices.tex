@@ -1,3 +1,393 @@
+\chapter{Sequential pattern mining}\label{pattern_mining}
+
+\lettrine{S}{equential} pattern mining can be defined as: \textit{``Given a set of data sequences, the
+problem is to discover sub-sequences that are frequent, that is, the percentage of
+data sequences containing them exceeds a user-specified minimum support.''}. Note 
+this definition fits pretty well with our objective of loops recognition in traces 
+so sequential pattern mining is the natural choice. Furthermore there is another
+definition that fits even better for our problem. It is, referring to patterns to
+analyze in a temporal sequences:\textit{``\ldots a collection of events that
+occur relatively close to each other in a given partial order, and \ldots
+frequent episodes as a recurrent combination of events''}.
+
+Sequential pattern mining is a technique applied on a wide range of problems
+like for example predicting systems failure by analyzing a sequence of logs,
+characterize suspicious behaviour in users by analyzing the sequence of commands
+entered, for automatically determine “best practices” by analyzing the sequences
+of actions of an expert, etc so the evolution on this area has been quietly
+ad-hoc to every problem. On this section pattern mining is introduced and three
+main classes of algorithms are explained always from an abstract point of
+view, i.e. without entering into details for specific implementations. This
+explanations were taken from \cite{mooney2013sequential}. Even if the temporal
+sequences algorithms described in section \ref{ss:temporal_sequences} seems to
+be the better choice for structure detection, it has been considered to explain
+briefly the other types since most of the ideas were first proposed by them.
+
+\section{Formal notation}\label{ss:formal_notation}
+
+Items are literals that belongs to a given alphabet $I=\{i_{1}, i_{2}, \dots,
+i_{m}\}$. Then an event is stated as a non-empty unordered set of items
+$(i_{1}, i{2}, \dots, i_{k})$. Finally a sequence is an ordered list of
+events $\langle\alpha_{1} \rightarrow \alpha_{2} \rightarrow \dots \rightarrow
+\alpha_{q}\rangle$. The ordered metric can be time, space or other. When a
+sequence is refered as a $k-sequence$ means that this sequence contains $k$
+items. A sequence $\langle\alpha_{1} \rightarrow \alpha_{2} \rightarrow \dots 
+\rightarrow \alpha_{n}\rangle$ is a subsequence of $\langle\beta_{1} \rightarrow 
+\beta_{2} \rightarrow \dots \rightarrow \beta_{m}\rangle$ if there exists
+integers $i_{1}, i_{2}, \dots i_{n}$ s.t. $\alpha_{1} \subseteq \beta_{i_{1}}, 
+\alpha_{2} \subseteq \beta_{i_{2}}, \dots, \alpha_{n} \subseteq \beta_{i_{n}}$.
+So for example $\langle B \rightarrow AC\rangle$ is a subsequence of 
+$\langle AB \rightarrow E \rightarrow ACD \rangle$ being the set of integers 1
+and 3.
+
+Having a set of sequences $D$, {\it support} or {\it frequency} of a sequence,
+denoted as $\sigma(\alpha, D)$, is defined as the number of input sequences in $D$
+that contain $\alpha$. A sequence is {\it frequent} or not depending on a
+threshold named {\it minimum support}, so is frequent if it happens more than
+{\it minimum support} times. The set of frequent k-sequences is denoted as
+$L_{k}$. Moving on, a frequent sequence is {\it maximal} if it is not subsequence
+of any other frequent sequence. The task becomes to find all maximal frequent
+sequences from $D$.
+
+% REMOVE ?????
+%This definition is a general abstracted definition and can be adapted for
+%ad-hoc algorithms so for example for the topic we are aware of, items can be the
+%MPI calls. In this case the
+%definition of subsequence can be transformed to “if there exists integers 
+%$i_{1}, i_{2}, \dots i_{n}$ s.t. $\alpha_{1} = \beta_{i_{1}}, 
+%\alpha_{2} = \beta_{i_{2}}, \dots, \alpha_{n} = \beta_{i_{n}}$” because all
+%events are sets of one item. If we use the whole callpath instead of just the
+%MPI call and items are the different calls, now events can not be unordered set
+%of items but ordered. 
+% ????????????
+
+\section{Apriori-based algorithms}\label{ss:apriori_based}
+
+Mining frequent itemsets is the core of later analysis like mining association
+rules, correlations, sequential patterns and so on. Apriori first proposal was
+about discover intra-transaction associations used
+in database mining, also called knowledge discovery.
+Being $I=\{i_{1}, i_{2}, \dots,i_{m}\}$ a set of literals called items and T a
+transaction $T \subseteq I$ is said T contains X if $X \subseteq T$. Further, an
+association rule is an implication of the form $X \Rightarrow Y$ where $X
+\subset I$, $Y \subset I$ and $X \cap Y = \emptyset$. Apriori algorithm was
+presented in the following paper \cite{agrawalfast}. The basis of this algorithm
+is presented here and several later algorithms were based on this like for
+example AprioriAll, AprioriSome, DynamicSome, GSP (Generalized Sequential
+Patterns), PSP and so on. Every one of them are introducing several
+optimizations and varying mainly the candidates generation step (explained on
+section \ref{ss:discovering_large_itemsets}) but maintains 
+the basic core.
+
+The algorithm consists on two fundamental steps being the first the most
+challenging one:
+\begin{enumerate}
+  \item Find all sets of items (itemsets) that have transaction support above
+    minimum support.
+  \item Use the large itemsets (itemsets above minimum support) to generate the
+    desired rules.
+\end{enumerate}
+
+\subsection{Discovering large itemsets}\label{ss:discovering_large_itemsets}
+
+The large itemsets discovering implies several passes over the data. The first
+pass is to find out individual items that are actually large, so which of them
+appears more than minimum support. 
+On next pass these large items are the seeds, with these
+seeds the candidate itemsets are generated and the data is passed again in order 
+to find out the large itemsets among the candidates. The same process is repeated 
+until no new large itemsets are found. The basic intuition is that any subset of
+a large itemset must be large. The algorithm looks like as in pseudocode
+\ref{pc:apriori}.
+
+The key point in this algorithm is the candidates generation. It is formed by
+two steps. The first step is to generate all the candidates and the second is to
+prune those candidates that for sure will not be large itemsets. First step is
+represented in pseudocode \ref{pc:apriori_candidate_generator1} and it can be
+seen that seed itemsets (from previous pass) are merged in pairs by adding last
+item from first itemset to the second. Last phase depicted in
+\ref{pc:apriori_candidate_generator2} is about prune the candidates
+that contain (k-1)-itemsets that do not exists on $L_{k-1}$. The idea behind
+that is what has been exposed before, i.e. any subset of a large itemset must
+be large. This property leads to a powerful pruning. By doing that, the 
+number of candidates is reduced considerably. By this approach is achieved 
+that $C_{k} \supseteq L_{k}$. Ideally $C_{k} = L_{k}$
+so as better the candidates generation is, less verifications (whether the minimum
+support is achieved or not) will be done and so better performance.
+
+\begin{pseudocode}{Apriori algorithm}{D}
+\label{pc:apriori}
+    L_{1} \GETS large \quad 1-itemset
+	\\
+    \FOR k=2; L_{k} \neq \emptyset; k++ \DO
+	\BEGIN
+        \COMMENT{New candidates} \\
+        C_{k} \GETS aprioriGen(L_{k-1})\\
+        \FORALL transactions \quad t \in D \DO
+        \BEGIN
+            \COMMENT{Candidates contained in t} \\
+            C_{t} \GETS subset(C_{k}, t)\\
+            \FORALL candidates \quad c \in C_{t} \DO
+            \BEGIN
+                c.count++\\
+            \END\\
+        \END\\
+        L_{k} \GETS \{c \in C_{k} \mid c.count \geq minsup\}
+	\END\\
+	\\
+
+    \RETURN \bigcup_{k}L_{k}
+\end{pseudocode}
+
+\begin{pseudocode}{Apriori Candidate Generator 1}{L_{k-1}-itemsets}
+\label{pc:apriori_candidate_generator1}
+\text{ {\bf insert into}} \quad C_{k}\\
+\text{ {\bf select}} \quad p.item_{1},\ldots,p.item_{k-1},q.item_{k-1}\\
+\text{ {\bf from}} \quad L_{k-1} \quad p,L_{k-1} \quad q\\
+\text{ {\bf where}} \quad p.item_{1},\ldots,p.item_{k-2} = q.item_{k-2}, 
+p.item_{k-1} < q.item_{k-1}\\
+\COMMENT{Last condition is for ensuring no duplicates}
+\end{pseudocode}
+
+
+\begin{pseudocode}{Apriori Candidate Generator 2}{L_{k-1}-itemsets, C_{k}}
+\label{pc:apriori_candidate_generator2}
+    \FORALL itemsets \quad c \in C_{k} \DO
+    \BEGIN
+        \FORALL (k-1)-subsets \quad s \in c \DO
+        \BEGIN
+            \IF s \not\in  L_{k-1} \THEN
+                delete \quad c \quad from \quad C_{k}\\
+        \END
+    \END
+\end{pseudocode}
+
+%Names used to be so descriptive and therefore can explain quite a lot about the
+%reality of the entity. Apriori meaning (by oxford dictonary) is {\it “using facts or
+%principles that are known to be true in order to decide what the probable
+%effects or results of something will be [\dots]”}. In this case, the name comes
+%from the generation-and-test technique. A priori, all candidates formed by
+%(k-1)-itemsets combinations are k-itemsets but it have to be tested.
+
+\section{Projection-based pattern growth
+algorithms}\label{ss:projection_based}
+
+Candidates generation presents to be critical for apriori algorithms and even if
+optimizations in the prune process has been introduced, the generated candidates
+follows an exponential grow. For example for detect a maximal sequence of 100
+elements, $2^{100} \approx 10^{30}$ candidates will be generated. The next
+problem is that for every step, data needs to be revisited to check out whether 
+new candidates are large itemsets or not. 
+
+Pattern growth paradigm presented in \cite{han2000mining1} remove
+completelly the necessity of candidates generation. They achieve improvements on
+performance for about one order of magnitude respect Apriori-like algorithms
+explained on previous section by adding two key concepts. 
+\begin{enumerate*}[label=(\roman*)]
+  \item Frequent pattern tree or FP-tree for short
+  \item and FP-tree based pattern mining called FP-growth.
+\end{enumerate*}
+Following, this two concepts are explained in more detail.
+
+\subsection{Frequent pattern tree}\label{ss:frequent_pattern_tree}
+
+The following observations can be used for introduce FP-trees and have been used
+for its construction. This structure dramatically decrease the size of data to be 
+scanned but maintains all the need information for the mining.
+
+\begin{enumerate}[label=\roman*)]
+  \item One important rule learned from apriori approach is that frequent
+    $(k+1) itemsets$ only can be done from frequent $(k) itemsets$. This observacion
+    leads to the idea of just taking into account frequent $(1) itemsets$ given a
+    minimum support.
+  \item These discovered frequent intemsets could be stored in some compact
+    structure, avoiding repeatedly scanning the DB.
+  \item Continuing with the idea of compacting important data, it can be said
+    that identical frequent itemsets from different transactions can be merged
+    into one with information about number of occurrences.
+  \item And for these partially identical frequent itemsets, shared prefixes can
+    be merged as well.
+\end{enumerate}
+
+For improve understandability lets drive a construction of an FP-tree following an
+example. Imagine we have a database with several transactions like the depicted
+in figure \ref{fig:fp_tree_db} (left hand side column). The process ends up with
+Fp-tree in figure \ref{fig:fp_tree_constructed}. Lets see how it happens. 
+
+First scan of database derives a list of frequent items, i.e. these 1-itemsets 
+above the minimum support value (3 for this example) that is $\langle
+(f:4),(c:4),(a:3),(b:3),(m:3),(p:3) \rangle$. Note the frequent items in every
+transaction are on right hand side column in figure \ref{fig:fp_tree_db}. The
+frequent itemsets here are not sorted by appearance in transaction but by
+frequence. This sorting will allows more compression on FP-tree construction. The 
+second scan is done over these frequent 1-itemsets and drives the
+FP-tree construction. First transaction leads to the construction of the first
+branch (left hand side). Next transaction shares the three first items, so
+it can be partially merged with first branch. The merge process is just about
+update the counters and make the new relations. Same process for all
+transactions. Additionally to the pure tree construction, header table structure 
+is done for ease the task of traverse all possible frequent patterns that 
+contains a given item. 
+
+\begin{figure}
+  \centering
+  \includegraphics[width=250px]{fp_tree_db}
+  \caption{A transaction database as running example}
+  \label{fig:fp_tree_db}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=200px]{fp_tree_constructed}
+  \caption{The FP-tree}
+  \label{fig:fp_tree_constructed}
+\end{figure}
+
+\subsection{Mining FP-trees}
+
+FP-growth algorithm is the responsible to find out the
+frequent patterns by analyzing the FP-tree. The mining starts with 1-itemset
+analysis. Thanks to the header table all paths for a given item $a_{i}$ can be get
+easily. Once all paths, where the given item is involved on, are retrieved a new 
+subtree is build up. Remember that in this process all items below minimum support 
+are pruned. Unlike before now only these retrieved items are taken into account 
+for the counting. This new structure is named $a_{i}$ conditional pattern base,
+i.e. the sub-pattern base under the condition of $a_{i}$ existence. Next step is
+to call mining function recursively having on every recursive call a large
+conditional pattern base, so it is growing. It can be better understood by means
+of an example. Lets follow the previous one.
+
+Starting from the bottom of the header table, lets mine FP-tree for the $p$ item. Two
+paths arise: $\langle f:4,c:3,a:3,m:2,p:2 \rangle$ and $\langle c:1, b:1, p:1
+\rangle$ (being the number after ``:'' the occurrences). Note that even if $f$
+appears 4 times, only 2 of them appears with $p$, so the path becomes $\langle 
+f:2,c:2,a:2,m:2,p:2 \rangle$. Similarly with second path. Moving on, the
+construction of the $p$ conditional pattern base is done by counting and pruning
+these items below minumum support (3 for the example), so the only branch for the new FP-tree is
+$(c:3)$. Hence only one frequent pattern is derived, i.e. $(cp:3)$. From now to
+the end, $p$ does not need to be taken into account any more, this is because
+all possible patterns containing $p$ has been already analyzed. Similarly we can proceed analyzing paths containing $m$ item. Two paths arise: 
+$\langle f:2,c:2,a:2,m:2 \rangle$ and $\langle f:1,c:1,a:1,b:1,m:1 \rangle$. The
+new conditional FP-tree just contains the path $\langle f:3,c:3,a:3 \rangle$.
+For show how the pattern is growing, lets see in a deph-first way what
+recursive calls are done:
+\begin{enumerate*}[label=(\roman*)]
+  \item mine($\langle f:3,c:3,a:3 \rangle \text{\textbar} m$)
+  \item mine($\langle f:3,c:3 \rangle \text{\textbar} am$)
+  \item mine($\langle f:3 \rangle \text{\textbar} cam$)
+\end{enumerate*}
+The frequent pattern derived from this analysis is $(fcam:3)$.
+
+\section{Temporal sequences}\label{ss:temporal_sequences}
+
+In this section will be shown the basis of these algorithms that concern about
+the periodicity of a certain patterns over the time (generalizing, over any
+metric from which the sorting is done). These are obviously the
+algorithms that best fits to the needs for trace structure detection. First
+developed framework for datasets considered to be episodic was presented by
+\cite{mannila1995discovering}.
+
+Two previous approaches were concerning about the analysis of arbitrary ordered
+sequences of data, however, this approach considers order as an inherent
+characteristic of the sequential structure. This main difference leads to a
+slightly different approach of sequential pattern mining and introduce new ideas 
+like sliding windows. Nevertheless some important components are shared among 
+them like:
+\begin{enumerate*}[label=(\roman*)]
+  \item Frequency threshold, that is defined as the minimum number of times a
+    sequence have to appear. It is analogous to minimum support of apriori and
+    pattern-growth algorithms.
+  \item Relies on generate-and-test paradigm to discover frequent sequences. It
+    is same approach like apriori-like algorithms.
+  \item Finally also takes profit from the principle of: all subepisodes are at
+    least as frequent as the superepisode, for candidates generation.
+\end{enumerate*}
+
+The main objective of these sort of algorithms is: Given a class of episodes, an
+input sequence of events, a window width, and a frequency threshold, find all
+episodes of the class that occur frequently enough. Before going to the actual 
+algorithm let's take a look to the main concepts.
+
+\subsection{Temporal sequences formal notation}
+
+On section \ref{ss:formal_notation} have been shown the typical formal notation
+for pattern mining, now this notation is extended for explaining the new
+concepts that arise from the temporal sequences minning.
+
+Given a class of elementary event types $E_{0}$, an event is a pair $(e,t)$
+where $e \in E_{0}$ and $t$ is an integer that represents the instant when
+the event appears. An event sequence is a triple $S=(T_{s},T^{s},S)$ where
+$T_{s}$ is the starting time, $T^{s}$ is the closing time and $S$ is an ordered
+sequence of events.
+
+A windows on $S=(T_{s},T^{s},S)$ is a sequence of events $W=(T_{w},T^{w},W')$
+where $T_{s} \leq T_{w}$,$T^{w} \leq T^{s}$ and $W'$ consists on those events
+$(e_{i},t_{i})$ where $T_{w} \leq t_{i} < T^{w}$. The width of windows is
+$width(W)=T^{w}-T_{w}=w$ and the set of all windows in a sequence S is
+$aw(S,w)$. Episodes are collections of events occurring frequently 
+close to each other, in
+general, are partially ordered sets of events that can be described as a
+directed acyclic graph. Are denoted as $\varphi =(V,\le,g)$ where V is a set of
+nodes, a partial order $\le$ on V and a function $g:V \rightarrow E_{0}$
+associating each node with an event type. In general V also can contain other
+episodes forming composite episodes. Episodes can be parallel or sequential.
+Is parallel when the partial order relation is trivial and an episode is
+sequential if the partial order relation is a total order. The crucial
+observation is that all episodes can be described as a composition of parallel
+and sequential episodes. Last definition is the episode frequency that 
+is described as the ratio between the number of windows containing a given 
+episode and the total number of windows:
+$$
+fr(\varphi,S,w)=\frac{|\text{\{}W \in aw(S,w) | \varphi \text{ occurs in }
+W\text{\}}|}{|aw(S,w)|}
+$$
+So an episode is said to be frequent if $fr(\varphi,S,w)$ is above $min\text{\_}freq$
+that is provided by the user.
+
+\subsection{Algorithm}
+
+First step is to find out all frequent episodes in the given sequence, given a
+class of episodes and a frequency threshold. This part is just like apriori
+algorithm. The basis of the algorithm presented here is shared with the already 
+presented in section \ref{ss:apriori_based} in the sense that they are based on an
+iterative process that consists on an alternation between building candidates 
+and recognize frequent episodes by scanning the input data. There is a detail
+here that makes this phase potentially outperform the naive Apriori-like
+algorithm. Now we are working with windows, and we consider just patterns than
+fits on windows so there is a non-sense to try to get $k-itemsets$ having $k >
+w$ so the search space is pruned by the windows size. Once all frequent 
+episodes are taken then the second step is about recognizing episodes in 
+sequences. The entire sequence is traversed by a sliding windows and for every one of these windows the analysis looking for episodes is done. 
+Different methods are used for the detection. 
+\begin{enumerate}[label=\roman*)]
+  \item Parallel episodes: For candidate parallel episode there is a counter
+    that indicates how many events of episode appears into the windows. If the
+    counter is equal to $|\varphi|$ the index of windows is saved because it
+    indicates, the episode has been detected. When the counter is decremented
+    it means that we can add one more windows where this episode is.
+  \item Serial episodes: Serial candidate episodes are recognized by using state
+    automata. A new instance of the automata is initialized whenever first event
+    of episode appears on the sliding windows. This automata reach the accepting
+    state when all events are present (and have been arising following a certain
+    order) and is deactivated when the first element
+    that motivates its activation leaves the window. When an automata is removed
+    and there is no other automata for this episode, the number of occurrences
+    is incremented.
+\end{enumerate}
+
+Instead of applying a naïve approach where every windows is scanned
+completely, episodes are recognized in sequences in an incremental fashion. 
+Two adjacent windows are typically very similar so after
+recognizing episodes in a windows, incremental updates in data structures can be
+done for the next one.
+
+Like previous algorithms, the exposed above is just he basic idea and more
+research has drive to better algorithms but maintaining this fundamental idea.
+Important to mention the Projected Window List presented in
+\cite{huang2004prowl} that it use a sort of pattern-growth fashion for temporal
+sequences mining for avoid candidate generation.
+
+
 \chapter{Automatic code instrumentation}\label{ann:automatic_code_instr}
 
 Loops characterization and validation phases of this thesis motivates the development
