@@ -258,10 +258,10 @@ in trace are the detected phases.
 \subsubsection{Dimemas}
 
 Like the other tools Dimemas also have a so descriptive name, it means (in
-spanish) ``tell me more'' but is fine to use the acronim that is ``DIstributed
+spanish) ``tell me more'' but is fine to use the acronym that is ``DIstributed
 MEmory MAchine Simulator''. It is a high-abstracted trace-driven MPI simulator
 perfect to perform the called ``what if'' experiments. It is capable to simulate
-the interconection network of a distributed memory machine by means of a high
+the interconnection network of a distributed memory machine by means of a high
 abstracted model that consists on three fundamental parameters:
 \begin{enumerate*}[label=\roman*)]
   \item Latency (s) that models the actual latency of the network and also the
@@ -278,16 +278,18 @@ conversion by {\tt prv2dim} converter that generates a dimemas trace, a
 different trace format that ease simulation.
 As an output it builds up a
 new Paraver trace that can be analyzed as the original. Only communication times 
-are simulated through the Dimemas models so CPU times
-remain the same on the output tracefile. Even if it is a minor detail, since it
-is important to introduce because the usefulness of it for the purposses of this
-thesis, actually there is a mechanism to modify CPU burst times. At parsing time
-(done by the {\tt prv2dim}) a hardware counter and a coeficient to multiply 
-for this it can be specified. Normally the hardware counter is the number of 
-cycles and the coeficient is the cycle time. By this way the user is able to 
+are simulated through the Dimemas models. Also provides a naive way to model CPU
+burst by means of a coefficient that can be applied to their duration.
+Additionally ``modules'' can be defined that are segments of the execution where
+different coefficients can be applied. Even if it is a minor detail, since it
+is important to introduce because its usefulness for this thesis purposes,
+there is an additional mechanism to modify CPU burst times. At parsing time
+a hardware counter and a coefficient to multiply 
+for, can be specified. Normally the hardware counter is the number of 
+cycles and the coefficient is the cycle time. By this way the user is able to 
 remove the possible O.S. noise that has affected the original
-execution\footnote{Noise intruced by O.S. can be detected in Paraver by a fall 
-  of the frecuency. This is becuse cycles counter forms part of the context of
+execution\footnote{Noise introduced by O.S. can be detected in Paraver by a fall 
+  of the frequency. This is because cycles counter forms part of the context of
   every process but not the time so whenever a process loss CPU, cycles will not
   be counted until return to execution but time is not stopped although. This
   phenomena implies an increment on the traced cycle time. Take into account
@@ -295,7 +297,7 @@ execution\footnote{Noise intruced by O.S. can be detected in Paraver by a fall
   any other source like DVFS so it works only when we can assume the frequency
 of the processor is quite stable.}.
 
-Can be considered that Dimemas is completely orthogonal to this thesis objetives
+Can be considered that Dimemas is completely orthogonal to this thesis objectives
 but have been considered interesting to introduce it since in some situations a
 Dimemas simulation will be needed in order to remove noise from trace since
 noise affects quite enough to the proposed methodology because it rely on some
@@ -312,7 +314,7 @@ Memory, Distributed Shared Memory or the ACOTES project, just to name a few.
 
 In this thesis it is an important piece since it has been used both for loops
 characterization (explained in section \ref{ss:loops_characterzation}) and for
-validation phases (explained in section \ref{}). The reason of use for the former point
+validation phases (explained in section \ref{s:validation}). The reason of use for the former point
 is that there were the need of gather information at iterations level and link them
 unambiguously to a given loop. This information was impossible to take by means of
 typical {\tt LD\_PRELOAD} mechanism so the alternative was to instrument user code and
@@ -343,7 +345,7 @@ possibilities the analysis tools provides.
 
 \begin{figure}[]
   \centering
-  \includegraphics[width=150px]{performance_analysis_diagram.png}
+  \includegraphics[width=150px]{diagram/performance_analysis_diagram.png}
   \caption{Performance analysis workflow}
   \label{fig:perf_analysis_workflow}
 \end{figure}

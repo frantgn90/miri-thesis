@@ -506,14 +506,15 @@ phase, i.e. the clustering. This phase performs two actions,
 \end{enumerate*}
 
 About the former, the reduction consists on collapse all the same MPI calls that
-are sparsed among all the time axis. Very inspired on \cite{noeth2009scalatrace} two MPI calls
+are sparsed among all the time axis. Very inspired on \cite{noeth2009scalatrace}
+two MPI calls
 results to be equal if and only if have the same signature. In our case the
 signature is defined by the entire callstack, i.e. a sequence of pairs 
 $(file, line)$ that unambiguously will define the dynamic position in code of a
 given MPI call. Additionally contains the rank-id.
 
 We can define $T$ as the sequence of mpi calls ordered by time and $|T|$ the 
-total number of mpi calls that is function of the size of the input trace. 
+total number of mpi calls that is strongly related with the size of the input trace. 
 Now, $c \in T$ is an MPI call being $t(c)$ the entry instant on this call and 
 $signature(c)$ its signature. Having 
 $\Omega$ the set of reduced $c$, then $r:T\rightarrow\Omega$ is the reduction 
@@ -526,14 +527,14 @@ being $T(\omega)$ an ordered list of times. Additionally elements in $T$ could
 have some features $\lambda \in \Lambda$ attached that becomes to ordered list 
 on $\Omega$ space similar to $T(\omega)$. 
 
-Once the reduction is finnished next step is to perform the aggregation and
+Once the reduction is finished next step is to perform the aggregation and
 derivation. Aggregation consists on aggregate the features
-belonging to those sparsed calls, generally the aritmetic mean on for example
+belonging to those scattered calls, generally the arithmetic mean on for example
 the size of the messages, duration of the call and so on. Derivation 
 consist on extract these needed information that is not
 explicit in trace so needs some sort of calculation. On previous sections 
 it has been introduced that number of iterations and
-iteration mean time among others iteration level information are good fetures 
+iteration mean time among others iteration level information are good features 
 to classify for loops. On production traces there is no any information about
 loops and iterations boundaries so this information should be gathered from a
 different source. For sure, this source are the MPI calls, as also has been previously
@@ -646,7 +647,7 @@ events.
 \end{pseudocode}
 
 This algorithm presents a linear time complexity (all search in sets are
-constant since they have been implemented as hashmaps) $\Theta(|Sigma|)$ that is
+constant since they have been implemented with hashmaps) $\Theta(|\Sigma|)$ that is
 basically with the size of the tracefile. Only this serial version have been
 developed but there is a lot of space for improvement since the characteristics
 of this problem allows to face it with parallel codes. Trace could be split into
@@ -654,11 +655,299 @@ several files and perform an algorithm similar to the proposed on every one of
 the partitions, once done a reduction among the different results should be
 done. Some considerations would be taken into account like for example the
 position to do the splits or if it would be need all the communications in a
-single file instead of spreaded among all of them. Because time restrictions
+single file instead of scattered among all of them. Because time restrictions
 have been decided to move this sort of considerations to future work.
+
+Reduction step is the key point for 
+the scalability of the methodology since $|T| >> |\Omega|$ because the executions 
+used to present a lot of repetitions so in next step, the clustering is done over a very 
+reduced version of the input trace. 
 
 \subsection{Loops clustering}
 
-\subsection{Loops merge}
+This is the key step of the this thesis proposal because the quality of the
+output will directly depend on the quality of the clustering. As has been introduced
+before, the goal is to cluster all elements in $\Omega$ into groups that will be
+considered the loops. There have been a previous discussion about what features
+to use in section \ref{ss:loops_characterzation} so this is not going to be
+discussed again, in fact this phase is enough general to use any set of
+features so the intention is being improving the model whenever new and better
+features will be found for this clustering purposes. Two main trends on 
+clustering algorithms have been considered \cite{rokach2005clustering}
+\begin{enumerate*}[label=\roman*)]
+  \item partitioning
+  \item and density-based algorithms.
+\end{enumerate*} 
+
+About the former, partitioning methods relocate instances by moving them from
+one cluster to another starting from an initial partitioning.
+One of the most common criteria for this relocation is the sum of square error
+(SSE), defined by the euclidean distances between every instance and the center
+of its cluster, that is trying to be minimized. SSE may be globally optimized by 
+exhaustively enumerating all partitions, which is very time-consuming, 
+or by giving an approximate solution using heuristics what is the most used
+solution. The most commonly used algorithm following this method is the 
+well-known K-means algorithm. Its complexity is $O(T*K*m*N)$ being $T$ number of
+iterations of the algorithm, $K$ number of clusters, $m$ number of instances, so
+$|\Omega|$, and $N$ number of features per instance. This algorithm is quite attractive because
+its linear complexity but have an important drawback, it needs the number of
+clusters $K$ in advance that is not trivial when no prior knowledge is
+available.
+
+About the last Density-based methods assume that the points that belongs to
+each cluster are
+drawn from a specific probability distribution. The overall distribution of data
+is assumed to be a mixture of several distributions. This methods are designed
+for discovering clusters of arbitrary shape. The idea is to continue growing the
+given cluster as long as the density in the neighborhood exceeds some threshold,
+namely, the neighborhood of a given radius has to contain at least a minimum
+number of objects. A particular algorithm that follows these ideas is the
+Density-based scan that discovers clusters of arbitrary shapes and is efficient
+for large spatial databases. The advantage respect K-means is that it does not
+need the previous specification of the number of clusters but needs other two
+parameters:
+\begin{enumerate*}[label=\roman*)]
+  \item $eps$ that is the radius distance needed to consider one instance neighbor
+    or not 
+  \item and $minPts$ that is the minimum number of points required to form a dense
+    region.
+\end{enumerate*}
+Its complexity is in the general case $\theta(nlog(n))$ with number of instances
+even if it can degrade to $O(n^{2})$ when bad decision on the $eps$ parameter
+value that could end up retrieving all instances when looking for neighbors for
+every instance scan.
+
+DBSCAN seems to be the most suitable algorithm for this step because two main
+reasons:
+\begin{enumerate}[label=\roman*)]
+  \item The number of clusters can not be a-priori known, so K-means should be
+    discarded for this step.
+  \item Iteration-level features follows, presumably, Gaussian distribution
+    because the stable executions, what it means is that for example in case of
+    iteration mean duration, is natural to think  that it will slightly differ
+    when it is measured from one MPI call point of view or from other,
+    so a certain variation should be assumed. It fulfills with the assumption 
+    of ``each cluster are drawn from a specific
+    probability distribution''.
+\end{enumerate}
+
+Fixing DBSCAN algorithm as the algorithm to be used, the next discussion is
+about how to set up the two parameters that it needs in order to end up with
+optimal results. About the $minPts$ it allows to set when to decide whether an
+accumulation of instances is considered as a cluster or not, it is a threshold
+that says how many points as minimum a cluster must have. In our case, every one
+of the points are mpi calls, what it means is that discarding any of them we are
+loosing information about the application structure so no one should be
+discarded. Imagine a loop where there is a single mpi call, if $minPts$ is above
+1, it will be discarded and it will not be shown to the user. In conclusion:
+$minPts=1$. In the case of $eps$ is not as easy. It has been set to a value that
+empirically have demonstrated is working well for the majority of the cases. 
+They key point here is that all data in all dimensions of the clustering have been 
+previously normalized, so $eps$ is about relative distances between instances
+instead of absolute.
+
+We can define the clustering function as $c : \Omega \rightarrow \Upsilon$ such
+that $\forall \omega \in \Omega \medspace \exists \upsilon \in \Upsilon :
+c(\omega) = \upsilon$. Being $\Upsilon$ the loops set. $|\Upsilon|$ is upper
+bounded by $|\Omega|$ because in the worst case every loop will have just one
+mpi call, but the general case is $|\Omega| > |\Upsilon|$ so it is also
+contributing to decrease the complexity of the next phase that is the loops
+merge. Additionally, on section \ref{ss:loops_merge} there is explained the 
+mechanism to even reduce more the complexity of this clustering by filtering
+the less representative loops.
+
+\subsection{Loops merge}\label{ss:loops_merge}
+
+Since now we were concerned about what loops do we have on the trace, that are
+indeed pieces of the overall puzzle of the structure of the application but not
+the structure by itself. This next to last step is about rearrange these pieces 
+in a way that actual structure of the application emerge explaining the 
+hierarchical relations between the different loops. 
+
+One loop have a relationship of subloop with other one, when the first lies in
+the body of the second. Having $a,b \in \Upsilon$ $a$ is subloop of $b$ is 
+represented as $a \mapsto b$ and fulfills 
+$$
+\forall a,b \in \Upsilon, c \in \mathbb{N} : a \mapsto b \Rightarrow it(a) = c*it(b), c > 1 \land 
+imt(a) < imt(b)
+$$
+being $it(\upsilon)$ the number of iterations and $imt(\upsilon)$ the iteration
+mean time in the general case. When this relation is done, we talk about merging
+$a$ to $b$. Note that this is not a double implication and
+this is because we can have two loops fulfilling these conditions but belonging
+to different phases of the execution, so without any relationship among them. 
+What empirically we have seen is that most applications use to have an 
+initialization phase, a body, where the actual application is working and 
+sometimes a finalization phase. One mechanism to differentiate them is looking
+at loops time boundaries. Additionally since the body is always larger than the
+other phases (assuming large enough input sizes) another the mechanism to 
+differentiate them is to check out how many time of the application every loop
+can explain. 
+
+A naive first algorithm was to sort all loops by number of iterations in a
+descending fashion. Then get the first loop in the list an try to merge with the
+next, if not possible, try with the other one. Note that this algorithm have a
+complexity in the worst case of $O(\frac{n^{2}+n}{2}) \approx O(n^{2})$ with
+$|\Upsilon|$. In order to improve it we decided to shrink the search space by
+classify loops by how many time of the application can explain, it is a way to
+classify loops by phase. The feature has been named $\delta$ and is defined as
+$$
+\delta(\upsilon)=\frac{it(\upsilon)*imt(\upsilon)}{T_{exe}}
+$$
+
+So a new DBSCAN is performed over the set of loops and every one of the clusters
+are the different phases of the execution, so now, the search space for every
+loop is just among loops that forms part of the same phase. The same algorithm
+is now executed on every phase.
+
+This concept of different phases can be better understood from a geometrical
+point of view. Having the program depicted in pseudocode
+\ref{pc:delta_classification_example} if we plot the
+already reduced mpi calls in dimensions number of iterations vs. iteration mean
+time we will have the plot in figure \ref{fig:delta_classification_1}.
+
+\begin{multicols}{2}
+  \begin{pseudocode}{Delta example}{ }
+  \label{pc:delta_classification_example}
+      \COMMENT{Short initialization}\\
+      \FOR 1 \text{ to } 10 \DO 
+      \BEGIN 
+        \FOR 1 \text{ to } 2 \DO
+        \BEGIN 
+          \FOR 1 \text{ to } 2 \DO
+          \BEGIN 
+              someComms() \\
+          \END \\
+          \text{MPI\_Call} \\
+        \END \\
+        \text{MPI\_Call} \\
+      \END \\
+      
+      \COMMENT{Body of execution}\\
+      \FOR 1 \text{ to } 100 \DO
+      \BEGIN 
+        \FOR 1 \text{ to } 2 \DO
+        \BEGIN 
+          \FOR 1 \text{ to } 2 \DO
+          \BEGIN 
+              someComms()\\
+          \END \\
+          \text{MPI\_Call} \\
+        \END \\
+        \text{MPI\_Call} \\
+      \END \\
+  \end{pseudocode}
+  \columnbreak
+  \vfill \null
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{delta_clustering_test_1}
+    \caption{Geometrical representation of delta classification}
+    \label{fig:delta_classification_1}
+  \end{figure}
+  \vfill \null
+\end{multicols}
+
+As you can see on figure above, six loops have been detected (this clustering is
+related with the previous step not with this last explained delta clustering) 
+and classified into two delta groups. The two groups are depicted by these two,
+black and yellow curves. So one cluster belongs to one delta if it lies over 
+the curve. These curves are described by the function:
+$$
+f(x)=\frac{\delta*T_{exe}}{x} \text{ being }  0 < \delta \leq 1
+$$
+
+Value of $\delta$ is always upper bounder per $1$. It is obvious since one loop
+can not have been executed during more time that the entire application time.
+Also is lower bounded by zero because if one loop duration is 0 obviously is
+would mean it has not been executed. 
+
+Additionally for simplify the loops merging, delta also can be used for
+filtering low representative loops. This functionality can be applied even
+just after the construction of the $\Omega$ set (reduction step) since at that
+point we already have the enough information for calculate $\delta$. Normally,
+the lower bound value is set to $0,1$ i.e. It is filtering all loops that
+represents less than the 10\% of the overall execution.
+
+On pseudocode \ref{pc:loops_merge_step} there is the actual implementation of
+this step. At the very beginning it can be seen how the grouping of the
+different loops by deltas is performed, now $\delta$ are subsets of
+$\Upsilon$, being $\Delta$ the set of all $\delta$.
+
+\begin{pseudocode}{Loops merge step}{\Upsilon}
+\label{pc:loops_merge_step}
+    \Delta \GETS deltaClassification(\Upsilon) \\
+    \FORALL \delta \in \Delta \DO 
+    \BEGIN
+        \COMMENT{Sort by it($\upsilon$) desc} \\
+        sort(\upsilon \in \delta) \\
+        \FOR i \in [0, |\delta|-1) \DO
+        \BEGIN
+            \FOR j \in [i+1, |\delta|) \DO
+            \BEGIN
+              \IF isSubloop(\delta_{i}, \delta{j}) \THEN
+                  \delta_{i} \mapsto \delta{j} \\
+            \END
+        \END
+    \END
+\end{pseudocode}
+
+The key point of this
+algorithm is the $isSubloop$ function. Imagine that we have one set of three loops
+a, b and c with same $\delta$ with 100, 50 and 10 iterations respectively. 
+For sure all three are in a some way related between them but there are two options:
+\begin{enumerate*}[label=\roman*)]
+    \item $a \mapsto b \mapsto c$
+    \item or $a \mapsto c$ and $b \mapsto c$
+\end{enumerate*}. You can see the same example where the second option is the
+correct on pseudocode
+\ref{pc:delta_classification_example_2} and figure
+\ref{fig:delta_classification_2}.
+
+\begin{multicols}{2}
+  \begin{pseudocode}{Delta example 2}{ }
+  \label{pc:delta_classification_example_2}
+      \FOR 1 \text{ to } 10 \DO 
+      \BEGIN 
+        \FOR 1 \text{ to } 5 \DO
+        \BEGIN 
+            someComms() \\
+        \END \\
+        \FOR 1 \text{ to } 10 \DO
+        \BEGIN 
+            someComms()\\
+        \END \\
+        \text{MPI\_Call} \\
+      \END \\
+  \end{pseudocode}
+  \columnbreak
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{delta_clustering_test_2}
+    \caption{Clustering of delta example 2}
+    \label{fig:delta_classification_2}
+  \end{figure}
+\end{multicols}
+
+In pseudocode \ref{pc:issubloop_function} it can be seen the $isSubloop$ implemented
+algorithm.
+
+\begin{pseudocode}{IsSubloop function}{a,b}
+\label{pc:issubloop_function}
+    \Delta \GETS deltaClassification(\Upsilon) \\
+    \FORALL \delta \in \Delta \DO 
+    \BEGIN
+        \COMMENT{Sort by it($\upsilon$) desc} \\
+        sort(\upsilon \in \delta) \\
+        \FOR i \in [0, |\delta|-1) \DO
+        \BEGIN
+            \FOR j \in [i+1, |\delta|) \DO
+            \BEGIN
+              \IF isSubloop(\delta_{i}, \delta{j}) \THEN
+                  \delta_{i} \mapsto \delta{j} \\
+            \END
+        \END
+    \END
+\end{pseudocode}
 
 \subsection{Pseudo-code construction}
