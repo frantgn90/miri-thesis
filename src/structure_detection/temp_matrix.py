@@ -30,9 +30,8 @@ class tmatrix(object):
         #visible = ""
         #for cs,tt in zip(scallstacks,sorted_matrix):
         #    times = str(list(map(lambda x: 'X' if x != 0 else '0', tt)))
-        #    visible += "{0}:>15 {1}\n".format(cs, times)
+        #    visible += "{0:>50} {1}\n".format(str(cs), times)
         #print (visible)
-        #exit(0)
         return cls(sorted_matrix, scallstacks, transformations)
 
     def is_hidden_superloop(self):
@@ -170,9 +169,6 @@ class tmatrix(object):
 
     def __submatrix(self, mat):
             subm=[]
-
-            min_v=float("inf")
-            min_h=float("inf")
             
             for i in range(len(self._matrix)):
                 for j in range(len(self._matrix[0])):
@@ -187,7 +183,8 @@ class tmatrix(object):
                     if not already_explored and self._matrix[i][j] != 0:
                         # Void cell
                         v=h=0
-
+                        min_v=float("inf")
+                        min_h=float("inf")
                         # Horitzontal min
                         for ii in range(i, len(self._matrix)):
                             if self._matrix[ii][j] == 0: break
