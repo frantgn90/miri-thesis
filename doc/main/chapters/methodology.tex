@@ -767,10 +767,11 @@ hierarchical relations between the different loops.
 One loop have a relationship of subloop with other one, when the first lies in
 the body of the second. Having $a,b \in \Upsilon$ $a$ is subloop of $b$ is 
 represented as $a \mapsto b$ and fulfills 
-$$
-\forall a,b \in \Upsilon, c \in \mathbb{N} : a \mapsto b \Rightarrow it(a) = c*it(b), c > 1 \land 
+\begin{equation}
+  \label{eq:subloop_rel_imp}
+  \forall a,b \in \Upsilon, c \in \mathbb{N} : a \mapsto b \Rightarrow it(a) = c*it(b), c > 1 \land 
 imt(a) < imt(b)
-$$
+\end{equation}
 being $it(\upsilon)$ the number of iterations and $imt(\upsilon)$ the iteration
 mean time in the general case. When this relation is done, we talk about merging
 $a$ to $b$. Note that this is not a double implication and
@@ -930,24 +931,252 @@ correct on pseudocode
 \end{multicols}
 
 In pseudocode \ref{pc:issubloop_function} it can be seen the $isSubloop$ implemented
-algorithm.
+algorithm. What it does is considering the first mpi call of the target loop
+($b$) as the boundaries of its iterations and same think for evaluated loop
+($a$). Then the procedure is quite simple, it basically consists in counting how
+many iterations of $a$ lies in one iteration of $b$. If any, then $a
+\mapsto b$. In the worst case, when $a$ is not subloop of $b$ the
+complexity is linear with number of iterations of $b$. Note that the
+implications defined in \ref{eq:subloop_rel_imp} are already fulfilled because
+the \ref{pc:loops_merge_step} algorithm. Number of iterations of $a$ is greater
+than $b$
+because the sorting of loops and iteration mean time is lower because both
+belongs to the same $\delta$, it means that $it(a)*imt(a) = it(b)*imt(b)$ so $it(a)
+> it(b) \Rightarrow imt(a) < imt(b)$
 
 \begin{pseudocode}{IsSubloop function}{a,b}
 \label{pc:issubloop_function}
-    \Delta \GETS deltaClassification(\Upsilon) \\
-    \FORALL \delta \in \Delta \DO 
+    itBounds \GETS T(firstCall(b)) \\
+    subIts \GETS T(firstCall(a)) \\
+
+    \IF subIts_{0} < itBounds_{0} \THEN
+        itBounds \GETS \{0\} \cup itBouds \\
+
+    \FOR i \in [0, |itBounds|-1) \DO
     \BEGIN
-        \COMMENT{Sort by it($\upsilon$) desc} \\
-        sort(\upsilon \in \delta) \\
-        \FOR i \in [0, |\delta|-1) \DO
+        lowBound \GETS itBounds_{i} \\
+        upBound \GETS itBounds_{i+1} \\
+
+        inIts \GETS \forall x \in inIts : lowBound < x < upBound \\
+        \IF |inIts| > 0 \THEN
+            \RETURN{True}
+    \END \\
+    \RETURN{False}
+\end{pseudocode}
+
+At the end of this step we already have defined all relations between the
+different loops so the actual structure of the application have emerged. 
+Internally every time a hierarchical relationship between two loops is found
+what the algorithm does is to move the loop from the $\delta$ set to literally
+inside the superloop, so at the end of the process on every $\delta \in \Delta$
+what we have are the top level loops, defined by:
+\begin{equation}
+    \label{eq:top_level_loops_de}
+    \forall a \in \delta, \nexists b \in \delta: a \mapsto b
+\end{equation}
+
+Next step is about representing this information in such a way is easily
+understandable to the analyst.
+
+\subsection{Inter-rank reduction}
+
+Until now mpi calls with same call path have been considered different if they 
+have been executed by different processes, in this step same call paths from 
+different processes are merged, allowing to rank conditional execution to
+emerge. The first step is to perform the inter-rank reduction, and once done,
+the consecutive calls and loops with same processes are grouped into conditional
+blocks, easing the later step of pseudo-code construction.
+
+In pseudocode \ref{pc:inter_rank_reduction} there is a description of how the
+inter-rank reduction is done. This function is called for every top level loops
+derived from the previous step. Assuming all items in the loop pased as
+parameter are ordered by call path, since same call path calls will be
+consecutive, the process of reducing is just about traverse the sequence of
+items and being collapsing same call path calls.
+
+Remember that call paths consists on a sequence of pairs $(line, file)$. The
+only way to order them is by the value of line, so what we do when comparing two
+call paths is going from the top stack level to the bottom until there is 
+a difference. Since it can be assumed two different branches are done from two 
+different lines, the stack level after the last common level will be on same 
+file, so here is where the sort takes place taking the line value.
+
+\begin{pseudocode}{Inter rank reduction}{topLevelLoop}
+\label{pc:inter_rank_reduction}
+    \COMMENT{Get set of mpi calls and subloops} \\
+    items \GETS items(topLevelLoop) \\
+    \FOR i \in [0, |topLevelLoop|) \DO
+    \BEGIN
+      \IF isLoop(items_{i}) \THEN
+        InterRankReduction(items_{i}) \\
+      \ELSE
+      \BEGIN
+        \FOR j \in [i+1, |topLevelLoop|) \DO
         \BEGIN
-            \FOR j \in [i+1, |\delta|) \DO
+          \IF isLoop(items_{j}) \THEN
+          \BEGIN
+            InterRankReduction(items_{j}) \\
+            break \\
+          \END
+          \ELSE
+          \BEGIN
+            \IF sameCallPath(item_{i}, item_{j}) \THEN
             \BEGIN
-              \IF isSubloop(\delta_{i}, \delta{j}) \THEN
-                  \delta_{i} \mapsto \delta{j} \\
+                reduce(item_{i}, item_{j}) \\
+                toremove(item_{j}) \\
             \END
+            \ELSE
+                break \\
+          \END
+        \END
+      \END
+    \END
+\end{pseudocode}
+
+The last step about group calls/loops into conditional blocks is a similar
+construction as before. It just travers all calls and group all consecutive
+calls/paths that are executed by the same set of processes. Every time a new
+call/loop presents to be executed by a different set of processes a new
+conditional block is built up.
+
+\subsection{Pseudo-code construction}
+
+The last step is about representation of the analysis. It is the interface with
+the user so is mandatory to provide a way to be as clear as possible. The
+information that we want to show is not just an static representation where the
+position in code is quite clear but not the order on time, neither just a
+temporal representation of the events but a mix of both. We want to show a
+temporal representation of events, so its dynamic aspect with clear information
+about its possition on code. Additionally we want to attach performance
+information for the transitions between mpi calls that are indeed the actual
+computation. The alternative that we have found have been represent the
+application structure by means of a pseudocode. A toy example is depicted 
+in figure \ref{fig:console_gui_example_1}.
+
+\begin{figure}[]
+  \centering
+  \includegraphics[width=\textwidth]{console_gui_example_1}
+  \caption{Console GUI example}
+  \label{fig:console_gui_example_1}
+\end{figure}
+
+In this example it can be seen that the output consists on 7 columns: 
+\begin{description}
+  \item \texttt{FILE} Indicates the file from the call of the same line have
+    been taken place.
+  \item \texttt{LINE} Indicates the precise position in \texttt{FILE} where the
+    call in same line have been taken place.
+  \item \texttt{PSEUDOCODE} The actual representation of the structure of the
+    application. Here you can see the loops and conditional structures when
+    there is a divergence among ranks executions. Additionally it can be seen
+    the call path taken for every mpi call. About mpi calls there is information
+    about partner ranks in the parenthesis.
+  \item \texttt{E(time)} Is the mean time in every mpi call.
+  \item \texttt{E(size)} Is the mean size of the messages sended/recieved for
+    every mpi call
+  \item \texttt{E(IPC)} Mean IPC both inside and outside mpi calls. In case of
+    figure \ref{fig:console_gui_example_1} there is not information about cpu
+    burst in between mpis, in next examples it will be shown.
+\end{description}
+
+Additionally an interactive shell have been developed, it allows you to perform
+actions like show the cpu burst metrics, filter them by a given thresshold,
+filter information by mpi rank, show up the clustering plot and even communicate
+with Paraver for show up a trace segment that corresponds to a given iteration
+of a given loop. 
+
+The process of transform the internal representation of the structure to the
+pseudocode is quite direct. First steps is about remove repetitive information
+by means of functions \texttt{extractCommonCallstacks} and
+\texttt{hideContiguousCallstacks}. The former is about remove the common
+callstack shared by all calls/subloops belonging to the same conditional block
+or loop. Even if it can remove most of the repetitive information, there are
+cases where there is still information that is repeated but not common to the
+whole block, for this cases the second function is the responsible to remove it.
+It is better to understand with an example. In pseudocode \ref{pc:beautify_1} is
+the original output with all call path information for all mpi call. After
+extract the common callstack, we have the scenario depicted in
+\ref{pc:beautify_2} where there still are repeated information. Finally after
+remove contiguous call path we have \ref{pc:beautify_3}.
+
+\begin{multicols}{3}
+\begin{pseudocode}{Orig.}{ }
+  \label{pc:beautify_1}
+  \FOR 1 \text{ to } N \DO
+  \BEGIN
+    a:1 \rightarrow b:1 \rightarrow mpi \\
+    a:1 \rightarrow b:1 \rightarrow mpi \\
+    a:1 \rightarrow b:2 \rightarrow mpi \\
+    a:1 \rightarrow b:2 \rightarrow mpi \\
+  \END
+\end{pseudocode}
+\columnbreak
+\begin{pseudocode}{Step 1}{ }
+  \label{pc:beautify_2}
+  a:1 \rightarrow \\
+  \FOR 1 \text{ to } N \DO
+  \BEGIN
+    b:1 \rightarrow mpi \\  
+    b:1 \rightarrow mpi \\
+    b:2 \rightarrow mpi \\
+    b:2 \rightarrow mpi \\
+  \END
+\end{pseudocode}
+\columnbreak
+\begin{pseudocode}{Step 2}{ }
+  \label{pc:beautify_3}
+  a:1 \rightarrow \\
+  \FOR 1 \text{ to } N \DO
+  \BEGIN
+    b:1 \\
+     \rightarrow mpi \\
+     \rightarrow mpi \\
+    b:2 \\
+     \rightarrow mpi \\
+     \rightarrow mpi \\
+  \END
+\end{pseudocode}
+\end{multicols}
+
+After remove repetitive information, next step is the parsing itself. We leave 
+from having a set of phases $\Delta$ that
+consists on a set of top level loops, these loops consists on a set of mpi calls 
+and other inner loops, so the point is to iterate over every delta, then over 
+every loop and finally over every mpi call as is depicted in pseudocodes 
+\ref{pc:pseudocode_construction} and \ref{pc:parse_loop_func}.
+
+\begin{pseudocode}{Pseudocode construction}{\Delta}
+\label{pc:pseudocode_construction}
+    \COMMENT{Sort the top level loops by code position.} \\
+    \Delta \GETS sort(\Delta) \\
+    \FORALL \delta \in \Delta \DO
+    \BEGIN
+        \FORALL \upsilon \in \delta \DO
+        \BEGIN
+          extractCommonCallstacks(\upsilon) \\
+          hideContiguousCallstacks(\upsilon) \\
+        \END
+    \END \\
+    \\
+    \FORALL \delta \in \Delta \DO
+    \BEGIN
+        \FORALL \upsilon \in \delta \DO
+        \BEGIN
+            parseLoopr(\upsilon) \\
         \END
     \END
 \end{pseudocode}
 
-\subsection{Pseudo-code construction}
+\begin{pseudocode}{ParseLoopr}{loop}
+\label{pc:parse_loop_func}
+    \COMMENT{Sort calls and inner loops by code position} \\
+    loop \GETS sort(loop) \\
+
+    \FORALL item \in loop \DO
+    \BEGIN
+        \IF item \in \Upsilon \THEN
+            parseLoopr(item)
+        \ELSE
+            togui(item)
+    \END
+\end{pseudocode}
