@@ -1,15 +1,10 @@
 
 \chapter{Scalable structure detection}
 
-On the previous studies and the proposed methodology
+On proposed methodology and further studies
 
-\section{Previous studies}
-
-Before entering to the description of the actual tool development, in this 
-section it is going to be explained the previous studies that have been done and
-have driven to the taken decisions.
-
-\subsection{Application structure by classification}
+\section{Application structure by
+classification}\label{s:app_structire_by_classification}
 
 Taking into account the motivations, exposed in \ref{s:motivations}, and the
 previous works studied and discussed in \ref{related_work} the idea to introduce
@@ -43,18 +38,6 @@ HPC applications are strongly repetitive over the time, so the number of unique
 MPI calls to cluster remains about constant despite the growth of the execution
 time, additionally clustering algorithm such that K-means presents an attractive 
 linear complexity and DBSCAN a quasi-lineal in general.
-
-The two previous studies that follows in this section are 
-\begin{enumerate*}[label=\roman*)]
-  \item since we want to group MPI calls into loops, is important to know what
-    is actually identifying a loop
-  \item and perform a quantitative demonstration of the scalability of the
-    method in terms of number of unique MPI calls for different growing inputs.
-\end{enumerate*}
-Both studies have been done over executions of the MPI NAS Parallel benchmarks 
-in its 3.3 version.
-
-\subsection{Loops feature selection}\label{ss:loops_characterzation}
 
 The key point of the presented method is to clustering MPI calls into loops but
 what is actually identifying a loop? The answer is about to figure out what loop
@@ -103,364 +86,6 @@ unambiguity the loops with two metrics:
   \item Number of dynamic iterations
   \item Iterations mean time
 \end{enumerate*}
-
-Additionally to this qualitative discussion, it is crucial to drive also a 
-quantitative analysis. In order to do so, 
-several features, the described above and some others, are collected from several 
-executions and a feature selection is then done by means of two well-known methods
-\footnote{Feature selection is
-the process of selection a subset of relevant features for use in the model
-construction.}.
-The main objective is to confirms or reject our intuition about number of
-iterations and iteration mean time, and to find out other possible features that
-can help on the task of identify loops.
-The first used technique is PCA analysis that permit to get hints 
-about how features are related between them and the last is a variable 
-importance analysis by means of Random Forest method. On next sections will be 
-explained how data have been gathered and the analysis performed over it.  
-
-\subsubsection{Data acquisition}
-
-Previously have been discussed how number of dynamic 
-iterations and iterations mean time can help. Additionally to these information
-\begin{enumerate*}[label=\roman*)]
-    \item IPC 
-    \item and some instruction types counters 
-\end{enumerate*}
-will be also gathered.
-About the former, we would need mean number of instructions and mean number of 
-cycles per iterations. The reason is that they maybe can contribute because some 
-differences in the performance between loops. The intuition says that
-hardly can help for this purposes because, among other reasons, it depends a lot
-on other factors than the application. Remember in previous sections have been argued
-performance information is not optimal for syntactic analysis but we can not
-discard it categorically before do a quantitative analysis. The reason for the
-latest is that it can be thought if two loops performs different work, the
-relative quantity with total number of instructions of scalar, floating point 
-or memory operations will differ. In order to do so, a set of hardware
-counters have been defined. The decision about what hardware counters
-pick have been dramatically restricted because the capabilities of the
-hardware used for the experiments. This set consist on:
-\begin{enumerate*}[label=\roman*)]
-  \item Number of instructions
-  \item number of cycles 
-  \item number of unconditional branches
-  \item number of conditional branches 
-  \item total number of branches
-  \item number of floating-point instructions
-  \item and number of memory loads.
-\end{enumerate*}
-Finally we also want to collect an unambiguously identification of loops
-since we want to be able to accurately relate these metrics to a given loop.
-The identification is done by hash function with code line and file.
-
-As has been introduced above, trace does not have explicit information about 
-loops so it should be collected from other sources. The reason is that the typical
-tracing method is by means of the {\tt LD\_PRELOAD} mechanism, so tracer library just
-can get information at shared library calls (like MPI, GOMP, \dots). The alternative
-is to manually instrument the user code and fire events with the desired information
-by means of the tracer library API, in this case Extrae. Since the process of
-manually insert monitors presents to be tough for large codes has been decided
-to do it automatically using a source-to-source compiler, in this case
-Mercurium. Modifications on Mercurium have been done what have consisted
-basically on develop a new compilation phase that injects the desired
-monitors on the desired places in the code. Now, at execution time, those
-monitors  fires the desired information to trace. 
-All developments for this purpose are explained in annex \ref{ann:automatic_loops_charac} 
-in more detail.
-
-Slightly different approaches have been applied in every case. In the case of
-the PCA, since we wanted to characterize loops as a single entity, events are
-fired at the beginning and at the end of every loop marking the loop boundaries
-with just loop identification information, furthermore also events are fired at 
-the beginning and at the end of loops iterations, in this case with all the
-mentioned hardware counters. Since tracefile presents to grow to dozens of
-Gigabytes for not so big executions and executions tends to be really stable
-just picking several iterations seems to be enough, so have been decided to 
-instead of instrument all iterations of all loops, an iteration is instrumented 
-given a probability. For these experiments the probability was set to 20\%.
-Finally to keep track of how many iterations has been instrumented over the
-total, an extra event with total number of executed iterations (instrumented or
-not) is also fired to trace for every loop.
-
-For random forest analysis data acquisition is done from another perspective, 
-in this case what we wanted is the same information that will be available on
-production traces but labeled with the information of to what loop it belongs
-to, so these traces can be understood as training  traces. To do so the
-functions that marks entry/exit of loops does not fire any event to trace but
-keep track of the loops nesting hierarchy. Loop identification (or
-identifications when in a nested loops) is only fired to trace before an MPI call. 
-
-After data have been gathered to traces, post-process is done for
-prepare it for the performed analysis. On next section will be explained 
-how this data have been analyzed by means of the two selected methods. 
-
-\subsubsection{Data analysis}
-
-The first selected technique to drive the
-analysis has been the Principal Component Analysis (PCA): Data is linearly 
-transformed in such a way it can be expressed in principal components that are 
-sorted by the amount of variance that can explain and are orthogonal between 
-them. It allows to identify patterns in data and expressing the data in 
-such a way to highlight their similarities and differences. Once these patterns 
-are found data can be compressed by reducing the number of dimensions with not 
-much loss of information.  For improve
-understandability of the PCA, Variable factor map is used: It
-presents a view of the projection of the observed variables projected into the
-plane spanned by the first two principal components. This shows us the
-structural relationship between the variables and the components. The projection
-of a variable vector onto the component axis allows us to directly read the
-correlation between the variable and the component.
-
-What we wanted to see through the PCA analysis is what features can better
-identify loops. To do so what is presented as input to the PCA procedure is a
-set of observations that are the loops with a set of features for every one of
-them. To prepare the data in this terms, a post-process of traces have been
-done. This post-process have consisted on aggregate all information from different
-iterations for every loop. This aggregation have been basically perform a
-geometrical mean of the gathered features minus for the special case of the
-number of iterations. In this last case total number of iterations is not the
-total number of instrumented iterations because not all of them have been
-instrumented but just a subset. Since the probability of an iteration to be
-instrumented is well-known (it has been set by us), the reconstructions is also
-trivial, being the total number of iterations:
-$$
-nit = iit*\frac{1}{\alpha^{\beta+1}}
-$$
-Being $\alpha$ the probability to be instrumented and $\beta$ the nesting level
-of the loop.
-
-After acquire and process the data, at image \ref{fig:sp_pcv_hwc2} it can be
-seen the contribution to the variance of every principal component for every NPB
-execution. In image \ref{fig:sp_pcv_hwc1} the different variable factor maps are
-showed up. About the former just comment that the first principal component can
-explain the majority of the variance having a value from about 70\% to above
-80\% for the EP case (\ref{fig:ep_pcv_hwc2}). Moving on, the last figure is 
-showing us how the variables are correlated between them and also how they are 
-correlated with the components. A more detailed analysis have to be done here.
-
-\begin{figure}
-    \centering
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/bt_A_4_pvar01.png}
-        \caption{BT}
-        \label{fig:bt_pcv_hwc2}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/cg_A_4_pvar01.png}
-        \caption{CG}
-        \label{fig:cg_pcv_hwc2}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/ep_A_4_pvar01.png}
-        \caption{EP}
-        \label{fig:ep_pcv_hwc2}
-    \end{subfigure}
-    
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/ft_A_4_pvar01.png}
-        \caption{FT}
-        \label{fig:ft_pcv_hwc2}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/lu_A_4_pvar01.png}
-        \caption{LU}
-        \label{fig:lu_pcv_hwc2}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/mg_A_4_pvar01.png}
-        \caption{MG}
-        \label{fig:mg_pcv_hwc2}
-    \end{subfigure}
-
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/sp_A_4_pvar01.png}
-        \caption{SP}
-        \label{fig:sp_pcv_hwc2}
-    \end{subfigure}
-    \caption{Principal Components variability explanation}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/bt_A_4_varmap01.png}
-        \caption{BT}
-        \label{fig:bt_pcv_hwc1}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/cg_A_4_varmap01.png}
-        \caption{CG}
-        \label{fig:cg_pcv_hwc1}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/ep_A_4_varmap01.png}
-        \caption{EP}
-        \label{fig:ep_pcv_hwc1}
-    \end{subfigure}
-    
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/ft_A_4_varmap01.png}
-        \caption{FT}
-        \label{fig:ft_pcv_hwc1}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/lu_A_4_varmap01.png}
-        \caption{LU}
-        \label{fig:lu_pcv_hwc1}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/mg_A_4_varmap01.png}
-        \caption{MG}
-        \label{fig:mg_pcv_hwc1}
-    \end{subfigure}
-
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/sp_A_4_varmap01.png}
-        \caption{SP}
-        \label{fig:sp_pcv_hwc1}
-    \end{subfigure}
-    \caption{Variable factor map on NPB with both HWC merged}
-\end{figure}
-
-First thing to analyze is whether the first qualitative considerations done at
-the very beginning of this section were true or not. About total number of
-iterations it can be seen that is the variable better correlated to the 
-second principal component in \ref{fig:bt_pcv_hwc1}, \ref{fig:cg_pcv_hwc1},
-\ref{fig:ft_pcv_hwc1} and \ref{fig:lu_pcv_hwc1}. In case of
-\ref{fig:ep_pcv_hwc1} it is important for first and second PC. About mean 
-iteration time it can be seen is highly correlated with first component in
-\ref{fig:cg_pcv_hwc1}, \ref{fig:ep_pcv_hwc1} and with the second in
-\ref{fig:ft_pcv_hwc1} and \ref{fig:mg_pcv_hwc1}. Both seems to be quite
-important in general so the first intuition was not bad at all. The bad news are
-that both metrics used to maintain a high correlation between them, in general
-negative, what is saying as more (dynamic) iteration a loop has, less iteration
-time. It have two lectures:
-\begin{enumerate*}[label=\roman*)]
-  \item It can be understood because the big loops that drives the execution are
-    expensive because does a lot of computations and little function loops with
-    simple jobs performs a lot of iterations like for example functions that
-    looks for a character in a string.
-  \item The other lecture is that since we are counting dynamic iterations,
-    subloops for sure will have more iterations that the big outer loops and
-    also the iteration time for those big loops is inevitably bigger because
-    they are containing those subloops.
-\end{enumerate*}
-Nevertheless there are some situations where this correlation is not like in
-\ref{fig:cg_pcv_hwc1} and \ref{fig:ep_pcv_hwc1}  where they are orthogonal. The
-conclusion is that these two metrics can explain a quite good amount of
-variability and can avoid aliasing in some cases so the first intuition seems to
-be good.
-
-Next thing to analyze is whether the IPC can help at the
-classification step mostly on cases where number of iterations and iterations
-time are highly correlated that happens more obviously on \ref{fig:bt_pcv_hwc1},
-\ref{fig:ft_pcv_hwc1}, \ref{fig:lu_pcv_hwc1} and \ref{fig:mg_pcv_hwc1}. In these
-cases it is used to present a moderated positive correlation with iteration mean
-time so better IPC when longest iterations. With this data the usefulness or not
-about IPC metric is fuzzy so more analysis needs to be done.
-
-Lastly for PCA, it needs to check out how the instructions types counters are
-behaving. About branch instruction counters (PAPI\_BR\_UCN\_REL,
-PAPI\_BR\_UCN\_REL and PAPI\_BR\_UCN\_REL) it can be said that in general they
-are strong positive correlated between them, presents a strong
-correlation with first component and is used to be orthogonal with iteration
-time mean and total number of iterations in cases when they are strongly
-correlated. What it means is that it can explain a lot of variability of the 
-dataset. Additionally since all three are explaining the same picking just one
-should be enough. About the relative number of load instructions 
-(PAPI\_LD\_INS\_REL) it presents a quite different behavior depending on the
-execution but in most cases it presents a negative correlation with number of
-branches like in \ref{fig:bt_pcv_hwc1}, \ref{fig:cg_pcv_hwc1},
-\ref{fig:ft_pcv_hwc1} and \ref{fig:mg_pcv_hwc1} what means that in most cases it
-can be used as well as branch counter when there is high correlation between
-total iterations and iterations mean time. Lastly, about relative floating
-point instructions (PAPI\_FP\_INS\_REL) like before its behavior differs
-depending on the execution with respect to the rest of metrics but it is true 
-that can explain quite a lot of variance.
-
-% TODO PCA Conclusions
-Summing up, \ldots
-
-
-The second used technique have been random forest for classification
-% TODO: Explicar Random Forest
-% TODO: Explicar para que lo queremos
-% TODO: Explicar el post-proceso de los datos
-% TODO: Explicar los resultados
-% TODO: Conclusiones
-
-In figure 
-
-\begin{figure}
-    \centering
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{varimp/bt_A_4_varimp.png}
-        \caption{BT}
-        \label{fig:bt_varimp}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{varimp/cg_A_4_varimp.png}
-        \caption{CG}
-        \label{fig:cg_varimp}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{varimp/ep_A_4_varimp.png}
-        \caption{EP}
-        \label{fig:ep_varimp}
-    \end{subfigure}
-    
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{varimp/ft_A_4_varimp.png}
-        \caption{FT}
-        \label{fig:ft_varimp}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{varimp/lu_A_4_varimp.png}
-        \caption{LU}
-        \label{fig:lu_varimp}
-    \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{varimp/mg_A_4_varimp.png}
-        \caption{MG}
-        \label{fig:mg_varimp}
-    \end{subfigure}
-
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{varimp/sp_A_4_varimp.png}
-        \caption{SP}
-        \label{fig:sp_varimp}
-    \end{subfigure}
-    \caption{Variable importance by Random Forest method on NPB}
-\end{figure}
-
-\subsection{Scalability}\label{ss:scalability}
-
-Clustering will not be done with all MPI events presented on the whole trace but
-just with these events that results from a compression from the original
-tracefile. This compression consists on the aggregation of information from 
-different instances of the same MPI event like inter-arrival time, number of
-instances, duration, \ldots that since applications used to present very repetitive 
-behavior the compression ratios will presumably be high. There is not the
-responsibility of this section to describe the algorithm followed to do so that
-is going to be described in \ref{ss:trace_reduction} but to demonstrate by a
-quantitative analysis that this assumption is true. The experiments were done
-by extracting traces from NPB suite with different problem sizes in a weak
-scaling fashion and figure out how many unique MPI events are retrieved 
-in every case for the clustering phase.  
-
 
 \section{Proposed methodology}
 
@@ -579,6 +204,23 @@ calls have not arrive yet. In case of hardware counters (buffer $C$) is for keep
 track of values even if they are multiple times set to zero by other mpi call
 events.
 
+This algorithm presents a linear time complexity (all search in sets are
+constant since they have been implemented with hashmaps) $\Theta(|\Sigma|)$ that is
+basically with the size of the tracefile. Only this serial version have been
+developed but there is a lot of space for improvement since the characteristics
+of this problem allows to face it with parallel codes. Trace could be split into
+several files and perform an algorithm similar to the proposed on every one of
+the partitions, once done a reduction among the different results should be
+done. Some considerations would be taken into account like for example the
+position to do the splits or if it would be need all the communications in a
+single file instead of scattered among all of them. Because time restrictions
+have been decided to move this sort of considerations to future work.
+
+Reduction step is the key point for 
+the scalability of the methodology since $|T| >> |\Omega|$ because the executions 
+used to present a lot of repetitions so in next step, the clustering is done over a very 
+reduced version of the input trace.
+
 \begin{pseudocode}{Reduction algorithm}{\Sigma}
 \label{pc:reduction_phase}
     S \GETS \emptyset \medspace
@@ -646,30 +288,13 @@ events.
     \RETURN \Omega
 \end{pseudocode}
 
-This algorithm presents a linear time complexity (all search in sets are
-constant since they have been implemented with hashmaps) $\Theta(|\Sigma|)$ that is
-basically with the size of the tracefile. Only this serial version have been
-developed but there is a lot of space for improvement since the characteristics
-of this problem allows to face it with parallel codes. Trace could be split into
-several files and perform an algorithm similar to the proposed on every one of
-the partitions, once done a reduction among the different results should be
-done. Some considerations would be taken into account like for example the
-position to do the splits or if it would be need all the communications in a
-single file instead of scattered among all of them. Because time restrictions
-have been decided to move this sort of considerations to future work.
-
-Reduction step is the key point for 
-the scalability of the methodology since $|T| >> |\Omega|$ because the executions 
-used to present a lot of repetitions so in next step, the clustering is done over a very 
-reduced version of the input trace. 
-
 \subsection{Loops clustering}
 
 This is the key step of the this thesis proposal because the quality of the
 output will directly depend on the quality of the clustering. As has been introduced
 before, the goal is to cluster all elements in $\Omega$ into groups that will be
 considered the loops. There have been a previous discussion about what features
-to use in section \ref{ss:loops_characterzation} so this is not going to be
+to use in section \ref{s:app_structire_by_classification} so this is not going to be
 discussed again, in fact this phase is enough general to use any set of
 features so the intention is being improving the model whenever new and better
 features will be found for this clustering purposes. Two main trends on 
@@ -1180,3 +805,412 @@ every loop and finally over every mpi call as is depicted in pseudocodes
             togui(item)
     \END
 \end{pseudocode}
+
+\section{Further considerations}
+
+Until now we have been working from a simplistic point of view, in this section
+we are going to consider two main problems that have been arise that
+are specially harmful for the model described above. The first one is the possibility 
+to have aliasing. Can happen 
+that two different loops are behaving in the same way in terms of the space
+described by iterations vs. iteration mean time, i.e. the model will consider 
+two different loops as the same. The second
+is that also can be possible that the same loop is split into several clusters
+because some data conditions, e.g. Imagine a situation where there is a loop of
+10 iterations and a given mpi call is only executed on pair (or odd) iterations.
+In this situation we will have one ``loop'' with half of number of iterations
+and double of iteration mean time. 
+
+In order to overcome with these problems have been considered to try to find out
+an alternative features to perform the clustering. This work is described in
+next section \ref{ss:loops_characterzation}. Since the results were not much
+satisfactory, some modifications of the basic methodology have been developed.
+They are described in section \ref{ss:methodology_modifications}.
+
+\subsection{Loops feature selection}\label{ss:loops_characterzation}
+
+Additionally to the qualitative discussion done in section
+\ref{s:app_structire_by_classification} about what features can unambiguously
+identify a loop, it is crucial to drive also a 
+quantitative analysis. In order to do so, several features, the described 
+before and some others are collected from several executions and a data analysis
+is then done by means of two well-known methods \footnote{Feature selection is
+the process of selection a subset of relevant features for use in the model
+construction.}. 
+
+The first used technique is PCA analysis that permit to get hints 
+about how features are related between them and with principal components. What
+we want to know with this technique is what loop features can better define
+them understanding as better features these subset of features that can explain
+the majority of the variability of the data being orthogonal between them, i.e.
+With poor correlation. To do so we present to the PCA algorithm a set of
+observations with several features every one, these observations are all the loops
+of the analyzed application. 
+
+Last used technique is 
+Variable Importance analysis using Random Forest method. This technique can
+determine what features are the most important. In this case what we
+present to the algorithm is the same data that is used by our proposed
+methodology but in this case labeled, so with information about to what loop
+every mpi call belongs to. The motivation is the same as before but with a 
+different approach.
+
+The main objective for both techniques is to confirms or reject our intuition about 
+number of iterations and iteration mean time, and to find out other possible features that
+can help on the task of identify loops by means of classification.
+  
+
+\subsubsection{Data acquisition}
+
+Previously have been discussed how number of dynamic iterations and iterations 
+mean time can be used for classify mpi calls into loops. Additionally to these information
+\begin{enumerate*}[label=\roman*)]
+    \item IPC 
+    \item and some instruction types counters 
+\end{enumerate*}
+will be also gathered.
+About the former, we would need mean number of instructions and mean number of 
+cycles per loop. The reason is that they maybe can contribute because some 
+differences in the performance between loops. The intuition says that
+hardly can help for this purposes because, among other reasons, it depends a lot
+on other factors than the application. Remember in previous sections have been argued
+performance information is not optimal for syntactic structure analysis but we can not
+discard it categorically before do a quantitative analysis. The reason for the
+latest is that it can be thought if two loops performs different work, the
+relative quantity with total number of instructions of scalar, floating point 
+or memory operations will differ. In order to do so, a set of hardware
+counters have been defined. The decision about what hardware counters
+pick have been dramatically restricted because the capabilities of the
+hardware used for the experiments, in this case MareNostrum 4. 
+This set consist on:
+\begin{enumerate*}[label=\roman*)]
+  \item Number of instructions
+  \item number of cycles 
+  \item number of unconditional branches
+  \item number of conditional branches 
+  \item total number of branches
+  \item and number of memory loads.
+\end{enumerate*},
+additionally, number of floating point instructions for PCA analysis since
+traces in this case were taken from MinoTauro what provides this extra counter. 
+Finally we also want to collect an unambiguously identification of loops
+since we want to be able to accurately relate these metrics to a given loop.
+The identification is done by hash function with code line and file.
+
+As has been introduced above, trace does not have explicit information about 
+loops so it should be collected from other sources. The reason is that the typical
+tracing method is by means of the {\tt LD\_PRELOAD} mechanism, so tracer library just
+can get information at shared library calls (like MPI, GOMP, \dots). The alternative
+is to manually instrument the user code and fire events with the desired information
+by means of the tracer library API, in this case Extrae. Since the process of
+manually insert monitors presents to be tough for large codes has been decided
+to do it automatically using a source-to-source compiler, in this case
+Mercurium. Modifications on Mercurium have consisted on develop a new compilation 
+phase that injects the desired monitors on the desired places in the code. 
+Now, at execution time, those monitors  fires the desired information to trace. 
+All developments for this purpose are explained in annex 
+\ref{ann:automatic_loops_charac} in more detail.
+
+Slightly different approaches have been applied in every case. In the case of
+the PCA, since we wanted to characterize loops, events are
+fired at the beginning and at the end of every loop marking the loop boundaries
+with just loop identification information, furthermore also events are fired at 
+the beginning and at the end of loops iterations, in this case with all the
+mentioned hardware counters. Since tracefile presents to grow to dozens of
+Gigabytes for not so big executions and executions tends to be really stable
+just picking several iterations seems to be enough, so have been decided to 
+instead of instrument all iterations of all loops, an iteration is instrumented 
+given a probability. For these experiments the probability was set to 20\%.
+Finally to keep track of how many iterations has been instrumented over the
+total, an extra event with total number of executed iterations (instrumented or
+not) is also fired to trace for every loop.
+
+For random forest analysis data acquisition is done from another perspective, 
+in this case what we wanted is the same information that will be available on
+production traces but labeled with the information of to what loop the mpi calls belongs
+to, so these traces can be understood as training traces. To do so the
+functions that marks entry/exit of loops does not fire any event to trace but
+keep track of the loops nesting hierarchy. Loop identification (or
+identifications when in a nested loops) is only fired to trace before an MPI call. 
+
+Data have been gathered for the follow NPB benchmarks with 128 ranks and input
+of class B:
+\begin{enumerate*}[label=\roman*)]
+  \item BT (121 ranks),
+  \item CG,
+  \item EP,
+  \item FT,
+  \item IS,
+  \item LU,
+  \item and MG,
+\end{enumerate*}
+IS and EP have not been included because the former just have one loop and so
+can not have aliasing problems and the second does not present repetitive
+patterns with MPI calls.
+
+After data have been gathered to traces, post-process is done for
+prepare it for the performed analysis. On next section will be explained 
+how this data have been manipulated and analyzed by means of the two selected 
+methods. 
+
+\subsubsection{Data analysis}
+
+The first selected technique to drive the analysis has been the Principal 
+Component Analysis (PCA): Data is linearly transformed in such a way it can be 
+expressed in principal components that are sorted by the amount of variance 
+that can explain and are orthogonal between them. It allows to identify patterns 
+in data and expressing the data in such a way to highlight their similarities 
+and differences. Once these patterns are found data can be compressed by reducing 
+the number of dimensions with not much loss of information.  For improve
+understandability of the PCA, Variable factor map is used: It
+presents a view of the projection of the observed variables projected into the
+plane spanned by the first two principal components. This shows us the
+structural relationship between the variables and the components. The projection
+of a variable vector onto the component axis allows us to directly read the
+correlation between the variable and the component.
+
+What we wanted to see through the PCA analysis is what features can better
+identify loops. To do so what is presented as input to the PCA procedure is a
+set of observations that are the loops with a set of features for every one of
+them. To prepare the data in this terms, a post-process of traces have been
+done. This post-process have consisted on aggregate all information from different
+iterations for every loop except for the special case of the number of iterations. 
+In this last case total number of iterations is not the
+total number of instrumented iterations because not all of them have been
+instrumented but just a subset. Since the probability of an iteration to be
+instrumented is well-known (it has been set by us), the reconstructions is also
+trivial, being the total number of iterations described by equation
+\ref{eq:n_total_its}.
+\begin{equation}
+  \label{eq:n_total_its}
+  nit = iit*\frac{1}{\alpha^{\beta+1}}
+\end{equation}
+Being $\alpha$ the probability to be instrumented and $\beta$ the nesting level
+of the loop.
+
+After apply PCA over the gathered data, on image \ref{fig:pca_results} the
+results can be seen. First principal component can explain the majority of the 
+variance having a value from about 70\% to above 80\% for the EP case 
+(\ref{fig:ep_pcv_hwc1}). It means that almost all data variance can be observed
+in the variable factor map. Following more detailed analysis have to been done.
+
+\begin{figure}
+    \label{fig:pca_results}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{pcas/bt_A_4_varmap01.png}
+        \caption{BT}
+        \label{fig:bt_pcv_hwc1}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{pcas/cg_A_4_varmap01.png}
+        \caption{CG}
+        \label{fig:cg_pcv_hwc1}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{pcas/ep_A_4_varmap01.png}
+        \caption{EP}
+        \label{fig:ep_pcv_hwc1}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{pcas/ft_A_4_varmap01.png}
+        \caption{FT}
+        \label{fig:ft_pcv_hwc1}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{pcas/lu_A_4_varmap01.png}
+        \caption{LU}
+        \label{fig:lu_pcv_hwc1}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{pcas/mg_A_4_varmap01.png}
+        \caption{MG}
+        \label{fig:mg_pcv_hwc1}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{pcas/sp_A_4_varmap01.png}
+        \caption{SP}
+        \label{fig:sp_pcv_hwc1}
+    \end{subfigure}
+    \caption{Variable factor map on NPB with both HWC merged}
+\end{figure}
+
+First thing to analyze is whether the first qualitative considerations done at
+the very beginning of this section are reinforced by this results or not. 
+About total number of
+iterations it can be seen that is the variable better correlated to the 
+second principal component in \ref{fig:bt_pcv_hwc1}, \ref{fig:cg_pcv_hwc1},
+\ref{fig:ft_pcv_hwc1} and \ref{fig:lu_pcv_hwc1}. In case of
+\ref{fig:ep_pcv_hwc1} it is important for first and second PC. About mean 
+iteration time it can be seen is highly correlated with first component in
+\ref{fig:cg_pcv_hwc1}, \ref{fig:ep_pcv_hwc1} and with the second in
+\ref{fig:ft_pcv_hwc1} and \ref{fig:mg_pcv_hwc1}. Both seems to be quite
+important in general so the first intuition was not bad at all. The bad news are
+that both metrics used to maintain a high correlation between them, in general
+negative, what is saying as more (dynamic) iteration a loop has, less iteration
+time. In this cases they are providing the same information, so one is not
+avoiding aliasing of the other. It have two lectures:
+\begin{enumerate*}[label=\roman*)]
+  \item It can be understood because the big loops that drives the execution are
+    expensive because does a lot of computations and little function loops with
+    simple jobs performs a lot of iterations like for example functions that
+    looks for a character in a string.
+  \item The other lecture is that since we are counting dynamic iterations,
+    subloops for sure will have more iterations that the big outer loops and
+    also the iteration time for those big loops is inevitably bigger because
+    they are containing those subloops.
+\end{enumerate*}
+Nevertheless there are some situations where this correlation is not like in
+\ref{fig:cg_pcv_hwc1} and \ref{fig:ep_pcv_hwc1}  where they are orthogonal. The
+conclusion is that these two metrics can explain a quite good amount of
+variability and can avoid aliasing but just in some cases.
+
+Next thing to analyze is whether the IPC can help at the
+classification step, mostly on cases where number of iterations and iterations
+time are highly correlated that happens more obviously on \ref{fig:bt_pcv_hwc1},
+\ref{fig:ft_pcv_hwc1}, \ref{fig:lu_pcv_hwc1} and \ref{fig:mg_pcv_hwc1}. In these
+cases it is used to present a moderated positive correlation with iteration mean
+time so better IPC when longest iterations. With this data the usefulness or not
+about IPC metric is fuzzy so more analysis needs to be done.
+
+Lastly for PCA, it needs to check out how the instructions types counters are
+behaving. About branch instruction counters (PAPI\_BR\_UCN\_REL,
+PAPI\_BR\_UCN\_REL and PAPI\_BR\_UCN\_REL) it can be said that in general they
+are strong positive correlated between them, presents a strong
+correlation with first component and is used to be orthogonal with iteration
+time mean and total number of iterations in cases when they are strongly
+correlated. 
+Additionally since all three are explaining the same, picking just one
+should be enough. About the relative number of load instructions 
+(PAPI\_LD\_INS\_REL) it presents a quite different behavior depending on the
+execution but in most cases it presents a negative correlation with number of
+branches like in \ref{fig:bt_pcv_hwc1}, \ref{fig:cg_pcv_hwc1},
+\ref{fig:ft_pcv_hwc1} and \ref{fig:mg_pcv_hwc1} what means that in most cases it
+can be used as well as branch counter when there is high correlation between
+total iterations and iterations mean time. Lastly, about relative floating
+point instructions (PAPI\_FP\_INS\_REL) like before its behavior differs
+depending on the execution with respect to the rest of metrics but it is true 
+that can explain quite a lot of variance.
+
+The second used technique have been random forest for classification. It makes
+up a set of decision trees.
+Decision trees are trees that guides to a decision leaving
+from a set of features, in our case the decision is to what class a given item
+belongs, those trees are named classification trees. In these structures leaves
+represents class labels and branches conjunctions of features that lead to those
+class labels\footnote{https://en.wikipedia.org/wiki/Random\_forest}
+\footnote{https://en.wikipedia.org/wiki/Decision\_tree\_learning}. The variable
+importance analysis is done over the classification trees and is expressed in
+terms of split purity, i.e. Whether the splits done over the data by using a
+feature value drives to instances completely separated by classes or to a set of
+instances with mixed classes, being more pure as less mixture of classes. The
+purity is measured by the Gini index\footnote{Similarly the Gini index in
+economics is used for represent the wealth distribution in a nation being the
+most commonly used measurement for inequality.} being lower when purer split. So
+as more, one variable, contributes to decrease the Gini index, more importance
+it has.
+
+%This is a quite different perspective from the previous approach, previously we
+%were concerned about what is generally defining loops, now we are 
+%closest to the model so try to figure out what is defining a loop as well but 
+%from the point of view of the information we have. So with information available
+%in production traces. Now we have same mpi calls to clusterize but labeled, so
+%it can be understood as a training dataset.
+
+The post-process in this case is basically the same as there is explained on
+section \ref{ss:trace_reduction}. Additionally, since we already have on trace
+to what loop every mpi call belongs to, this information is also gathered.
+
+You can see the results in figure \ref{fig:varmap_results}. By quick peak this
+results can lead to a discourage. What can be seen is that the best variables
+for every case have a lot of variation and what is the best variable for one
+case, is the worst for other one, but lets to take a look in a more detail.
+First thing to do is to know if the original qualitative discussion have sense
+with empirical data. Starting with bad news, about total number of iterations 
+it can be seen how is in general the less important variable as it can be seen 
+in \ref{fig:bt_varimp}, \ref{fig:ft_varimp}, \ref{fig:mg_varimp} and
+\ref{fig:sp_varimp}. Following with good news, we can see that iteration mean
+time is considered an important variable in general \ldots
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{varimp/bt_B_121_varimp.png}
+        \caption{BT}
+        \label{fig:bt_varimp}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{varimp/cg_B_128_varimp.png}
+        \caption{CG}
+        \label{fig:cg_varimp}
+    \end{subfigure}
+   
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{varimp/ft_B_128_varimp.png}
+        \caption{FT}
+        \label{fig:ft_varimp}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{varimp/lu_B_128_varimp.png}
+        \caption{LU}
+        \label{fig:lu_varimp}
+    \end{subfigure}
+  
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{varimp/mg_B_128_varimp.png}
+        \caption{MG}
+        \label{fig:mg_varimp}
+    \end{subfigure}
+    \quad
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{varimp/sp_B_128_varimp.png}
+        \caption{SP}
+        \label{fig:sp_varimp}
+    \end{subfigure}
+    \caption{Variable importance by Random Forest method on NPB}
+    \label{fig:varmap_results}
+\end{figure}
+
+%    \begin{subfigure}[b]{0.3\textwidth}
+%        \includegraphics[width=\textwidth]{varimp/ep_B_121_varimp.png}
+%        \caption{EP}
+%        \label{fig:ep_varimp}
+%    \end{subfigure}
+% 
+
+Summing up, clear improvements can not be achieved for these to analysis. PCA
+analysis have demonstrate how different features are related between them and so
+also can be kind of a valuable analysis for other purposes. It demonstrates how
+number of iterations and iteration mean time is good enough for some executions
+because can explain a lot of variability but not so good in other cases. Bad
+news is there is no a clear sustitute or a clear additional feature to be used
+from this analysis. About variable importance analysis, in the same way, there
+is not a clear interpretation since the order of variables in terms of
+importance have a lot of variability between different benchmarks such as in
+some executions number of iterations and iteration mean time are the most
+important but for others are the less, i.e. generating a lot of cluster
+aliasing. 
+
+\subsection{Methodology modifications}\label{ss:methodology_modifications}
+
+Here Im going to explain the modifications in order to deal with aliasing,
+spliting and hiden superloops
+
+\subsubsection{Cluster Aliasing}
+
+Blah 
+
+\subsubsection{Cluster Splitting}
+
+Blah
+
+\subsubsection{Hidden superloop detection}
+
+Blah

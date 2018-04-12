@@ -1,5 +1,20 @@
 \chapter{Results}
 
+\section{Scalability}\label{s:scalability}
+
+Clustering will not be done with all MPI events presented on the whole trace but
+just with these events that results from a compression from the original
+tracefile. This compression consists on the aggregation of information from 
+different instances of the same MPI event like inter-arrival time, number of
+instances, duration, \ldots that since applications used to present very repetitive 
+behavior the compression ratios will presumably be high. There is not the
+responsibility of this section to describe the algorithm followed to do so that
+is going to be described in \ref{ss:trace_reduction} but to demonstrate by a
+quantitative analysis that this assumption is true. The experiments were done
+by extracting traces from NPB suite with different problem sizes in a weak
+scaling fashion and figure out how many unique MPI events are retrieved 
+in every case for the clustering phase.
+
 \section{Validation}\label{s:validation}
 
 Some results
