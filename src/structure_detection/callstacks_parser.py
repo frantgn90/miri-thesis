@@ -45,6 +45,8 @@ class callstacks_parser(object):
         self.callstack_last = [ None for i in range(self._trace.tasks) ]
         self.loop_stack = [ [] for i in range(self._trace.tasks) ]
         self.mpi_acumm_cycles = [ {} for i in range(self._trace.tasks) ]
+        self.mpi_acumm_instr = [ {} for i in range(self._trace.tasks) ]
+        self.mpi_acumm_ld_instr = [ {} for i in range(self._trace.tasks) ]
     def get_ntasks(self):
         return self._trace.get_ntasks()
     def get_taskids(self):
@@ -99,13 +101,28 @@ class callstacks_parser(object):
         self.callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
                 .update({x.type:x.value for x in rec.events["GLOP"]})
     def __hwc_handler(self, rec):
-        hwc_record = list(filter(lambda x: x.type_name == "PAPI_TOT_CYC",
-                rec.events["HWC"]))
-        if len(hwc_record) > 0:
-            assert len(hwc_record) == 1
-            hwc_record = hwc_record[0]
+        hwc_record_cycles = list(
+                filter(lambda x: x.type_name == "PAPI_TOT_CYC",rec.events["HWC"]))
+        hwc_record_instr =  list(
+                filter(lambda x: x.type_name == "PAPI_TOT_INS",rec.events["HWC"]))
+        hwc_record_ld =  list(
+                filter(lambda x: x.type_name == "PAPI_LD_INS",rec.events["HWC"]))
+
+        if len(hwc_record_cycles) > 0:
+            assert len(hwc_record_cycles) == 1
+            hwc_record = hwc_record_cycles[0]
             for signature in self.mpi_acumm_cycles[rec.task_id-1].keys():
                 self.mpi_acumm_cycles[rec.task_id-1][signature] += hwc_record.value
+        if len(hwc_record_instr) > 0:
+            assert len(hwc_record_instr) == 1
+            hwc_record = hwc_record_instr[0]
+            for signature in self.mpi_acumm_instr[rec.task_id-1].keys():
+                self.mpi_acumm_instr[rec.task_id-1][signature] += hwc_record.value
+        if len(hwc_record_ld) > 0:
+            assert len(hwc_record_ld) == 1
+            hwc_record = hwc_record_ld[0]
+            for signature in self.mpi_acumm_ld_instr[rec.task_id-1].keys():
+                self.mpi_acumm_ld_instr[rec.task_id-1][signature] += hwc_record.value
 
         if self.mpi_opened[rec.task_id-1]: # MPI call HWC
             self.callstack_last[rec.task_id-1].metrics[rec.task_id-1]\
@@ -140,6 +157,9 @@ class callstacks_parser(object):
                 self.mpi_fini_hashmap[rec.task_id-1].update({rec.time: cs})
 
             self.mpi_acumm_cycles[rec.task_id-1][cs.get_signature()] = 0
+            self.mpi_acumm_instr[rec.task_id-1][cs.get_signature()] = 0
+            self.mpi_acumm_ld_instr[rec.task_id-1][cs.get_signature()] = 0
+
             self.mpi_opened[rec.task_id-1] = False
             self.callstack_last[rec.task_id-1] = None
             self.burst_last[rec.task_id-1] = None
@@ -164,6 +184,18 @@ class callstacks_parser(object):
                         self.mpi_acumm_cycles[rec.task_id-1][cs.get_signature()])
             else:
                 self.mpi_acumm_cycles[rec.task_id-1].update({cs.get_signature():0})
+            if cs.get_signature() in self.mpi_acumm_instr[rec.task_id-1]:
+                cs.iteration_instr.append(
+                        self.mpi_acumm_instr[rec.task_id-1][cs.get_signature()])
+            else:
+                self.mpi_acumm_instr[rec.task_id-1].update({cs.get_signature():0})
+            if cs.get_signature() in self.mpi_acumm_ld_instr[rec.task_id-1]:
+                cs.iteration_ld_instr.append(
+                        self.mpi_acumm_ld_instr[rec.task_id-1][cs.get_signature()])
+            else:
+                self.mpi_acumm_ld_instr[rec.task_id-1].update({cs.get_signature():0})
+
+
                                                                                   
             cs.burst_metrics[rec.task_id-1].update({x.type:x.value 
                 for x in self.burst_last[rec.task_id-1].events["HWC"]})
@@ -182,7 +214,6 @@ class callstacks_parser(object):
                                                                                   
             # Loopid information
             cs.loop_info = copy.copy(self.loop_stack[rec.task_id-1])
-                                                                                  
             self.callstack_last[rec.task_id-1] = cs
             self.mpi_opened[rec.task_id-1] = True
 

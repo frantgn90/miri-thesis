@@ -63,8 +63,6 @@ class callstack(object):
         self.repetitions={}
         self.repetitions[self.rank]=1
         self.instants=[int(instant)]
-        self.iteration_cycles=[]
-        self.iteration_cycles_mean=None
         self.instants_distances=[]
         self.instants_distances_mean=None
         self.instants_distances_median=None
@@ -76,17 +74,29 @@ class callstack(object):
         self.condition_level = None
         self.reduced=False
         self.calls=calls
-        self.metrics = {}
-        self.burst_metrics = {}
         self.partner = set()
         self.compacted_partner = []
-        self.metrics[self.rank] = {
-                "mpi_duration":0,
-                "mpi_msg_size":0}
-        self.burst_metrics[self.rank] = {
-                "burst_duration":0}
         self.in_program_order = True
         self.my_loop = None
+
+        # Hardcoded Iteration metrics
+        self.iteration_cycles=[]
+        self.iteration_cycles_mean=None
+        self.iteration_instr=[]
+        self.iteration_instr_mean=None
+        self.iteration_ld_instr=[]
+        self.iteration_ld_instr_mean=None
+
+        self.metrics = {}
+        self.burst_metrics = {}
+
+        self.metrics[self.rank] = {
+                "mpi_duration":0,
+                "mpi_msg_size":0
+        }
+        self.burst_metrics[self.rank] = {
+                "burst_duration":0
+        }
 
         self.dicts_to_merge = [
                 self.metrics,
@@ -172,6 +182,8 @@ class callstack(object):
         self.repetitions[self.rank]+=1
         self.instants.extend(other.instants)
         self.iteration_cycles.extend(other.iteration_cycles)
+        self.iteration_instr.extend(other.iteration_instr)
+        self.iteration_ld_instr.extend(other.iteration_ld_instr)
         self.partner.update(other.partner)
         
         for self_dtomerge, other_dtomerge in \
@@ -219,6 +231,8 @@ class callstack(object):
         self.instants_distances_median=numpy.median(self.instants_distances)
         self.instants_distances_mean=numpy.mean(self.instants_distances)
         self.iteration_cycles_mean=numpy.mean(self.iteration_cycles)
+        self.iteration_instr_mean=numpy.mean(self.iteration_instr)
+        self.iteration_ld_instr_mean=numpy.mean(self.iteration_ld_instr)
 
         for dtomerge in self.dicts_to_merge:
             for rank in dtomerge:
@@ -465,6 +479,7 @@ class callstack(object):
                 self.repetitions[self.rank],
                 iit_mean,
                 iit_median)
+        val=""
         for call in self.calls:
             val += "{0}({1}) ".format(call.call, call.line)
         return val

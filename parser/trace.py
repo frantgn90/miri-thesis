@@ -6,9 +6,9 @@ import glob
 import re
 import os
 import logging
-import copy
 from multiprocessing import Pool
 import numpy
+from pympler import tracker
 import progressbar
 
 TYPE_STATE = "1"
@@ -18,6 +18,9 @@ TYPE_COMMS = "3"
 MONITOR_PERIOD=10e8
 last_monitor_time = 0
 n_monitor = 0
+
+nevents=0
+GC_FIRE = 100
 
 class stack(object):
     def __init__(self):
@@ -83,33 +86,15 @@ class communication(record):
         self.send_merged = False
 
 class event(record):
+
     def __init__(self, line, pcf):
         super(event, self).__init__(line, pcf)
         self.time = int(self.fields[5])
-
+        
         if type(self) != event: #inheritage
             return
 
-        self.events_supported = {
-                "420000": {"name":"HWC", "class":hwc_event, 
-                    "re":re.compile("420000*")},
-                "500000": {"name":"MPI", "class":mpi_event, 
-                    "re":re.compile("500000*")},
-                "501000": {"name":"GLOP", "class":glop_event, 
-                    "re":re.compile("501000*")},
-                "700000": {"name":"CALL", "class":call_event, 
-                    "re":re.compile("700000*")},
-                "800000": {"name":"LINE", "class":line_event, 
-                    "re":re.compile("800000*")},
-                "900000": {"name":"LOOP", "class":loop_event,
-                    "re":re.compile("990000*")},
-                "910000": {"name":"ITER", "class":iter_event,
-                    "re":re.compile("991000*")},
-                "920000": {"name":"NITER", "class":niter_event,
-                    "re":re.compile("992000*")}
-        }
-
-        self.events = {x["name"]:[] for x in self.events_supported.values()}
+        self.events = {x["name"]:[] for x in events_supported.values()}
 
         for i in range(6,len(self.fields),2):
             event_type = self.fields[i]
@@ -120,10 +105,15 @@ class event(record):
         event_line = "{0}:{1}:{2}".format(":".join(self.fields[:6]),
                 event_type,event_value)
 
-        self.events.fromkeys({x["name"] for x in self.events_supported.values() })
-        for val in self.events_supported.values():
-            if val["re"].match(event_type):
-                 self.events[val["name"]].append(val["class"](event_line, self.pcf))
+        #self.events.fromkeys({x["name"] for x in events_supported.values() })
+        #for val in events_supported.values():
+        #    if val["re"].match(event_type):
+        #         self.events[val["name"]].append(val["class"](event_line, self.pcf))
+        if event_type[:6] in events_supported:
+            new_event_name = events_supported[event_type[:6]]["name"]
+            new_event = events_supported[event_type[:6]]\
+                    ["class"](event_line,self.pcf)
+            self.events[new_event_name].append(new_event)
 
 class loop_event(event):
     def __init__(self, line, pcf):
@@ -162,7 +152,7 @@ class hwc_event(event):
     def __init__(self, line, pcf):
         super(hwc_event, self).__init__(line, pcf)
         self.type = self.fields[6]
-        self.type_name = self.pcf.translate_type(self.type).split(" ")[0]
+        self.type_name = self.pcf.translate_type(self.type)
         self.type_name_short = self.type_name.split(" ")[0]
         self.value = int(self.fields[7])
 
@@ -209,6 +199,18 @@ class mpi_event(event):
 
         self.mpi_type = int(self.type[:-2])
         self.call_name = self.pcf.translate_event(self.type, self.value)
+
+events_supported = {
+    "420000": {"name":"HWC", "class":hwc_event},
+    "500000": {"name":"MPI", "class":mpi_event},
+    "501000": {"name":"GLOP", "class":glop_event},
+    "700000": {"name":"CALL", "class":call_event},
+    "800000": {"name":"LINE", "class":line_event},
+    "990000": {"name":"LOOP", "class":loop_event},
+    "991000": {"name":"ITER", "class":iter_event},
+    "992000": {"name":"NITER", "class":niter_event}
+}
+
 
 class pcf(object):
     def __init__(self,pcfname):
@@ -336,6 +338,7 @@ class trace(object):
                         self.__record_state_callback(rec)
                     bar_completed += len(line)
                     bar.update(bar_completed)
+
         return None
 
     def _parse_parallel(self, nprocesses):

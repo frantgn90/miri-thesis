@@ -215,8 +215,8 @@ def main(argc, argv):
     callstacks_pool = plane_cs_pool
 
     # REMOVE!!!!!! This is when application is extrae statically linked
-    for cs in callstacks_pool:
-        del cs.calls[-2]
+    #for cs in callstacks_pool:
+    #    del cs.calls[-2]
 
     if arguments.with_loop_info:
         assert all(map(lambda x: x.with_loop_info(), callstacks_pool))

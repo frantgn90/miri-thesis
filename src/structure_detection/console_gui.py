@@ -6,12 +6,12 @@ import constants
 from utilities import pretty_print
 from gui import gui
 
-C_WIDTH = 155
+C_WIDTH = 105
 C_NCOLS = 6
 
 FILE_WIDTH = 20
 LINE_WIDTH = 4
-CODE_WIDTH = 90
+CODE_WIDTH = 40
 TIME_WIDTH = 10
 SIZE_WIDTH = 15
 EVEN_WIDTH = 10

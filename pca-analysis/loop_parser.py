@@ -54,6 +54,9 @@ class stack(object):
         return self.stack[-1]
     def pop(self):
         return self.stack.pop()
+    def map(self,f, *args):
+        for e in self.stack:
+            f(e, *args)
 
 class iteration(object):
     def __init__(self, iterid):
@@ -65,14 +68,6 @@ class iteration(object):
         assert fini > self.init
         self.fini = fini
         self.duration = self.fini - self.init
-    #def set_hwc_init(self, name, value):
-    #    assert not name in self.hwc
-    #    self.hwc[name] = value
-    def set_hwc_fini(self, name, value):
-        # Some HWC does not appear at the iterations entry
-        # but only in the end. Why??
-        #assert name in self.hwc
-        self.hwc[name] = value
     def calcule(self):
         pass
 
@@ -152,23 +147,22 @@ def loop_handler(loop_record):
         if not loopobj.loopid in loop_hmap[loop_record.task_id-1]:
             loop_hmap[loop_record.task_id-1][loopobj.loopid] = loopobj
 
+# It is needed since extrae reset the HWC on every event
+def update(it, hwc_record_set):
+    for hwc_record in hwc_record_set:
+        it.hwc[hwc_record.type_name_short] += hwc_record.value
 
-# TODO Cada vez que entra un HWC añadir el valor a todas las iteraciones
-# del stack (stacked value) ya que los HWC se resetean para cada evento
 def iter_handler(iter_record, hwc_record_set):
+    iter_stack[iter_record.task_id-1].map(update, hwc_record_set)
     if iter_record.entry:
         itobj = iteration(iter_record.iterid)
         itobj.set_init(iter_record.time)
-        # Extrae reset HWC once they are gathered so
-        # substraction is not needed.
-        #for hwc_record in hwc_record_set:
-        #    itobj.set_hwc_init(hwc_record.type_name_short, hwc_record.value)
+        for hwc_record in hwc_record_set:
+            itobj.hwc[hwc_record.type_name_short] = 0
         iter_stack[iter_record.task_id-1].push(itobj)
     elif iter_record.exit:
         itobj = iter_stack[iter_record.task_id-1].pop()
         itobj.set_fini(iter_record.time)
-        for hwc_record in hwc_record_set:
-            itobj.set_hwc_fini(hwc_record.type_name_short, hwc_record.value)
         loop_stack[iter_record.task_id-1].top().new_iteration(itobj)
 
 def niter_handler(niter_record):
