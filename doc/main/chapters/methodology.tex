@@ -6,7 +6,7 @@ On proposed methodology and further studies
 \section{Application structure by
 classification}\label{s:app_structire_by_classification}
 
-Taking into account the motivations, exposed in \ref{s:motivations}, and the
+\lettrine{T}{aking} into account the motivations, exposed in \ref{s:motivations}, and the
 previous works studied and discussed in \ref{related_work} the idea to introduce
 a new approach arise, even if as always based on previous foundations.  
  
@@ -26,7 +26,7 @@ three reasons:
 
 The proposal presented in this thesis is to explore a new way to detect the
  general structure of an application by applying clustering. 
-The essential point is that the problem has been converted in to a classification 
+The essential point is that the problem has been converted into a classification 
 problem so instead of looking for these itemsets that are being
 repeated several times during the execution, close enough one each other, let's
 face the problem of arrange the MPI calls that belongs to the same loop to the
@@ -511,8 +511,8 @@ $\Upsilon$, being $\Delta$ the set of all $\delta$.
         \BEGIN
             \FOR j \in [i+1, |\delta|) \DO
             \BEGIN
-              \IF isSubloop(\delta_{i}, \delta{j}) \THEN
-                  \delta_{i} \mapsto \delta{j} \\
+              \IF isSubloop(\upsilon_{i}, \upsilon{j}) \THEN
+                  \upsilon_{i} \mapsto \upsilon_{j} \\
             \END
         \END
     \END
@@ -521,10 +521,14 @@ $\Upsilon$, being $\Delta$ the set of all $\delta$.
 The key point of this
 algorithm is the $isSubloop$ function. Imagine that we have one set of three loops
 a, b and c with same $\delta$ with 100, 50 and 10 iterations respectively. 
-For sure all three are in a some way related between them but there are two options:
+All three can be related in a some way or not. There are six options:
 \begin{enumerate*}[label=\roman*)]
     \item $a \mapsto b \mapsto c$
-    \item or $a \mapsto c$ and $b \mapsto c$
+    \item $a \mapsto c$ and $b \mapsto c$
+    \item $a \mapsto b$ and $c$ is alone
+    \item $a \mapsto c$ and $b$ is alone
+    \item $b \mapsto c$ and $a$ is alone
+    \item all three have no relation
 \end{enumerate*}. You can see the same example where the second option is the
 correct on pseudocode
 \ref{pc:delta_classification_example_2} and figure

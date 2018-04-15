@@ -26,7 +26,7 @@
 \usepackage{algorithm}
 \usepackage{lettrine}
 \usepackage[inline]{enumitem}
-\usepackage{draftwatermark}
+%\usepackage{draftwatermark}
 \usepackage{fancyhdr}
 \usepackage{framed}
 \usepackage[toc,page]{appendix}
@@ -44,9 +44,9 @@
 
 \linespread{1.1}
 
-\SetWatermarkText{DRAFT}
-\SetWatermarkScale{5}
-\SetWatermarkColor[rgb]{0.95,0.95,0.95}
+%\SetWatermarkText{DRAFT}
+%\SetWatermarkScale{5}
+%\SetWatermarkColor[rgb]{0.95,0.95,0.95}
 \graphicspath{ {imgs/} }
 
 \begin{document}
@@ -61,8 +61,14 @@
 \begin{titlepage}
 \begin{center}
 
-\vspace*{.06\textheight}
-{\scshape\LARGE Universitat Polit\'ecnica de Catalunya\par}\vspace{1.5cm} % University name
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=80px]{upc_logo}
+  \label{}
+\end{figure}
+
+\vspace*{.02\textheight}
+{\scshape\LARGE Universitat Polit\`ecnica de Catalunya\par}\vspace{1.5cm} % University name
 \textsc{\Large Master Thesis}
 \vspace{1.5cm}
 \hrule
@@ -126,13 +132,47 @@ continu\'o as\'i hasta hacerse dueño de todo su significado.{\huge ''}}}
 %------------------------------------------------------------------------------
 %	ABSTRACT PAGE
 %------------------------------------------------------------------------------
+\chapter*{Abstract}
 
-%\begin{abstract}
-%\addchaptertocentry{\abstractname} % Add the abstract to the table of contents
-%The Thesis Abstract is written here (and usually kept to just this page). 
-%The page is kept centered vertically so can expand into the blank space above 
-%the title too\ldots
-%\end{abstract}
+%HPC has been increasing in importance and nowadays can be said it is the third
+%support of science with theory and mathematics. For these systems there is a
+%high pressure to be always faster and improvements have been done in all layers
+%of the transformation hierarchy. This thesis is centered on program layer and
+%the tools that aims to improve execution times here are the performance analysis 
+%tools that allows to detect the bottlenecks presents in the application that 
+%prevents from better behaviour. In an application-centric approach, the
+%performance analysis is a cyclic process consisting of observing the behaviour
+%of the application so as to hypothesize the possible problems that affects its
+%performance and finally translate these hypothesis to improvements in the
+%application, re-starting the cycle to validate them. Obviously as less number of
+%iterations of this cycle the less time wasted and it directly depends on the
+%quality of the hypothesis that is strongly related with the possibilities the
+%analysis tools provides. 
+
+Performance tools have been demonstrated to be valuable
+on detection of bottlenecks for a long time but since it demands high skilled
+analyst, developers are not used to use them but delegate this work to the
+actual specialist. What it means is that analyzers are not used to work with
+their own code. Having the structure of the program will lead to better
+understand the application by allowing to analyst to have a mental schema about
+what the program does. This improve in understandability also will leads to
+better and faster analysis while also drives to better reports to the developer. 
+Identifying this need, in this thesis we propose a new methodology for
+application structure detection. Even if this problem has been previously solved by
+different researchers, they used to use sequential pattern mining techniques
+what are difficultly scalable what is a big drawback if we pay attention to the
+trend of the HPC systems to grow in complexity.
+We propose a disruptive design being the key point of the proposal the fact that we
+understand this problem
+as a classification problem instead of a sequential pattern mining problem. The main
+reason to do that is because we are exclusively focused on HPC applications so
+we decided to exploit their idiosyncrasy that have leads to a sort of ad-hoc
+methodology for HPC application that have allowed to decrease the complexity of
+the tool.
+
+A prototype of the proposed methodology have been developed and tested
+demonstrating that is scalable and is able to provide correct results for
+current real world applications.
 
 %------------------------------------------------------------------------------
 %   CONTENT

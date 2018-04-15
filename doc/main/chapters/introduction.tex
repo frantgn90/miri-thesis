@@ -255,53 +255,53 @@ interaction between Paraver and the proposed development in the sense that the
 second one is capable to identify and communicate with paraver for show up where
 in trace are the detected phases.
 
-\subsubsection{Dimemas}
-
-Like the other tools Dimemas also have a so descriptive name, it means (in
-spanish) ``tell me more'' but is fine to use the acronym that is ``DIstributed
-MEmory MAchine Simulator''. It is a high-abstracted trace-driven MPI simulator
-perfect to perform the called ``what if'' experiments. It is capable to simulate
-the interconnection network of a distributed memory machine by means of a high
-abstracted model that consists on three fundamental parameters:
-\begin{enumerate*}[label=\roman*)]
-  \item Latency (s) that models the actual latency of the network and also the
-    possible overhead because the software stack before arrives to the NIC
-  \item Bandwidth (mb/s) that models the bandwidth of the network and
-  \item Contention that is modeled by the number of messages in flight 
-    allowed on a given instant on a given network (intra-nodes, inter-nodes or
-    inter-machines) and the number of input and output messages from a given
-    node in a given instant.
-\end{enumerate*}
-
-Dimemas works with paraver traces but in this case it needs to perform a 
-conversion by {\tt prv2dim} converter that generates a dimemas trace, a
-different trace format that ease simulation.
-As an output it builds up a
-new Paraver trace that can be analyzed as the original. Only communication times 
-are simulated through the Dimemas models. Also provides a naive way to model CPU
-burst by means of a coefficient that can be applied to their duration.
-Additionally ``modules'' can be defined that are segments of the execution where
-different coefficients can be applied. Even if it is a minor detail, since it
-is important to introduce because its usefulness for this thesis purposes,
-there is an additional mechanism to modify CPU burst times. At parsing time
-a hardware counter and a coefficient to multiply 
-for, can be specified. Normally the hardware counter is the number of 
-cycles and the coefficient is the cycle time. By this way the user is able to 
-remove the possible O.S. noise that has affected the original
-execution\footnote{Noise introduced by O.S. can be detected in Paraver by a fall 
-  of the frequency. This is because cycles counter forms part of the context of
-  every process but not the time so whenever a process loss CPU, cycles will not
-  be counted until return to execution but time is not stopped although. This
-  phenomena implies an increment on the traced cycle time. Take into account
-  that is impossible to guarantee a fall on frequency is because O.S. or because
-  any other source like DVFS so it works only when we can assume the frequency
-of the processor is quite stable.}.
-
-Can be considered that Dimemas is completely orthogonal to this thesis objectives
-but have been considered interesting to introduce it since in some situations a
-Dimemas simulation will be needed in order to remove noise from trace since
-noise affects quite enough to the proposed methodology because it rely on some
-scalar values like timing instead of just an ordered sequence of events.
+%\subsubsection{Dimemas}
+%
+%Like the other tools Dimemas also have a so descriptive name, it means (in
+%spanish) ``tell me more'' but is fine to use the acronym that is ``DIstributed
+%MEmory MAchine Simulator''. It is a high-abstracted trace-driven MPI simulator
+%perfect to perform the called ``what if'' experiments. It is capable to simulate
+%the interconnection network of a distributed memory machine by means of a high
+%abstracted model that consists on three fundamental parameters:
+%\begin{enumerate*}[label=\roman*)]
+%  \item Latency (s) that models the actual latency of the network and also the
+%    possible overhead because the software stack before arrives to the NIC
+%  \item Bandwidth (mb/s) that models the bandwidth of the network and
+%  \item Contention that is modeled by the number of messages in flight 
+%    allowed on a given instant on a given network (intra-nodes, inter-nodes or
+%    inter-machines) and the number of input and output messages from a given
+%    node in a given instant.
+%\end{enumerate*}
+%
+%Dimemas works with paraver traces but in this case it needs to perform a 
+%conversion by {\tt prv2dim} converter that generates a dimemas trace, a
+%different trace format that ease simulation.
+%As an output it builds up a
+%new Paraver trace that can be analyzed as the original. Only communication times 
+%are simulated through the Dimemas models. Also provides a naive way to model CPU
+%burst by means of a coefficient that can be applied to their duration.
+%Additionally ``modules'' can be defined that are segments of the execution where
+%different coefficients can be applied. Even if it is a minor detail, since it
+%is important to introduce because its usefulness for this thesis purposes,
+%there is an additional mechanism to modify CPU burst times. At parsing time
+%a hardware counter and a coefficient to multiply 
+%for, can be specified. Normally the hardware counter is the number of 
+%cycles and the coefficient is the cycle time. By this way the user is able to 
+%remove the possible O.S. noise that has affected the original
+%execution\footnote{Noise introduced by O.S. can be detected in Paraver by a fall 
+%  of the frequency. This is because cycles counter forms part of the context of
+%  every process but not the time so whenever a process loss CPU, cycles will not
+%  be counted until return to execution but time is not stopped although. This
+%  phenomena implies an increment on the traced cycle time. Take into account
+%  that is impossible to guarantee a fall on frequency is because O.S. or because
+%  any other source like DVFS so it works only when we can assume the frequency
+%of the processor is quite stable.}.
+%
+%Can be considered that Dimemas is completely orthogonal to this thesis objectives
+%but have been considered interesting to introduce it since in some situations a
+%Dimemas simulation will be needed in order to remove noise from trace since
+%noise affects quite enough to the proposed methodology because it rely on some
+%scalar values like timing instead of just an ordered sequence of events.
 
 \subsubsection{Mercurium}\label{ss:mercurium}
 

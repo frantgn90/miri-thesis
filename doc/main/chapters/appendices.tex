@@ -390,7 +390,7 @@ sequences mining for avoid candidate generation.
 
 \chapter{Automatic code instrumentation}\label{ann:automatic_code_instr}
 
-Loops characterization and validation phases of this thesis motivates the development
+\lettrine{L}{oops} characterization and validation phases of this thesis motivates the development
 of an automatization of the user source code instrumentation. It is for sure an
 important piece of this thesis but since it is not the main development have been
 decided to include it as annex.
@@ -593,34 +593,25 @@ number of actual iterations performed whether have been instrumented or not.
 
 \section{Instrumentation for Variable Importance analysis}
 
-The information needed for the variable importance analysis is the loop id from where
-every mpi call belongs to in order to label every mpi call unambiguously with
-it. To do so the followed strategy has been to fire the loop id
-just before every mpi call, this information will be later post-process such
+Variable importance analysis needs every mpi call to be labeled with the
+identificator of the loop where every one of them lies. To do so the followed
+strategy have been instrument every entry and exit of every loop, by injecting
+calls to the helper library that will keep track about what loop or nested loop 
+the execution is traversing. By this way, on any instant the
+information about where the execution is in terms of loops or nested loops is
+available. Then just before every mpi call there is a call that fires this
+information to the trace. This information will be later post-process such
 that every event containing loop ids are providing information for the next mpi
-call. The way to do so is bit similar as in section
-\ref{ann:automatic_loops_charac} in the sense that entry and exit of loops are
-instrumented and stacks also are used for keep
-track of what loops the application is traversing in a nested fashion. The
-differences are that for every entry and exit from loop no events are fired to
-trace but just get information about what loops the application is entering and
-exit. Next fundamental difference is that no iteration is instrumented so no
-events marking iterations are neither fire to trace. Instead of iterations, in
-this case the mpi calls are instrumented by adding two calls to the tracer api,
-one before that fire to trace the \ldots
-
-The instrumentation consists \ldots
+call. 
 
 \chapter{Experiments}
 
-In this appendix it can be checked out the numbers used for the plots showed up
+\lettrine{I}{n} this appendix it can be checked out the numbers used for the plots showed up
 on the results chapter.
 
 \section{Number of unique mpi calls}\label{s:nunique_mpi_calls}
 
-Here the numbers for the plots in figure \ref{fig:scalability_results}.
-
-\begin{table}[]
+\begin{table}[h]
 \centering
 \label{tb:unique_mpi_calls}
 \caption{Number of unique mpi calls}
@@ -635,5 +626,37 @@ LU & 635 & 1421 & 2993 & 635  & 1421 & 2993 & 635  & 1421 & 2993 \\
 IS & 117 & 237  & 477  & 117  & 237  & 477  & 117  & 237  & 477  \\
 MG & 1794 & 3344 & 6656 & 1794 & 3344 & 6656 & 1794 & 3344 & 6656 \\
 SP & 819  & 1456 & 3276 & 819  & 1456 & 3276 & 819  & 1456 & 3276 \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\section{Structure detection execution times}\label{s:strdect_exec_times}
+
+\begin{table}[h]
+\centering
+\caption{Structure detection times for CG}
+\label{tb:cg_strdec_times}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+           & A.8   & A.16  & A.32  & B.8    & B.16  & B.32   & C.8    & C.16  & C.32   \\ \midrule
+Reduction  & 23.25 & 47.08 & 148.3 & 115.55 & 236.8 & 721.25 & 116.42 & 239.1 & 719.01 \\
+Clustering & 0.002 & 0.008 & 0.01  & 0.002  & 0.025 & 0.01   & 0.002  & 0.02  & 0.01   \\
+Merge      & 0.03  & 0.08  & 0.22  & 0.1    & 0.179 & 0.4    & 0.08   & 0.15  & 0.47   \\
+Inter-rank & 0.007 & 0.02  & 0.12  & 0.007  & 0.02  & 0.12   & 0.007  & 0.029 & 0.11   \\
+Pseudocode & 0.006 & 0.007 & 0.01  & 0.009  & 0.007 & 0.002  & 0.006  & 0.007 & 0.01   \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Structure detection times fro MG}
+\label{tb:mg_strdec_times}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+           & A.8   & A.16  & A.32 & B.8  & B.16  & B.32   & C.8   & C.16  & C.32  \\ \midrule
+Reduction  & 7.8   & 15.6  & 31.5 & 28.5 & 57.13 & 123.15 & 33.04 & 63.28 & 136.8 \\
+Clustering & 0.007 & 0.014 & 0.04 & 0.08 & 0.01  & 0.05   & 0.008 & 0.02  & 0.04  \\
+Merge      & 0.27  & 1.13  & 3.57 & 0.29 & 1.15  & 3.8    & 0.29  & 1.13  & 3.6   \\
+Inter-rank & 0.03  & 0.12  & 0.49 & 0.03 & 0.12  & 0.48   & 0.03  & 0.12  & 0.5   \\
+Pseudocode & 0.008 & 0.01  & 0.01 & 0.01 & 0.015 & 0.14   & 0.008 & 0.16  & 0.25  \\ \bottomrule
 \end{tabular}
 \end{table}
