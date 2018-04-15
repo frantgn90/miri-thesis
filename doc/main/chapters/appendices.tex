@@ -441,9 +441,9 @@ and just expose simple calls.
 
 On next sections the work done for the two developments are deeply explained.
 
-\section{Instrumentation for loops characterization}\label{ann:automatic_loops_charac}
+\section{Instrumentation for PCA analysis}\label{ann:automatic_loops_charac}
 
-For loops characterization what is needed is gather information from loops and
+For PCA analysis what is needed is gather information from loops and
 its iterations so the transformations done looks like the transformation of
 pseudo-code \ref{pc:mercurium_loops_original} to \ref{pc:mercurium_loops_trans}.
 
@@ -479,9 +479,9 @@ dynamically at execution time by means of an environment variable.} to a
 given iteration, to be instrumented or not. The decision of
 instrument an iteration given a probability arise from the fact that extract
 information of all loops at level of iterations adds an unmanageable overhead to
-the trace size, in annex \ref{ann:loops_data_quality} an empirical demonstration 
-about the quality of data is not degrading because this sampling mechanism is 
-showed. Summarizing, the main ideas for the instrumentation are:
+the trace size and the executions used to be very repetitive so taking just few
+iterations should be enough for figure out the global behaviour of all
+iterations. Summarizing, the main ideas for the instrumentation are:
 \begin{enumerate}[label=\roman*)]
   \item For every loop entry and exit are marked in trace.
   \item Additionally, before the exit event, the total number of iterations
@@ -591,17 +591,49 @@ Former is used to decide if a given iteration and its subloops (and its
 iterations) should be instrumented or not, while the last is used to fire the
 number of actual iterations performed whether have been instrumented or not.
 
+\section{Instrumentation for Variable Importance analysis}
 
+The information needed for the variable importance analysis is the loop id from where
+every mpi call belongs to in order to label every mpi call unambiguously with
+it. To do so the followed strategy has been to fire the loop id
+just before every mpi call, this information will be later post-process such
+that every event containing loop ids are providing information for the next mpi
+call. The way to do so is bit similar as in section
+\ref{ann:automatic_loops_charac} in the sense that entry and exit of loops are
+instrumented and stacks also are used for keep
+track of what loops the application is traversing in a nested fashion. The
+differences are that for every entry and exit from loop no events are fired to
+trace but just get information about what loops the application is entering and
+exit. Next fundamental difference is that no iteration is instrumented so no
+events marking iterations are neither fire to trace. Instead of iterations, in
+this case the mpi calls are instrumented by adding two calls to the tracer api,
+one before that fire to trace the \ldots
 
-\subsection{Data quality assesment}\label{ann:loops_data_quality}
+The instrumentation consists \ldots
 
-% TODO: Comment how the chance to instrument a nested loop is chance^nestedlevel
+\chapter{Experiments}
 
-In this section there will be demonstrated how the degradation of the sampled
-data is minimum for different ``chances'' because the high regularity of HPC
-applications.
+In this appendix it can be checked out the numbers used for the plots showed up
+on the results chapter.
 
-\section{Instrumentation for validation}
+\section{Number of unique mpi calls}\label{s:nunique_mpi_calls}
 
-Hola manola
+Here the numbers for the plots in figure \ref{fig:scalability_results}.
 
+\begin{table}[]
+\centering
+\label{tb:unique_mpi_calls}
+\caption{Number of unique mpi calls}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+ & A.8 & A.16 & A.32 & B.8  & B.16 & B.32 & C.8  & C.16 & C.32 \\ \midrule
+BT & 945 & 1680 & 3780 & 945  & 1680 & 3780 & 945  & 1680 & 3780 \\
+CG & 480 & 960  & 1920 & 480  & 960  & 1920 & 480  & 960  & 1920 \\
+EP & 72  & 144  & 288  & 72   & 144  & 288  & 72   & 144  & 288  \\ 
+FT & 121 & 241  & 481  & 121  & 241  & 481  & 121  & 241  & 481  \\
+LU & 635 & 1421 & 2993 & 635  & 1421 & 2993 & 635  & 1421 & 2993 \\
+IS & 117 & 237  & 477  & 117  & 237  & 477  & 117  & 237  & 477  \\
+MG & 1794 & 3344 & 6656 & 1794 & 3344 & 6656 & 1794 & 3344 & 6656 \\
+SP & 819  & 1456 & 3276 & 819  & 1456 & 3276 & 819  & 1456 & 3276 \\ \bottomrule
+\end{tabular}
+\end{table}
