@@ -80,6 +80,7 @@
 \usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
 \usepackage[absolute,overlay]{textpos}
 \usepackage{multicol}
+\usepackage{pseudocode}
 
 %\hypersetup{
 %	colorlinks = true,
@@ -109,8 +110,17 @@
 }
 
 \author
-{
-	Juan Francisco Mart\'inez Vera
+{%
+	\texorpdfstring{
+	\begin{multicols}{2}
+		{\small \textit{Author}}\\
+		Juan Francisco Mart\'inez Vera\\
+		\columnbreak
+		{\small \textit{Supervisor}}\\
+		Jes\'us Labarta Mancho\\
+	\end{multicols}
+	}
+	{ }
 }
 \institute[FIB, UPC]
 {
@@ -147,197 +157,123 @@
 %----------------------------------------------------------------------------------------
 
 \section{Context}
-\subsection{High Performance Computing}
-\begin{frame}
-\frametitle{High Performance Computing}
-\begin{itemize}
-	\item Becomes the third support of science with mathematics and theory
-	\item Tremendous improvement in all transformation hierarchy layers
-\end{itemize}
-\pause
-\begin{figure}
-	\includegraphics[width=100px]{imgs/transformationhierarchy.png}
-	\caption{Transformation hierarchy}
-\end{figure}
-\begin{textblock*}{5cm}(40px,160px) % {block width} (coords)
-	\includegraphics<+(1)->[width=70px]{imgs/moore_prediction.png}
-\end{textblock*}
-\begin{textblock*}{5cm}(40px,100px) % {block width} (coords)
-	\includegraphics<+(1)->[width=70px]{imgs/microarchitecture.png}
-\end{textblock*}
-\begin{textblock*}{5cm}(270px,170px) % {block width} (coords)
-	\includegraphics<+(1)->[width=70px]{imgs/multicore.png}
-\end{textblock*}
-\begin{textblock*}{5cm}(270px,100px) % {block width} (coords)
-	\includegraphics<+(1)->[width=70px]{imgs/program_simulation.png}
-\end{textblock*}
-\end{frame}
+%\subsection{High Performance Computing}
+%\begin{frame}
+%\frametitle{High Performance Computing}
+%\begin{itemize}
+%	\item Becomes the third support of science with mathematics and theory
+%	\item Tremendous improvement in all transformation hierarchy layers
+%\end{itemize}
+%\begin{figure}
+%	\includegraphics[width=100px]{imgs/transformationhierarchy.png}
+%	\caption{Transformation hierarchy}
+%\end{figure}
+%\begin{textblock*}{5cm}(40px,160px) % {block width} (coords)
+%	\includegraphics<+(1)->[width=70px]{imgs/moore_prediction.png}
+%\end{textblock*}
+%\begin{textblock*}{5cm}(40px,100px) % {block width} (coords)
+%	\includegraphics<+(1)->[width=70px]{imgs/microarchitecture.png}
+%\end{textblock*}
+%\begin{textblock*}{5cm}(270px,170px) % {block width} (coords)
+%	\includegraphics<+(1)->[width=70px]{imgs/multicore.png}
+%\end{textblock*}
+%\begin{textblock*}{5cm}(270px,100px) % {block width} (coords)
+%	\includegraphics<+(1)->[width=70px]{imgs/program_simulation.png}
+%\end{textblock*}
+%\end{frame}
 
 \subsection{Performance Analysis tools}
 \begin{frame}
 \frametitle{Performance Analysis tools (i)}
 \begin{itemize}
-	\item Focused on Program layer
+%	\item Focused on Program layer
 	\item Aid to detect bottlenecks
 	\item Is a cyclic process
 	\begin{itemize}
-		\item Less iterations better
-		\item Depens on quality of hypothesis
+%		\item Less iterations better
+		\item \# iterations depens on quality of hypothesis
 		\item That is strongly related with possibilities tools provides
 	\end{itemize}
-\end{itemize}
-\begin{figure}
-	\includegraphics[width=100px]{imgs/performance_analysis_diagram.png}
-	\caption{Performance analysis workflow}
-\end{figure}
-\end{frame}
-
-\begin{frame}
-\frametitle{Performance Analysis tools (ii)}
-\begin{itemize}
-	\item Have been demonstrate to be valuable on detection of bottlenecks
-	\item Demands high skilled analysts
-	\item So developers use to delegate this work
+	\item Analyst have to work with codes \textbf{they are not familiar with}
 	\begin{itemize}
-		\item \textbf{Analyst have to work with codes they are not familiar with}
+		\item POP project
+		\item \textbf{Syntactic structure help analyst} to understand what is going on
 	\end{itemize}
 \end{itemize}
-\begin{figure}
-	\includegraphics[width=100px]{imgs/pop.png}
-	\caption{Performance optimisation and Productivity project}
-\end{figure}
-\pause
-\begin{block}{Motivation 1}
-	Providing application structure will lead to better understandability about what the application is doing.
-\end{block}
-\end{frame}
+\begin{multicols}{2}
+	\begin{figure}
+		\includegraphics[height=80px]{imgs/performance_analysis_diagram.png}
+		\caption{Performance analysis workflow}
+	\end{figure}
+	\columnbreak
 
-\begin{frame}
-\frametitle{Performance Analysis tools (iii)}
-\begin{itemize}
-	\item When dealing with big traces:
-	\begin{itemize}
-		\item Visualizers responsiveness times \textbf{becomes prohibitive}
-	\end{itemize}
-	\item Analysis phases is then break down into:
-	\begin{enumerate}
-		\item Filter
-		\item Cutter
-		\item Inspection
-	\end{enumerate}
-\end{itemize}
-\begin{figure}
-	\includegraphics[width=40px]{imgs/analysis_subphases.png}
-%	\caption{Analysis subphases}
-\end{figure}
-\pause
-\begin{block}{Motivation 2}
-	Having the structure of the application will aid the process of identify regions of interest
-\end{block}
+	\begin{figure}
+		\includegraphics[height=80px]{imgs/analysis_subphases.png}
+		\caption{Analysis subphases}
+	\end{figure}
+\end{multicols}
 \end{frame}
 
 \section{State of the Art}
-\subsection{Syntactic structure}
 
 \begin{frame}
-\frametitle{State of the Art (i)}
-\begin{itemize}
-	\item On-line analysis
+\frametitle{State of the Art}
+	Previous research on syntactic structure\\
 	\begin{itemize}
-		\item In \cite{noeth2009scalatrace} propose structure derection for on-line trace compression
-		\begin{itemize}
-			\item Rely on \textbf{detecting and aggregating patterns}
-		\end{itemize}
-		\item In \cite{aguilar2016event} propose structure detection for on-line trace compression and visual performance analysis
-		\begin{itemize}
-			\item Rely on \textbf{directed graph construction} and DFS-analysis for cycles hierarchical analysis.
-		\end{itemize}
+		\item Previous research have been driven in this field.
+		\item Since traces are ordered sequences...
+		\item ... Natural choice has been \textbf{sequential pattern mining} in general.
 	\end{itemize}
-	\item Off-line analysis
+	As main drawback\\
 	\begin{itemize}
-		\item In \cite{Safyallah2006} propose improving reverse engineering by structure detection analysis
-		\begin{itemize}
-			\item Rely on \textbf{sequential pattern mining} techniques.
-		\end{itemize}
-		\item In \cite{Lopez-Cueva2012} propose to aid huge SoC traces
-		\begin{itemize}
-			\item Rely on \textbf{frequent periodic pattern mining}.
-		\end{itemize}
-		\item In \cite{trahay2015selecting} propose to select automatically the performance hotspots
-		\begin{itemize}
-			\item Rely on \textbf{growing sequential pattern mining}.
-		\end{itemize}
+		\item This sort of algorithms, \textbf{used to present high complexity}.
+		\item From $O(n^{2})$ to $O(2^{n})$.
 	\end{itemize}
-\end{itemize}
 \end{frame}
 
+\section{Motivations}
 \begin{frame}
-\frametitle{State of the Art (ii)}
-\begin{itemize}
-	\item On-line analysis
-	\begin{itemize}
-		\item \cite{noeth2009scalatrace} By avoiding $O(n^{2})$ they \textbf{limits pattern recognition}
-		\item In \cite{aguilar2016event} \textbf{Loss temporality} when detecting hierarchical structure
-	\end{itemize}
-	\item Off-line analysis
-	\begin{itemize}
-		\item \cite{Safyallah2006} \cite{Lopez-Cueva2012} \cite{trahay2015selecting} relies on pattern mining techniques that presents \textbf{high complexity}.
-	\end{itemize}
-\end{itemize}
+\frametitle{Motivations}
+\begin{block}{Motivation 1: About improve understandability...}
+	Providing application structure will lead to better understandability about what the application is doing.
+\end{block}
 \pause
-\begin{block}{Motivation 3}
-	Been scalable by finding out an alternative technique
+\begin{block}{Motivation 2: About identify regions of interest...}
+	Having the structure of the application can aid the process of identify regions of interest
+\end{block}
+\pause
+\begin{block}{Motivation 3: About been scalable...}
+	Because the trend of increasing trace sizes, explore an alternative to improve scalability. 
 \end{block}
 \end{frame}
 
 \section{Proposal}
 \subsection{Application structure by classification}
 \begin{frame}
-\frametitle{Application structure by classification(i)}
-HPC applications idiosincracy
+\frametitle{Application structure by classification}
+\framesubtitle{Intuition}
+HPC applications idiosincracy\\
 \begin{itemize}
 	\item Big outer loop
 	\item Repetitive and stable executions
 	\item Communications lies on loops that drives the execution
 \end{itemize}
-\vfill
-\begin{multicols*}{3}
-	\begin{figure}
-		\includegraphics[width=0.3\textwidth,height=60px]{imgs/ft_trace_128.png}
-		\caption{FT 128 ranks}
-	\end{figure}
-	
-	\begin{figure}
-		\includegraphics[width=0.3\textwidth,height=60px]{imgs/lu_trace_128.png}
-		\caption{LU 128 ranks}
-	\end{figure}
-	
-	\begin{figure}
-		\includegraphics[width=0.3\textwidth,height=60px]{imgs/cg_trace_128.png}
-		\caption{CG 128 ranks}
-	\end{figure}
-
-\end{multicols*}
-\end{frame}
-
-\begin{frame}
-\frametitle{Application structure by classification (ii)}
+Taking this into account...\\
 \begin{itemize}
-	\item Instead of following the trend, different proposal
-	\item Taking into account the characteristics of our target
-	\item Loops can be discovered by monitoring the communications
-	\item Stable executions implies same behaviour for all iterations in a given loop
+	\item Stable executions implies \textbf{similar behaviour for all iterations} in a given loop
+	\item Loops can be discovered by \textbf{monitoring the communications}.
 	\item So...
 \end{itemize}
 \vfill
 \pause
 \begin{block}{The key idea}
-	Communications are used as proxies for the observation of iterations. Clustering them by its behaviour the applications structures can be betrayed.
+	Communications are used as \textbf{proxies} for the observation of iterations. Clustering them \textbf{by its behaviour} the applications structures can be betrayed.
 \end{block}
 \end{frame}
 
 \begin{frame}
-\frametitle{Application structure by classification (iii)}
+\frametitle{Application structure by classification}
+\framesubtitle{Defining behaviour}
 Selected features must be able to
 \begin{itemize}
 	\item Join MPIs from the same loop
@@ -369,7 +305,7 @@ As a starting point ...
 \vspace{10px}
 \pause
 \begin{itemize}
-	\item By \textbf{reduction} and \textbf{aggregation \& derivation}
+	%\item By \textbf{reduction} and \textbf{aggregation \& derivation}
 	\item Is a sort of Map \& Reduce
 	\item Every MPI call is identified by its \textbf{signature}
 	\item Being the signature: Ordered sequence of pairs $(file,line)$ that define the call path, i.e. The dynamic position
@@ -386,7 +322,7 @@ As a starting point ...
 Additionally \textbf{filter less representative MPI calls}.
 \begin{itemize}
 	\item Allows to decrease even more the clustering complexity.
-	\item Focus only on the important data.
+	\item Focus only on the important data (normally set to 10\%).
 	\item The criteria is whether a given threshold of ``explained time'' is surpased.
 \end{itemize}
 \begin{equation}
@@ -403,15 +339,14 @@ Additionally \textbf{filter less representative MPI calls}.
 The stored information for every unique MPI call is:
 \begin{itemize}
 	\item \textbf{Number of repetitions}
-	\item \textbf{Mean time time between repetitions}
+	\item Timestamps $\rightarrow$ \textbf{Mean time time between repetitions}
 	\item Entire call path
 	\item Previous burst performance information
-	\item All timestamps
 	\item Calculed delta
 \end{itemize}
 \vfill
 \pause
-\begin{block}{Keynote}
+\begin{block}{The key point for scalability}
 	HPC applications are strongly repetitive over time so number of unique MPI calls will remain despite the increasing problem size.
 \end{block}
 \end{frame}
@@ -424,17 +359,13 @@ The stored information for every unique MPI call is:
 \textbf{Output} Set of sets of MPI calls.
 \vspace{10px}
 \pause
+
 \begin{itemize}
 	\item \textbf{DBSCAN} as clustering algorithm (prefered to K-means)
 	\begin{itemize}
 		\item $\epsilon$ empirically set to 0.2 (in general)
 		\item minPts set to 1
-	\end{itemize}
-\pause
-	\item In a bidimentional space defined by
-	\begin{itemize}
-		\item Number of repetitions
-		\item Mean time between repetitions
+		\item Number of repetitions vs. Mean time between repetitions
 	\end{itemize}
 \pause
 	\item Resulting clusters \textbf{will be considered loops}.
@@ -443,8 +374,16 @@ The stored information for every unique MPI call is:
 		\item Number of repetitions $\rightarrow$ Number of iterations.
 		\item Mean time between repetitions $\rightarrow$ Mean iterations time.
 	\end{itemize}
-	
 \end{itemize}
+\pause
+\begin{multicols}{2}
+	\begin{figure}
+		\includegraphics[width=0.3\textwidth,height=0.3\textheight]{imgs/clustering_ex_1.png}
+	\end{figure}
+	\begin{figure}
+		\includegraphics[width=0.3\textwidth,height=0.3\textheight]{imgs/clustering_ex_2.png}
+	\end{figure}
+\end{multicols}
 \end{frame}
 
 \begin{frame}
@@ -462,9 +401,9 @@ Intuition
 \pause
 Some clues
 \begin{itemize}
-	\item Outer loop will have \textbf{more iterations} then nested one.
-	\item Outer loop will spend \textbf{more time} for per iteration.
-	\item Outer loop will \textbf{explain the same amount of time} as inner loop.
+	\item Outer loop will have \textbf{less iterations} than nested one.
+	\item Outer loop will spend \textbf{more time} per iteration.
+	%\item Outer loop will \textbf{explain the same amount of time} as inner loop.
 \end{itemize}
 \end{frame}
 
@@ -472,54 +411,89 @@ Some clues
 \frametitle{Workflow}
 \framesubtitle{Loops merge (ii)}
 \begin{multicols}{2}
+%	\begin{pseudocode}{ }{ }
+%		\FOR 1 \text{ to } 10 \DO
+%		\BEGIN
+%			\FOR 1 \text{ to } 2 \DO
+%			\BEGIN
+%				\FOR 1 \text{ to } 2 \DO
+%				\BEGIN
+%					MPI\_Call() \\
+%				\END\\
+%				MPI\_Call()\\
+%			\END \\
+%			MPI\_Call()\\
+%		\END\\
+%		\FOR 1 \text{ to } 100 \DO
+%		\BEGIN
+%			\FOR 1 \text{ to } 2 \DO
+%			\BEGIN
+%				\FOR 1 \text{ to } 2 \DO
+%				\BEGIN
+%					MPI\_Call() \\
+%				\END\\
+%				MPI\_Call()\\
+%			\END \\
+%			MPI\_Call()\\
+%		\END
+%	\end{pseudocode}
 	\begin{figure}
-		\includegraphics[width=0.3\textwidth]{imgs/delta_clustering_test_1_pse.png}
+		\includegraphics[width=0.25\textwidth]{imgs/delta_clustering_test_1_pse.png}
 	\end{figure}
-	\pause
 	\columnbreak
 	\begin{figure}
-		\includegraphics[width=0.5\textwidth]{imgs/delta_clustering_test_1.png}
+		\includegraphics[width=0.4\textwidth]<1>{imgs/clustering_ex_2_2.png}
+		\includegraphics[width=0.4\textwidth]<2->{imgs/delta_clustering_test_1.png}
 	\end{figure}
 \end{multicols}
+\begin{itemize}
+	\item $O(\frac{n^{2}-n}{2}) \approx O(n^{2})$ comparissons
+	\pause
+	\item Reduce search space by classify loops by its delta
+	\begin{itemize}
+		\item All lies on same $f(x)=\frac{\delta*T_{exe}}{x}$ being $0 < \delta < 1$
+	\end{itemize}
+	\item And then merge them in a less to more iterations fashion
+\end{itemize}
 \pause
 \begin{block}{Keynote}
-	Different phases can be detected by this way and used for the loops merging.
+	This mechanism is then used for phases detection as well.
 \end{block}
 \end{frame}
 
-\begin{frame}
-\frametitle{Workflow}
-\framesubtitle{Loops merge (iii)}
-\begin{multicols}{2}
-	\begin{figure}
-		\includegraphics[width=0.4\textwidth]{imgs/delta_clustering_test_2_pse.png}
-	\end{figure}
-	\pause
-	\columnbreak
-	\begin{figure}
-		\includegraphics[width=0.5\textwidth]{imgs/delta_clustering_test_2.png}
-	\end{figure}
-\end{multicols}
-\pause
-\begin{block}{Warning}
-	Not all loops that fulfills with nested loops conditions, are nested loops.\\
-	Extra check is needed.
-\end{block}
-\end{frame}
+%\begin{frame}
+%\frametitle{Workflow}
+%\framesubtitle{Loops merge (iii)}
+%\begin{multicols}{2}
+%	\begin{figure}
+%		\includegraphics[width=0.4\textwidth]{imgs/delta_clustering_test_2_pse.png}
+%	\end{figure}
+%	\pause
+%	\columnbreak
+%	\begin{figure}
+%		\includegraphics[width=0.5\textwidth]{imgs/delta_clustering_test_2.png}
+%	\end{figure}
+%\end{multicols}
+%\pause
+%\begin{block}{Warning}
+%	Not all loops that fulfills with nested loops conditions, are nested loops.\\
+%	Extra check is needed.
+%\end{block}
+%\end{frame}
 
-\begin{frame}
-\frametitle{Workflow}
-\framesubtitle{Loops merge (iv)}
-\begin{itemize}
-	\item Classify MPI clusters/Loops ($\upsilon \in \Upsilon$) per ``how much of execution represents'' ($\delta \in \Delta$)\footnote{Do not confuse with $\delta()$ function.}.
-	\item For every phase ($\delta$) sort loops ($\upsilon$) by number of iterations.
-	\item Perform the loop merge \textbf{from high to low iterations count}.
-	\item Before every merge, \textbf{check out} whether the hierarchical relationship is true.
-\end{itemize}
-\begin{figure}
-	\includegraphics[width=0.5\textwidth]{imgs/loops_merge_pseudocode.png}
-\end{figure}
-\end{frame}
+%\begin{frame}
+%\frametitle{Workflow}
+%\framesubtitle{Loops merge (iv)}
+%\begin{itemize}
+%	\item Classify MPI clusters/Loops ($\upsilon \in \Upsilon$) per ``how much of execution represents'' ($\delta \in \Delta$)\footnote{Do not confuse with $\delta()$ function.}.
+%	\item For every phase ($\delta$) sort loops ($\upsilon$) by number of iterations.
+%	\item Perform the loop merge \textbf{from high to low iterations count}.
+%	\item Before every merge, \textbf{check out} whether the hierarchical relationship is true.
+%\end{itemize}
+%\begin{figure}
+%	\includegraphics[width=0.5\textwidth]{imgs/loops_merge_pseudocode.png}
+%\end{figure}
+%\end{frame}
 
 \begin{frame}
 \frametitle{Workflow}
@@ -531,7 +505,7 @@ Some clues
 \begin{itemize}
 	\item Two calls with \textbf{same call paths still coexist} if belongs to different MPI ranks.
 	\begin{itemize}
-		\item \textbf{Conservative} reduction step! If assuming SPMD\footnote{Single Program Multiple Data} applications.
+		\item \textbf{Conservative} reduction step!
 	\end{itemize}
 	\item Divergences between MPI ranks are understood as \textbf{conditional structures in code}.
 	\item This step is about: 
@@ -540,33 +514,33 @@ Some clues
 		\item Reduction
 		\item Arrangement in conditional blocks
 	\end{enumerate}
-
 \end{itemize}
+\pause
+\begin{block}{Idea}
+	Inter-rank reduction step could be moved to the actual Reduction step, leaving this workflow step just for conditional blocks construction.
+\end{block}
 \end{frame}
 
-\begin{frame}
-\frametitle{Workflow}
-\framesubtitle{Inter-rank reduction (ii)}
-\begin{multicols}{3}
-	\vfill
-	\begin{figure}
-		\includegraphics[width=0.3\textwidth]{imgs/workflow_ranks_1.png}
-		\caption{Ordenation}
-	\end{figure}
-	\columnbreak
-	\pause
-	\begin{figure}
-		\includegraphics[width=0.3\textwidth]{imgs/workflow_ranks_2.png}
-		\caption{Reduction}
-	\end{figure}
-	\columnbreak
-	\pause
-	\begin{figure}
-		\includegraphics[width=0.3\textwidth]{imgs/workflow_ranks_3.png}
-		\caption{Conditional blocks}
-	\end{figure}
-\end{multicols}
-\end{frame}
+%\begin{frame}
+%\frametitle{Workflow}
+%\framesubtitle{Inter-rank reduction (ii)}
+%
+%	\begin{enumerate}
+%		\item [0] main() : 10 $>$ B() : 2 $>$ MPI
+%		\item [1] main() : 10 $>$ B() : 2 $>$ MPI
+%		\item [0] main() : 10 $>$ B() : 5 $>$ C() : 7 $>$ MPI
+%		\item [1] main() : 10 $>$ B() : 5 $>$ C() : 8 $>$ MPI
+%		\item [0] main() : 10 $>$ C() : 2 $>$ MPI
+%		\item [1] main() : 10 $>$ C() : 2 $>$ MPI
+%	\end{enumerate}
+%	\pause
+%	\begin{enumerate}
+%		\item [0,1] main() : 10 $>$ B() : 2 $>$ MPI
+%		\item [0] main() : 10 $>$ B() : 5 $>$ C() : 7 $>$ MPI
+%		\item [1] main() : 10 $>$ B() : 5 $>$ C() : 8 $>$ MPI
+%		\item [0,1] main() : 10 $>$ C() : 2 $>$ MPI
+%	\end{enumerate}
+%\end{frame}
 
 \begin{frame}
 \frametitle{Workflow}
@@ -627,47 +601,401 @@ Some clues
 \begin{frame}
 \frametitle{Further considerations}
 
-Until now were not aware \textbf{the problems can arise from clustering step}. \\
+Until now were not aware about \textbf{the problems can arise from clustering step}. \\
 But there are some:
 \begin{enumerate}
 	\item \textbf{Cluster aliasing} when two different loops behaves similarly enough over our defined space
+	\item \textbf{Hidden superloop} when not detected superloop prevents from a good structure detection.
 	\item \textbf{Cluster split} when MPI calls belonging to the same loop behaves in a different way.
 \end{enumerate}
 \vfill
-\pause
-\begin{multicols}{2}
-	\begin{figure}
-		\includegraphics[height=80px]{imgs/aliasing_example.png}
-		\caption{Cluster aliasing example}
-	\end{figure}
+%\pause
+%\begin{multicols}{2}
+%	\begin{figure}
+%		\includegraphics[height=80px]{imgs/aliasing_example.png}
+%		\caption{Cluster aliasing example}
+%	\end{figure}
+%	\columnbreak
+%	\begin{figure}
+%		\includegraphics[height=80px]{imgs/split_example.png}
+%		\caption{Cluster split example}
+%	\end{figure}
+%\end{multicols}
+\end{frame}
+
+\subsection{Proposal modifications}
+\begin{frame}
+\frametitle{Proposal modifications}
+\framesubtitle{Cluster aliasing}
+In the same loop, MPI calls are somehow interleaved
+\begin{itemize}
+	\item Imagine one loops containing $A$ and $B$ calls
+	\item No aliasing: $A \rightarrow B \rightarrow A \rightarrow B \rightarrow A \rightarrow B$
+	\item Aliasing: $A \rightarrow A \rightarrow A \rightarrow B \rightarrow B \rightarrow B$ 
+\end{itemize}
+\begin{multicols}{3}
+	\begin{pseudocode}{ }{ }
+		\FOR 1 to 2 \DO
+		\BEGIN
+			MPI\_A()\\
+			MPI\_B()\\
+		\END\\
+		\FOR 1 to 2 \DO
+		\BEGIN
+			MPI\_A()\\
+			MPI\_B()\\
+		\END
+	\end{pseudocode}
+	\vfill \null
 	\columnbreak
-	\begin{figure}
-		\includegraphics[height=80px]{imgs/split_example.png}
-		\caption{Cluster split example}
-	\end{figure}
+	\pause
+	\null \vfill
+	\begin{table}[]
+		\centering
+		\begin{tabular}{l|ll}
+			MPI\_A & 1 & 3 \\
+			MPI\_B & 2 & 4 \\
+			MPI\_C & 5 & 7 \\
+			MPI\_D & 6 & 8
+		\end{tabular}
+	\end{table}
+	%\includegraphics[height=0.2\textheight]{imgs/cluster_aliasing_1.png}
+	\vfill \null
+	\columnbreak
+	\pause
+	\null \vfill
+	\begin{table}[]
+		\centering
+		\begin{tabular}{l|llll}
+			MPI\_A & 1 & 3 &   &   \\
+			MPI\_B & 2 & 4 &   &   \\ \hline
+			MPI\_C &   &   & 5 & 7 \\
+			MPI\_D &   &   & 6 & 8
+		\end{tabular}
+	\end{table}
+	%\includegraphics[height=0.2\textheight]{imgs/clustering_aliasing_2.png}
+	\vfill \null
 \end{multicols}
 \end{frame}
 
-\subsection{Data analysis}
+\begin{frame}
+\frametitle{Proposal modifications}
+\framesubtitle{Hidden superloop}
+The model will not detect loops w/o MPI calls
+Can leads to bad results if more than one nested loops
+\begin{itemize}
+	\item Aliasing will be detected, but two 4-iteration loops
+	\item Wrong: $A \rightarrow A \rightarrow A \rightarrow A \rightarrow B \rightarrow B \rightarrow B \rightarrow B$
+	\item Correct: $A \rightarrow A \rightarrow B \rightarrow B \rightarrow A \rightarrow A \rightarrow B \rightarrow B$
+\end{itemize}
+\begin{multicols}{2}
+	\begin{pseudocode}{ }{ }
+		\FOR 1 to 2 \DO
+		\BEGIN
+			\FOR 1 to 2 \DO
+			\BEGIN
+				MPI\_A()\\
+			\END\\
+			\FOR 1 to 2 \DO
+			\BEGIN
+				MPI\_B()\\
+			\END
+		\END
+	\end{pseudocode}
+	\pause
+	\columnbreak
+	\begin{table}[]
+		\centering
+		\begin{tabular}{l | llll}
+			MPI\_A & 1 & 2 & 5 & 6 \\ 
+			MPI\_B & 3 & 4 & 7 & 8
+		\end{tabular}
+	\end{table}
+	\pause
+	\begin{table}[]
+	\centering
+	\begin{tabular}{l | llllllll}
+		MPI\_A & 1 & 2 &   &   & 5 & 6 &   &   \\ \hline
+		MPI\_B &   &   & 3 & 4 &   &   & 7 & 8
+	\end{tabular}
+	\end{table}
+\end{multicols}
+\end{frame}
 
-\subsection{Proposal modifiations}
+%\begin{frame}
+%\frametitle{Proposal modifications}
+%\framesubtitle{Cluster split (i)}
+%Whether MPI call is conditioned
+%\begin{itemize}
+%	\item \#repetitions and mean time bw. reps. change (in same proportion).
+%\end{itemize} 
+%\begin{multicols}{2}
+%	\begin{pseudocode}{ }{ }
+%		\FOR i=1 \text{ to } 10 \DO
+%		\BEGIN
+%			\IF isPair(i) \THEN
+%				MPI\_A()\\
+%			MPI\_B()\\
+%		\END
+%	\end{pseudocode}
+%	\columnbreak
+%	\begin{figure}
+%		\includegraphics[width=0.3\textwidth]<1>{imgs/clustering_val_8_1.png}
+%		\includegraphics[width=0.3\textwidth]<2>{imgs/clustering_val_8.png}
+%	\end{figure}
+%\end{multicols}
+%\pause
+%	\begin{figure}
+%		\includegraphics[height=0.3\textheight]{imgs/result_val_8.png}
+%	\end{figure}
+%\end{frame}
+
+\begin{frame}
+\frametitle{Proposal modifications}
+\framesubtitle{Cluster split}
+Whether MPI call is conditioned
+\begin{itemize}
+	\item \#repetitions and mean time bw. reps. change (in same proportion).
+\end{itemize} 
+\begin{multicols}{2}
+	\begin{figure}
+		\includegraphics[height=60px]{imgs/split_example_2.png}
+	\end{figure}
+%	\begin{pseudocode}{ }{ }
+%		\FOR i=1 \text{ to } 10 \DO
+%		\BEGIN
+%		MPI\_B()\\
+%		\IF isPair(i) \THEN
+%			MPI\_A()\\
+%		MPI\_B()\\
+%		\END
+%	\end{pseudocode}
+	\columnbreak
+	\begin{figure}
+		\includegraphics[width=0.3\textwidth]<1>{imgs/clustering_val_8_1.png}
+		\includegraphics[width=0.3\textwidth]<2>{imgs/clustering_val_8.png}
+	\end{figure}
+\end{multicols}
+\pause
+By ``reverse loop merging'' and times checking
+\begin{figure}
+	\includegraphics[height=0.3\textheight]{imgs/result_val_9.png}
+\end{figure}
+\end{frame}
+%	\begin{pseudocode}{ }{ }
+%	\FOR i=1 \text{ to } 10 \DO
+%	\BEGIN	
+%	MPI\_B()\\
+%	\IF isPair(i) \THEN
+%	MPI\_A()\\
+%	MPI\_B()\\
+%	\END
+%\end{pseudocode}
+
+\subsection{Data analysis}
+\begin{frame}
+\frametitle{Data analysis}
+Validate our first intutition \\
+Explore the possibility to find out...\\
+\begin{itemize}
+	\item \textbf{Alternative features} for classification
+	\item \textbf{Additional features} for classification
+	\item \#Instructions, \#Cycles, \#Loads, \#(Cond, Uncond, Total) branches. \#FP instructions\footnote{Strictly limited by available hardaware}
+\end{itemize}
+\pause
+Two steps:
+\begin{enumerate}
+	\item Data acquisition \& post-process
+	\item Analyze results and conclusion
+\end{enumerate}
+\pause
+By means of two well-known techniques:\\
+\begin{enumerate}
+	\item Principal components analysis
+	\item \textbf{Variable Importance by Random Forest technique}
+\end{enumerate}
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Data analysis}
+%\framesubtitle{Data acquisition (i)}
+%Desired data...\\
+%\begin{itemize}
+%\item PCA\footnote{Principal component analysis}: Set of observations with set of features, i.e. Set of loops with with \textbf{iteration-level aggregated features}. 
+%\item Variable Importance Same data as in production traces but labeled, i.e. \textbf{With information to what loop every MPI call belongs to}.
+%\end{itemize}
+%How to obtain it\\
+%\begin{enumerate}
+%\item The needed information is not in trace so ...
+%\item \textbf{Manually inject monitors} to the source code
+%\begin{itemize}
+%	\item Very tough and error prone for huge source codes
+%\end{itemize}
+%\item Alternatively use source-to-source compiler to \textbf{do it automaticaly}
+%\begin{itemize}
+%	\item Mercurium
+%\end{itemize}
+%\end{enumerate}
+%\end{frame}
+
+\begin{frame}
+\frametitle{Data analysis}
+\framesubtitle{Data acquisition (i)}
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{imgs/mercurium_internals.png}
+\caption{Mercurium internals overview}
+\end{figure}
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Data analysis}
+%\framesubtitle{Data acquisition (ii)}
+%\begin{multicols}{2}
+%\begin{pseudocode}{PCA}{ }
+%MLoopInit(loop_{line}, loop_{file})\\
+%\FOR i \in I \DO
+%\BEGIN
+%MIterInit(chance)\\
+%...\\
+%MIterFini()\\
+%\END\\
+%MLoopFini()		
+%\end{pseudocode}
+%\begin{itemize}
+%\item MLoopInit and MLoopFini fire loops boundaries
+%\item MIterInit and MiterFini fire iteration boundaries with hwc information to trace
+%\end{itemize}
+%\columnbreak
+%\pause
+%\begin{pseudocode}{VarImp}{ }
+%MLoopInit(loop_{line}, loop_{file})\\
+%\FOR i \in I \DO
+%\BEGIN
+%...\\
+%MBefCall()\\
+%MPI\_Call()\\
+%MPIAftCall()\\
+%...\\
+%\END\\
+%MLoopFini()		
+%\end{pseudocode}
+%\begin{itemize}
+%\item MLoopInit and MLoopFini keep track entry/exit loops
+%\item MPIBefCall and MPIAftCall fire loop id
+%\end{itemize}
+%\end{multicols}
+%\end{frame}
+
+%\begin{frame}
+%\frametitle{Data analysis}
+%\framesubtitle{Analysis of results (i): \textbf{PCA}}
+%\begin{figure}
+%	\includegraphics[height=0.9\textheight]{imgs/pcas_results.png}
+%\end{figure}
+%\end{frame}
+
+\begin{frame}
+\frametitle{Data analysis}
+\framesubtitle{Analysis of results (ii): \textbf{Variable Importance}}
+The first intuition \textbf{has been validated}!\\
+But alternative/additional features have not been found $\rightarrow$ Future work
+\begin{figure}
+	\includegraphics[height=0.7\textheight]{imgs/varimp_results.png}
+\end{figure}
+\end{frame}
 
 \section{Results}
-\subsection{Specific capabilities}
+\subsection{Lulesh 2.0}
 \begin{frame}
-Hola manola
+\frametitle{Results}
+\framesubtitle{Lulesh 2.0 (ii)}
+\begin{multicols*}{2}
+Filter all $\delta < 10\%$\\
+For simplicity:
+\begin{itemize}
+	\item Filter by \textbf{rank 0}
+	\item Filter CPU burst by $time > 6ms$
+\end{itemize}
+\pause
+Results:
+\begin{itemize}
+	\item 30 iterations loop
+	\item 5 long CPU burst above 6ms
+	\item 1 Data conditioned MPI call
+	\item 56 no conditioned MPI calls
+\end{itemize}
+\columnbreak
+%\begin{figure}
+%	\includegraphics[height=0.3\textheight]{imgs/clustering_val_10.png}
+%\end{figure}
+\begin{figure}
+	\includegraphics[height=0.8\textheight]{imgs/result_val_10.png}
+\end{figure}
+\end{multicols*}
 \end{frame}
-\subsection{Real application}
+
 \begin{frame}
-Hola manola
+\frametitle{Results}
+\framesubtitle{Lulesh 2.0 (i)}
+%\begin{multicols}{3}
+%	Trace: ~150MB
+%	\columnbreak
+%	Lines of code: ~10K
+%	\columnbreak
+%	Number of MPI calls: 1K
+%	\columnbreak
+%	Number of uniqe MPI calls: 100
+%\end{multicols}
+\begin{figure}
+	\includegraphics[width=0.8\textwidth]<1>{imgs/lulesh_trace_1.png}
+	\includegraphics[width=0.8\textwidth]<2>{imgs/lulesh_trace_1_cnt.png}
+	\caption{Lulesh 2.0 128 MPI ranks -- 30 iterations}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Results}
+	\framesubtitle{Lules 2.0 (iii)}
+	\begin{figure}
+		\includegraphics[height=0.3\textheight]{imgs/result_val_10_bursts.png}
+	\end{figure}
+	\begin{figure}
+		\includegraphics[height=0.4\textheight]{imgs/lulesh_trace_3.png}
+	\end{figure}
 \end{frame}
 
 \section{Conclusions}
 \begin{frame}
-Hola manola
+\frametitle{Conclusions}
+\begin{itemize}
+	\item After identify the motivations and revise the literature...
+	\item ... we have been decided to explore a different approach.
+	\item By classification have been demonstrated how real world applications structure can be betrayed with good results.
+	\item And with an improved scalability since we are working with unique MPI calls.
+	\item The used set of features for clustering is critical since can avoid some extra checks
+	\item Loops presents to be better identified by iteration time mean than by number of iterations...
+	\item ... and IPC and relative number of branches and loads have been discarded.
+\end{itemize}
 \end{frame}
 
-\bibliography{bibliography}
-\bibliographystyle{apalike}
+\section{Future work}
+\begin{frame}
+	\frametitle{Future work}
+	\begin{itemize}
+		\item Improve Reduce phase times by, e.g. Parallelize the reduction using for example well-known infrastructures like Hadoop.
+		\item More research for select the best features set that avoids cluster aliasing/split.
+		\item Explore the alternative to merge different ranks mpi calls at Trace reduce step.
+		\item Exploring the possibility to use sampling techniques to get more detailed view of the structure of an application.
+		
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\centering
+	{\Huge Thank you!}
+\end{frame}
+
+%\bibliography{bibliography}
+%\bibliographystyle{apalike}
 
 \end{document}
