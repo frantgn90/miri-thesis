@@ -86,6 +86,9 @@
 \usepackage{graphics}
 \usepackage{appendixnumberbeamer}
 
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]{}
+
 %\hypersetup{
 %	colorlinks = true,
 %	linkcolor = red
@@ -151,10 +154,10 @@
 \titlepage
 \end{frame}
 
-\begin{frame}[allowframebreaks]
-%\frametitle{Presentation outline}
-\tableofcontents
-\end{frame}
+%\begin{frame}[allowframebreaks]
+%%\frametitle{Presentation outline}
+%\tableofcontents
+%\end{frame}
 
 %----------------------------------------------------------------------------------------
 %	PRESENTATION SLIDES
@@ -200,7 +203,7 @@
 	\begin{itemize}
 		\item But derive this work to actual specialist
 		\item Analyst are used to \textbf{work with codes they are not familiar with}.
-		\item e.g. POP project
+		\item e.g. POP project: Provides \textbf{performance optimisation and productivity} services for academic and industrial code(s).
 	\end{itemize}
 
 	\begin{figure}
@@ -238,7 +241,7 @@
 \begin{frame}
 \frametitle{Objective}
 	\begin{exampleblock}{The objective for this thesis is...}
-		Find out a way to \textbf{expose the structure} of the application, by means of a post-mortem trace analysis, in order to improve the understandability of the analyst and the communication with the developers.
+		\textbf{Expose the structure} of the application, by means of a post-mortem trace analysis.
 	\end{exampleblock}
 \end{frame}
 
@@ -264,7 +267,7 @@
 	\end{itemize}
 	\pause
 	\begin{block}{Finally...}
-		The decission has been to explore a new approach!
+		The decision has been to explore a new approach!
 	\end{block}
 \end{frame}
 
@@ -276,6 +279,8 @@
 	Use communications as \textbf{proxies} for the observation of iterations and clustering them \textbf{by its behaviour}.
 \end{block}
 \pause
+\begin{multicols}{2}
+	
 \textbf{Why?}\\
 HPC applications idiosincracy\\
 \begin{itemize}
@@ -285,10 +290,18 @@ HPC applications idiosincracy\\
 \end{itemize}
 So...\\
 \begin{itemize}
-	\item Stable executions implies \textbf{similar behaviour for all iterations} in a given loop
-	\item Loops can be discovered by \textbf{monitoring the communications}.
+	\item \textbf{Similar behaviour for all iterations} in a given loop
+	\item Loops by \textbf{monitoring the communications}.
 \end{itemize}
+\columnbreak
+
+
+\includegraphics[width=0.4\textwidth,height=0.2\textheight]{imgs/lu_trace_128.png}\\
+\includegraphics[width=0.4\textwidth,height=0.2\textheight]{imgs/cg_trace_128.png}\\
+\includegraphics[width=0.4\textwidth,height=0.2\textheight]{imgs/ft_trace_128.png}
+
 \vfill
+\end{multicols}
 \end{frame}
 
 \begin{frame}
@@ -304,24 +317,35 @@ Selected features must be able to
 \pause
 As a starting point ...
 \begin{enumerate}
-	\item \textbf{Number of repetitions}: Two different mpi calls in same loop will be executed the same ammount of time
-	\item \textbf{Mean time between repetitions}: Two different loops will, presumibly, execute different work
+	\item \textbf{Number of repetitions}: Two different mpi calls in same loop will be executed the same number of times.
+	\item \textbf{Mean time between repetitions}: Two different loops will, presumibly, execute different work.
 \end{enumerate}
 \end{frame}
 
 \section{Implementation}
 \subsection{Workflow}
 \begin{frame}
-\frametitle{Workflow}
-\vspace{40px}
-\begin{figure}
-	\includegraphics[width=\textwidth]<1>{imgs/workflow_v2.pdf}
-	\includegraphics[width=\textwidth]<2>{imgs/workflow_v2_2.pdf}
-\end{figure}
-
 \begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 	\includegraphics<+(1)->[width=50px]{imgs/wi_all.png}
 \end{textblock*}
+\frametitle{Workflow}
+%\vspace{40px}
+\begin{figure}
+	\includegraphics[width=0.8\textwidth]<1>{imgs/workflow_Diagram.pdf}
+	\includegraphics[width=0.8\textwidth]<2>{imgs/workflow_Diagram_step1.pdf}
+	\includegraphics[width=0.8\textwidth]<3>{imgs/workflow_Diagram_step2.pdf}
+	\includegraphics[width=0.8\textwidth]<4>{imgs/workflow_Diagram_step3.pdf}
+	\includegraphics[width=0.8\textwidth]<5>{imgs/workflow_Diagram_step4.pdf}
+	\includegraphics[width=0.8\textwidth]<6>{imgs/workflow_Diagram_step5.pdf}
+	\includegraphics[width=0.8\textwidth]<7->{imgs/workflow_Diagram_2.pdf}
+\end{figure}
+\begin{itemize}[<+->]
+	\item Parsing and reducing information from trace
+	\item Identify loops by MPI call sites classification
+	\item Find out the hierarchical relations between loops
+	\item Colapse same MPI call site from different processes
+	\item Constuction of the output
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -330,23 +354,79 @@ As a starting point ...
 	\includegraphics[width=50px]{imgs/wi_1.png}
 \end{textblock*}
 \framesubtitle{Trace reduction step}
-\begin{mdframed}[backgroundcolor=blue!10,roundcorner=10pt,linewidth=0pt]
+\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 	\textbf{Input} Tracefile, i.e. Sequence of timestamped events ordered by time.\\
-	\textbf{Output} Set of unique MPI calls with attached information.
+	\textbf{Output} Set of unique MPI calls sites with attached information.
 \end{mdframed}
 \vspace{10px}
-\pause
+\begin{multicols}{2}
+	\begin{pseudocode}{ }{ }
+		\FOR 1 \text{ to } 50 \DO
+		\BEGIN
+			\FOR 1 \text{ to } 2 \DO
+			\BEGIN
+				MPI\_A \\
+			\END \\
+		MPI\_B\\
+		\END\\
+		\FOR 1 \text{ to } 100 \DO
+		\BEGIN
+			\FOR 1 \text{ to } 2 \DO
+			\BEGIN
+				\FOR 1 \text{ to } 2 \DO
+				\BEGIN
+					MPI\_C \\
+				\END\\
+				MPI\_D\\
+			\END \\
+			MPI\_E\\
+		\END
+	\end{pseudocode}
+	\begin{textblock*}{2cm}(127px,145px) % {block width} (coords)
+		\includegraphics[width=10px]{imgs/mpi_b_shape.pdf}\\
+		\includegraphics[width=10px]{imgs/mpi_a_shape.pdf}
+	\end{textblock*}
+	\columnbreak
+	\null \vfill
+	\begin{figure}
+		\includegraphics[width=0.5\textwidth]<2>{imgs/reduce_example_1.pdf}
+		\includegraphics[width=0.5\textwidth]<3>{imgs/reduce_example_2.pdf}
+		\includegraphics[width=0.5\textwidth]<4>{imgs/reduce_example_3.pdf}
+		\includegraphics[width=0.5\textwidth]<5->{imgs/reduce_example_4.pdf}
+	\end{figure}
+	\begin{figure}
+		\includegraphics[width=0.2\textwidth]<6>{imgs/reduce_example_5.pdf}
+	\end{figure}
+	\vfill \null	
+\end{multicols}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Workflow}
+\begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
+	\includegraphics[width=50px]{imgs/wi_1.png}
+\end{textblock*}
+\framesubtitle{Trace reduction step}
+\begin{multicols}{2}
 \begin{itemize}
 	%\item By \textbf{reduction} and \textbf{aggregation \& derivation}
-	\item Is \textbf{The key step for scalability}
 	\item Is a sort of Map \& Reduce
 	\item Every MPI call is identified by its \textbf{signature}: Ordered sequence of pairs $(file,line)$ that define the call path, i.e. The dynamic position
 	\item Additionally \textbf{less representative MPI calls are filtered} (10\%). 
 \end{itemize}
-\pause
+\columnbreak
 \begin{figure}
-	\includegraphics[width=0.5\textwidth]{imgs/reduction_diagram.pdf}
+	\includegraphics[width=0.5\textwidth]{imgs/reduce_example_4.pdf}
 \end{figure}
+\begin{figure}
+	\includegraphics[width=0.2\textwidth]{imgs/reduce_example_5.pdf}
+\end{figure}	
+\end{multicols}
+\pause
+\begin{block}{Keynote}
+	Is \textbf{the key step for scalability} because repetitivity of HPC applications
+\end{block}
 \end{frame}
 
 %\begin{frame}
@@ -396,30 +476,42 @@ As a starting point ...
 \begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 	\includegraphics[width=50px]{imgs/wi_2.png}
 \end{textblock*}
-\framesubtitle{Loops identification}
-\begin{mdframed}[backgroundcolor=blue!10,roundcorner=10pt,linewidth=0pt]
-\textbf{Input} Set of unique MPI calls with attached information.\\
-\textbf{Output} Set of sets of MPI calls $\rightarrow$ Loops
+\framesubtitle{Loops identification (ii)}
+\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
+	\textbf{Input} Set of unique MPI calls sites with attached information.\\
+	\textbf{Output} Set of sets of MPI calls $\rightarrow$ Loops
 \end{mdframed}
-\vfill
-\pause
-
-\begin{itemize}
-	\item Need for some classification algorithm
-	\pause
-	\item \textbf{DBSCAN} as clustering algorithm (prefered to K-means)
-	\begin{itemize}
-		\item $\epsilon$ empirically set to 0.2 (in general)
-		\item minPts set to 1
-		\item Number of repetitions vs. Mean time between repetitions
-	\end{itemize}
-\pause
-	\item Resulting clusters \textbf{will be considered loops}.
-	\begin{itemize}
-		\item Number of repetitions $\rightarrow$ Number of iterations.
-		\item Mean time between repetitions $\rightarrow$ Mean iterations time.
-	\end{itemize}
-\end{itemize}
+\begin{multicols}{2}
+	\begin{pseudocode}{ }{ }
+		\FOR 1 \text{ to } 50 \DO
+		\BEGIN
+			\FOR 1 \text{ to } 2 \DO
+			\BEGIN
+				MPI\_A \\
+			\END \\
+			MPI\_B\\
+		\END\\
+		\FOR 1 \text{ to } 100 \DO
+		\BEGIN
+			\FOR 1 \text{ to } 2 \DO
+			\BEGIN
+				\FOR 1 \text{ to } 2 \DO
+				\BEGIN
+					MPI\_C \\
+				\END\\
+				MPI\_D\\
+			\END \\
+			MPI\_E\\
+		\END
+	\end{pseudocode}
+	\columnbreak
+	\begin{figure}
+	\includegraphics[width=0.5\textwidth]<1>{imgs/clustering_ex_3.png}
+	\includegraphics[width=0.5\textwidth]<2>{imgs/clustering_ex_3_c1.png}
+	\includegraphics[width=0.5\textwidth]<3>{imgs/clustering_ex_3_c2.png}
+	\includegraphics[width=0.5\textwidth]<4>{imgs/clustering_ex_3_c3.png}
+	\end{figure}
+\end{multicols}
 \end{frame}
 
 \begin{frame}
@@ -427,37 +519,26 @@ As a starting point ...
 \begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 	\includegraphics[width=50px]{imgs/wi_2.png}
 \end{textblock*}
-\framesubtitle{Loops identification (ii)}
+\framesubtitle{Loops identification}
 \begin{multicols}{2}
-		\begin{pseudocode}{ }{ }
-			\FOR 1 \text{ to } 50 \DO
-			\BEGIN
-				\FOR 1 \text{ to } 2 \DO
-				\BEGIN
-					MPI\_Call \\
-				\END \\
-				MPI\_Call\\
-			\END\\
-			\FOR 1 \text{ to } 100 \DO
-			\BEGIN
-				\FOR 1 \text{ to } 2 \DO
-				\BEGIN
-					\FOR 1 \text{ to } 2 \DO
-					\BEGIN
-						MPI\_Call \\
-					\END\\
-					MPI\_Call\\
-				\END \\
-				MPI\_Call\\
-			\END
-		\end{pseudocode}
-	\columnbreak
-	
-	\columnbreak
-	\pause
-	\begin{figure}
-		\includegraphics[width=0.5\textwidth]{imgs/clustering_ex_3.png}
-	\end{figure}
+\begin{itemize}
+	\item Need for some classification algorithm
+	\item \textbf{DBSCAN} as clustering algorithm (prefered to K-means)
+	\begin{itemize}
+		\item $\epsilon$ empirically set to 0.2 (in general)
+		\item minPts set to 1
+		%\item Number of repetitions vs. Mean time between repetitions
+	\end{itemize}
+	\item Resulting clusters \textbf{will be considered loops}.
+	\begin{itemize}
+		\item Number of repetitions $\rightarrow$ Number of iterations.
+		\item Mean time between repetitions $\rightarrow$ Mean iterations time.
+	\end{itemize}
+\end{itemize}
+\columnbreak
+\begin{figure}
+	\includegraphics[width=0.5\textwidth]{imgs/clustering_ex_3_c3.png}
+\end{figure}
 \end{multicols}
 \end{frame}
 
@@ -467,19 +548,21 @@ As a starting point ...
 	\includegraphics[width=50px]{imgs/wi_3.png}
 \end{textblock*}
 \framesubtitle{Loops merge (i)}
-\begin{mdframed}[backgroundcolor=blue!10,roundcorner=10pt,linewidth=0pt]
+\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 \textbf{Input} Set of loops.\\
 \textbf{Output} Set of top level loops with its related nested loops.
 \end{mdframed}
 \vspace{10px}
 \pause
+\vfill
 Intuition
 \begin{itemize}
 	\item Isolated loops are just \textbf{pieces of the overall puzzle}.
-	\item By discover its hierarchical relations \textbf{the structure of the application will be betrayed}.
+	\item By discover its hierarchical relations \textbf{the structure of the application will be discovered}...
+	\item As well as the different phases
 \end{itemize}
 \pause
-Some clues
+We can assume
 \begin{itemize}
 	\item Outer loop will have \textbf{less iterations} than nested one.
 	\item Outer loop will spend \textbf{more time} per iteration.
@@ -495,26 +578,32 @@ Some clues
 \framesubtitle{Loops merge (ii)}
 \begin{multicols}{2}
 	\begin{figure}
-		\includegraphics[width=0.3\textwidth]{imgs/clustering_ex_3_pse.png}
+		\includegraphics[width=0.3\textwidth]{imgs/clustering_ex_3_ps3.png}
 	\end{figure}
 	\columnbreak
-	\begin{figure}
-		\includegraphics[width=0.4\textwidth]<1>{imgs/clustering_ex_3.png}
-		\includegraphics[width=0.4\textwidth]<2->{imgs/clustering_ex_3_2.png}
-	\end{figure}
+	%\begin{figure}
+		\includegraphics[width=0.45\textwidth]<1>{imgs/clustering_ex_3_c3.png}
+		\includegraphics[width=0.45\textwidth]<2>{imgs/clustering_ex_3_c3_2.png}
+		\includegraphics[width=0.45\textwidth]<3>{imgs/clustering_ex_3_c3_3.png}
+		\includegraphics[width=0.45\textwidth]<4>{imgs/clustering_ex_3_c3_4.png}
+	%\end{figure}
 \end{multicols}
 \begin{itemize}
 	%\item $O(\frac{n^{2}-n}{2}) \approx O(n^{2})$ comparissons
 	\pause
-	\item Reduce search space by classify loops by its delta
+	\item Classify loops by its delta
 	\begin{itemize}
 		\item All lies on same $f(x)=\frac{\delta*T_{exe}}{x}$ being $0 < \delta < 1$
 	\end{itemize}
 	\item And then merge them in a less to more iterations fashion
+	\begin{itemize}
+		\item Always checking iterations interleaving
+	\end{itemize}
 \end{itemize}
 \pause
+\pause
 \begin{block}{Keynote}
-	This mechanism is then used for phases detection as well.
+	This mechanism is then used for phases detection.
 \end{block}
 \end{frame}
 
@@ -524,7 +613,7 @@ Some clues
 \end{textblock*}
 \frametitle{Workflow}
 \framesubtitle{Pseudocode construction (i)}
-\begin{mdframed}[backgroundcolor=blue!10,roundcorner=10pt,linewidth=0pt]
+\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 \textbf{Input} Set of top level loops with rank conditional structures.\\
 \textbf{Output} Pseudocode representing the actual application structure.
 \end{mdframed}
@@ -574,43 +663,73 @@ Some clues
 \frametitle{Workflow}
 \framesubtitle{Pseudocode construction (ii)}
 \begin{figure}
-	\includegraphics[width=0.8\textwidth]{imgs/example_output_1.png}
+	\includegraphics[width=0.8\textwidth]<1>{imgs/example_output_2.png}
+	\includegraphics[width=0.8\textwidth]<2>{imgs/example_output_2_2.png}
+	\includegraphics[width=0.8\textwidth]<3>{imgs/example_output_2_3.png}
+	\includegraphics[width=0.8\textwidth]<4>{imgs/example_output_2_4.png}
+	\includegraphics[width=0.8\textwidth]<5>{imgs/example_output_2.png}
 	%\caption{Example console output}
 \end{figure}
 \pause
 \begin{figure}
-	\includegraphics[width=0.8\textwidth]{imgs/interactive_shell_example.png}
+	\includegraphics[width=0.8\textwidth]<5>{imgs/interactive_shell_example.png}
 \end{figure}
 \end{frame}
 
 \section{Best features analysis}
+
+\begin{frame}
+	\frametitle{Best features analysis}
+	\framesubtitle{Motivation (i)}
+
+\textbf{Clustering aliasing} $\rightarrow$ Same behavior
+	\begin{multicols}{2}
+		\begin{figure}
+			\includegraphics[height=0.3\textheight]{imgs/aliasing_example_pse.png}
+		\end{figure}
+		\columnbreak
+		\begin{figure}
+			\includegraphics[width=0.3\textwidth]{imgs/aliasing_ex_clustering.png}
+		\end{figure}
+	\end{multicols}
+\vfill
+\pause
+\textbf{Clustering split} $\rightarrow$ Data conditions
+	\begin{multicols}{2}
+		\begin{figure}
+			\includegraphics[height=60px]{imgs/split_example_2.png}
+		\end{figure}
+		\columnbreak
+		\begin{figure}
+			\includegraphics[width=0.3\textwidth]{imgs/clustering_val_8.png}
+		\end{figure}
+	\end{multicols}
+\end{frame}
+
 \begin{frame}
 \frametitle{Best features analysis}
-Some problems have been detected like cluster aliasing/split
+\framesubtitle{Motivation (ii)}
+Both \textbf{solved}, but better if \textbf{avoid them}, so...
 \begin{itemize}
-	\item Solved by timestamps analysis
-\end{itemize}
-\textbf{Validate} our first intutition \\
-\textbf{Explore} the possibility to find out...\\
-\begin{itemize}
-	\item \textbf{Alternative features} for classification
-	\item \textbf{Additional features} for classification
+	\item \textbf{Validate} our first intutition
+	\item \textbf{Explore} alternative/additional features
 	\begin{itemize}
-		\item \#Instructions, \#Cycles, \#Loads, \#(Cond, Uncond, Total) branches. \#FP instructions\footnote{Strictly limited by available hardaware}
+		\item IPC, \%Loads, \%(Cond, Uncond, Total) branches \footnote{Strictly limited by available hardaware}
 	\end{itemize}
 \end{itemize}
 \pause
+\vfill
 Two steps:
 \begin{enumerate}
-	\item Data acquisition \& post-process
+	\item Data acquisition
 	\begin{itemize}
 		\item Extrae just can monitorize calls to shared libraries
 		\item Loops monitors injection by \textbf{Mercurium}
 	\end{itemize}
-	\item Analyze results and conclusion
+	\item Analyze results
 	\begin{itemize}
-		\item Principal components analysis
-		\item Variable Importance by Random Forest technique
+		\item Principal Components Analysis
+		\item Random Forest Variable Importance
 	\end{itemize}
 \end{enumerate}
 \end{frame}
@@ -618,22 +737,21 @@ Two steps:
 \begin{frame}
 \frametitle{Best features analysis}
 \framesubtitle{Analysis of results: \textbf{Variable Importance}}
-\begin{block}{Results}
-	The first intuition \textbf{has been validated}!\\
-	But alternative/additional features have not been found $\rightarrow$ Future work
-\end{block}
 \begin{figure}
-	\includegraphics[height=0.7\textheight]{imgs/varimp_results.png}
+	\includegraphics[height=0.85\textheight]<1>{imgs/varimp_results_2.png}
+	\includegraphics[height=0.85\textheight]<2>{imgs/varimp_results_3.png}
 \end{figure}
+%\begin{block}{Results}
+%	The first intuition \textbf{has been validated}!
+%\end{block}
 \end{frame}
 
 \section{Results}
 \subsection{Lulesh 2.0}
 \begin{frame}
 	\frametitle{Results}
-	\framesubtitle{Lulesh 2.0}
-	\begin{multicols*}{2}
-	\begin{mdframed}[backgroundcolor=blue!10,roundcorner=10pt,linewidth=0pt]
+	\framesubtitle{Lulesh 2.0 (i)}
+	\begin{multicols}{2}
 	Execution:
 	\begin{itemize}
 		\item 6014 code lines
@@ -646,28 +764,33 @@ Two steps:
 		\item Filter all $\delta < 10\%$\\
 		\item CPU burst $time > 6ms$
 	\end{itemize}
-	\end{mdframed}
 	\pause
+	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 	Results:
-	\begin{itemize}
+	\begin{itemize}[<+->]
 		\item 30 iterations loop
-		\item 5 long CPU burst above 6ms
-		\item 1 Data conditioned MPI call
-		\item 56 no conditioned MPI calls
+		\item 5 long CPU burst
+		\item 1 Data conditioned MPI
+		\item 56 no conditioned MPI
 	\end{itemize}
+	\end{mdframed}
 	\columnbreak
 	%\begin{figure}
 	%	\includegraphics[height=0.3\textheight]{imgs/clustering_val_10.png}
 	%\end{figure}
 	\begin{figure}
-		\includegraphics[height=0.8\textheight]{imgs/result_val_10.png}
+		%\includegraphics[height=0.8\textheight]<2>{imgs/result_val_10.png}
+		\includegraphics[height=0.8\textheight]<2>{imgs/result_val_10_1.png}
+		\includegraphics[height=0.8\textheight]<3>{imgs/result_val_10_2.png}
+		\includegraphics[height=0.8\textheight]<4>{imgs/result_val_10_3.png}
+		\includegraphics[height=0.8\textheight]<5->{imgs/result_val_10.png}
 	\end{figure}
-	\end{multicols*}
+	\end{multicols}
 \end{frame}
 
 \begin{frame}
 \frametitle{Results}
-\framesubtitle{Lulesh 2.0 (i)}
+\framesubtitle{Lulesh 2.0 (ii)}
 \begin{figure}
 	\includegraphics[width=0.8\textwidth]<1>{imgs/lulesh_trace_1.png}
 	\includegraphics[width=0.8\textwidth]<2>{imgs/lulesh_trace_1_cnt.png}
@@ -677,64 +800,24 @@ Two steps:
 
 \begin{frame}
 	\frametitle{Results}
-	\framesubtitle{Lulesh 2.0 (ii)}
-	\begin{figure}
-		\includegraphics[height=0.3\textheight]{imgs/result_val_10_bursts.png}
-	\end{figure}
-	\begin{figure}
-		\includegraphics[height=0.4\textheight]{imgs/lulesh_trace_3.png}
-	\end{figure}
-\end{frame}
-
-\begin{frame}
-	\frametitle{Results}
 	\framesubtitle{Lulesh 2.0 (iii)}
-	\begin{figure}
-		\includegraphics[height=0.3\textheight]<1>{imgs/lulesh_comm_phase_1.png}
-		\includegraphics[height=0.3\textheight]<2>{imgs/lulesh_comm_phase_2.png}
-		%\includegraphics[height=0.3\textheight]<3>{imgs/lulesh_comm_phase_3.png}
-		%\includegraphics[height=0.3\textheight]<4>{imgs/lulesh_comm_phase_4_5.png}
-	\end{figure}
-
-	\begin{table}[height=0.1\textheight]
-		\centering
-		\caption{Total MPI calls}
-		\resizebox{0.5\textwidth}{!}{%
-		\begin{tabular}{@{}l|llllll@{}}
-			\toprule
-			& MPI\_Isend & MPI\_Irecv & MPI\_Wait & MPI\_Waitall & MPI\_Allreduce & MPI\_Comm\_rank \\ \midrule
-			Rank 0 & 300        & 510        & 510       & 90           & 29             & 270             \\ \bottomrule
-		\end{tabular}%
-	}
-	\end{table}
-
-	\begin{table}[height=0.2\textheight]
-		\centering
-		\caption{MPI calls countes by communication phases}
-		\label{my-label}
-		\resizebox{0.5\textwidth}{!}{%
-		\begin{tabular}{@{}l|llllll@{}}
-			\toprule
-			& MPI\_Isend & MPI\_Irecv & MPI\_Wait & MPI\_Waitall & MPI\_Allreduce & MPI\_Comm\_rank \\ \midrule
-			Comm phase 1 & 0          & 7          & 0         & 0            & 1              & 1               \\
-			Comm phase 2 & 7          & 7          & 7         & 1            & 0              & 3               \\
-			Comm phase 3 & 0          & 0          & 7         & 1            & 0              & 2               \\
-			Comm phase 4 & 0          & 3          & 0         & 0            & 0              & 1               \\
-			Comm phase 5 & 3          & 0          & 3         & 1            & 0              & 2               \\ \bottomrule
-		\end{tabular}%
-	}
-	\end{table}
+	\centering
+	%\begin{figure}
+		\includegraphics[width=0.6\textwidth]{imgs/result_val_10_bursts.png}\\
+	%\end{figure}
+	%\begin{figure}
+		\includegraphics[width=0.6\textwidth]{imgs/lulesh_trace_3.png}
+	%\end{figure}
 \end{frame}
 
 \subsection{CG}
 \begin{frame}
 \frametitle{Results}
-\framesubtitle{CG Class A}
+\framesubtitle{CG Class A (i)}
 \begin{multicols*}{2}
-	\begin{mdframed}[backgroundcolor=blue!10,roundcorner=10pt,linewidth=0pt]
 		Execution:
 		\begin{itemize}
-			\item ~2000 code lines
+			\item $\approx2000$ code lines
 			\item 32 parallel processes
 			\item $\approx150MB$ tracefile
 		\end{itemize}
@@ -743,39 +826,48 @@ Two steps:
 			\item Filter all $\delta < 10\%$\\
 			\item CPU burst $time > 100us$
 		\end{itemize}
-	\end{mdframed}
 	\pause
+	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 	Results:
-	\begin{itemize}
+	\begin{itemize}[<+->]
 		\item 15 iterations loop
 		\item 25 iterations subloop
 		\item Other 3 iterations subloops
-		\item 2 long CPU burst above 500us
+		\item 2 long CPU burst above 100us
 %		\item 1 Data conditioned MPI call
 %		\item 56 no conditioned MPI calls
 	\end{itemize}
+	\end{mdframed}
 	\columnbreak
 %	\begin{figure}
 %		\includegraphics[height=0.3\textheight]{imgs/cg_32_clustering.png}
 %	\end{figure}
 	\begin{figure}
-		\includegraphics[height=0.7\textheight]{imgs/cg_32_result.png}
+		\includegraphics[height=0.7\textheight]<2>{imgs/cg_32_result_2.png}
+		\includegraphics[height=0.7\textheight]<3>{imgs/cg_32_result_3.png}
+		\includegraphics[height=0.7\textheight]<4>{imgs/cg_32_result_4.png}
+		\includegraphics[height=0.7\textheight]<5>{imgs/cg_32_result.png}
 	\end{figure}
 \end{multicols*}
 \end{frame}
 
 \begin{frame}
-\frametitle{CG (ii)}
+\frametitle{Results}
+\framesubtitle{CG Class A(ii)}
 	\begin{figure}
 		\includegraphics[height=0.2\textheight]{imgs/cg_32_validation_1.png}
 	\end{figure}
 	\pause
+	\centering
+	Showing just \textbf{MPI\_Irecv} on \textbf{cg.f : 1089}\\
 	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/cg_32_validation_2.png}
+		\includegraphics[height=0.2\textheight]<2>{imgs/cg_32_validation_2.png}
+		\includegraphics[height=0.2\textheight]<3->{imgs/cg_32_validation_2_1.png}
 	\end{figure}
 	\pause
 	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/cg_32_validation_3.png}
+		\includegraphics[height=0.2\textheight]<4>{imgs/cg_32_validation_3.png}
+		\includegraphics[height=0.2\textheight]<5>{imgs/cg_32_validation_3_2.png}
 	\end{figure}
 \end{frame}
 
@@ -783,44 +875,58 @@ Two steps:
 \begin{frame}
 	\frametitle{Scalability}
 	\begin{multicols}{2}
-	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_bd.png}
-	\end{figure}
-	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_bd.png}
-	\end{figure}
-	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_bd.png}
-	\end{figure}
+	%\begin{figure}
+		\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_bd.png}\\
+	%\end{figure}
+	%\begin{figure}
+		\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_bd.png}\\
+	%\end{figure}
+	%\begin{figure}
+		\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_bd.png}\\
+	%\end{figure}
+	\vfill
+	\pause
+	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
+		Reduction step is clearly dominating the execution time.
+	\end{mdframed}
+	\pause
 	\columnbreak
-	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_sp.png}
-	\end{figure}
-	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_sp.png}
-	\end{figure}
-	\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_sp.png}
-	\end{figure}
+	\centering
+	%\begin{figure}
+		\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_sp.png}\\
+	%\end{figure}
+	%\begin{figure}
+		\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_sp.png}\\
+	%\end{figure}
+	%\begin{figure}
+		\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_sp.png}\\
+	%\end{figure}
+	\vfill
+	\pause
+	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
+		The rest maintains its time even if increasing problem size.
+	\end{mdframed}
 	\end{multicols}
 \end{frame}
 
 \begin{frame}
 	\frametitle{Scalability}
-	
 	\begin{figure}
-		\includegraphics[width=0.5\textwidth]{imgs/plots/cg_red_and_trace.png}
+		\includegraphics[width=0.7\textwidth]{imgs/plots/cg_red_and_trace.png}
 	\end{figure}
+	\begin{block}{Keynote}
+		Reduction time highly correlated with trace size
+	\end{block}
 \end{frame}
 
 \section{Conclusions}
 \begin{frame}
 \frametitle{Conclusions}
 \begin{itemize}[<+->]
-	\item New approach has been explored.
-	\item That demonstrates how works reasonably well.
-	\item Iterations mean time and number of iterations demonstrates to be valuable features for classification
-	\item With general linear complexity with trace size.
+	\vfill\item New approach has been explored.
+	\vfill\item That demonstrates that works well with HPC applications.
+	\vfill\item Iterations mean time and number of iterations demonstrates to be valuable features for classification
+	\vfill\item Execution time clearly dominated by Reduction step that presents linear complexity with trace size.
 \end{itemize}
 \end{frame}
 
@@ -828,10 +934,13 @@ Two steps:
 \begin{frame}
 	\frametitle{Future work}
 	\begin{itemize}[<+->]
-		\item Improve Reduce phase times by, e.g. Parallelize the reduction using for example well-known infrastructures like Hadoop.
-		\item More research for select the best features set that avoids cluster aliasing/split.
-		\item Explore the alternative to merge different ranks mpi calls at Trace reduce step.
-		\item Exploring the possibility to use sampling techniques to get more detailed view of the structure of an application.
+		\vfill\item Improve memory usage by compress timestamps.
+		\vfill\item More research for select the best features set that avoids cluster aliasing/split.
+		\vfill\item Improve Reduce phase times by, e.g. Parallelize the reduction using for example well-known infrastructures like Hadoop.
+%		\begin{itemize}
+%			\item Or alternatives like counting transitions between calls
+%		\end{itemize}
+		\vfill\item Exploring the possibility to use sampling techniques to get more detailed view of the structure of an application.
 		
 	\end{itemize}
 \end{frame}
@@ -1050,6 +1159,46 @@ MLoopFini()
 \begin{figure}
 	\includegraphics[height=0.9\textheight]{imgs/pcas_results.png}
 \end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Results}
+\framesubtitle{Lulesh 2.0 (iii)}
+\begin{figure}
+	\includegraphics[height=0.3\textheight]<1>{imgs/lulesh_comm_phase_1.png}
+	\includegraphics[height=0.3\textheight]<2>{imgs/lulesh_comm_phase_2.png}
+	\includegraphics[height=0.3\textheight]<3>{imgs/lulesh_comm_phase_3.png}
+	\includegraphics[height=0.3\textheight]<4>{imgs/lulesh_comm_phase_4_5.png}
+\end{figure}
+
+\begin{table}[height=0.1\textheight]
+	\centering
+	\caption{Total MPI calls}
+	\resizebox{0.5\textwidth}{!}{%
+		\begin{tabular}{@{}l|llllll@{}}
+			\toprule
+			& MPI\_Isend & MPI\_Irecv & MPI\_Wait & MPI\_Waitall & MPI\_Allreduce & MPI\_Comm\_rank \\ \midrule
+			Rank 0 & 300        & 510        & 510       & 90           & 29             & 270             \\ \bottomrule
+		\end{tabular}%
+	}
+\end{table}
+
+\begin{table}[height=0.2\textheight]
+	\centering
+	\caption{MPI calls counts by communication phases}
+	\label{my-label}
+	\resizebox{0.5\textwidth}{!}{%
+		\begin{tabular}{@{}l|llllll@{}}
+			\toprule
+			& MPI\_Isend & MPI\_Irecv & MPI\_Wait & MPI\_Waitall & MPI\_Allreduce & MPI\_Comm\_rank \\ \midrule
+			Comm phase 1 & 0          & 7          & 0         & 0            & 1              & 1               \\
+			Comm phase 2 & 7          & 7          & 7         & 1            & 0              & 3               \\
+			Comm phase 3 & 0          & 0          & 7         & 1            & 0              & 2               \\
+			Comm phase 4 & 0          & 3          & 0         & 0            & 0              & 1               \\
+			Comm phase 5 & 3          & 0          & 3         & 1            & 0              & 2               \\ \bottomrule
+		\end{tabular}%
+	}
+\end{table}
 \end{frame}
 
 %\bibliography{bibliography}
