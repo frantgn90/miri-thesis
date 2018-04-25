@@ -286,7 +286,7 @@ HPC applications idiosincracy\\
 \begin{itemize}
 	\item Big outer loop
 	\item Repetitive and stable executions
-	\item Communications lies on loops that drives the execution
+	\item Communications (MPI) lies on loops that drives the execution
 \end{itemize}
 So...\\
 \begin{itemize}
@@ -339,12 +339,12 @@ As a starting point ...
 	\includegraphics[width=0.8\textwidth]<6>{imgs/workflow_Diagram_step5.pdf}
 	\includegraphics[width=0.8\textwidth]<7->{imgs/workflow_Diagram_2.pdf}
 \end{figure}
-\begin{itemize}[<+->]
-	\item Parsing and reducing information from trace
-	\item Identify loops by MPI call sites classification
-	\item Find out the hierarchical relations between loops
-	\item Colapse same MPI call site from different processes
-	\item Constuction of the output
+\begin{itemize}%[<+->]
+	\item<2,7> Parsing and reducing information from trace
+	\item<3,7> Identify loops by MPI call sites classification
+	\item<4,7> Find out the hierarchical relations between loops
+	\item<5> Colapse same MPI call site from different processes
+	\item<6-> Construction of the output
 \end{itemize}
 \end{frame}
 
@@ -425,7 +425,7 @@ As a starting point ...
 \end{multicols}
 \pause
 \begin{block}{Keynote}
-	Is \textbf{the key step for scalability} because repetitivity of HPC applications
+	Trace reduction is \textbf{the key step for scalability} because repetitivity of HPC applications.
 \end{block}
 \end{frame}
 
@@ -434,7 +434,7 @@ As a starting point ...
 %\begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 %	\includegraphics[width=50px]{imgs/wi_1.png}
 %\end{textblock*}
-%\framesubtitle{Trace reduction step (ii)}
+%\framesubtitle{Trace reduction step}
 %Additionally \textbf{filter less representative MPI calls}.
 %\begin{itemize}
 %	\item Allows to decrease even more the clustering complexity.
@@ -454,7 +454,7 @@ As a starting point ...
 %\begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 %	\includegraphics[width=50px]{imgs/wi_1.png}
 %\end{textblock*}
-%\framesubtitle{Trace reduction step (iii)}
+%\framesubtitle{Trace reduction step}
 %The stored information for every unique MPI call is:
 %\begin{itemize}
 %	\item \textbf{Number of repetitions}
@@ -476,7 +476,7 @@ As a starting point ...
 \begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 	\includegraphics[width=50px]{imgs/wi_2.png}
 \end{textblock*}
-\framesubtitle{Loops identification (ii)}
+\framesubtitle{Loops identification}
 \begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 	\textbf{Input} Set of unique MPI calls sites with attached information.\\
 	\textbf{Output} Set of sets of MPI calls $\rightarrow$ Loops
@@ -523,7 +523,7 @@ As a starting point ...
 \begin{multicols}{2}
 \begin{itemize}
 	\item Need for some classification algorithm
-	\item \textbf{DBSCAN} as clustering algorithm (prefered to K-means)
+	\item \textbf{DBSCAN} as clustering algorithm (preferrtfed to K-means)
 	\begin{itemize}
 		\item $\epsilon$ empirically set to 0.2 (in general)
 		\item minPts set to 1
@@ -547,7 +547,7 @@ As a starting point ...
 \begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 	\includegraphics[width=50px]{imgs/wi_3.png}
 \end{textblock*}
-\framesubtitle{Loops merge (i)}
+\framesubtitle{Loops merge}
 \begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 \textbf{Input} Set of loops.\\
 \textbf{Output} Set of top level loops with its related nested loops.
@@ -575,7 +575,7 @@ We can assume
 \begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 	\includegraphics[width=50px]{imgs/wi_3.png}
 \end{textblock*}
-\framesubtitle{Loops merge (ii)}
+\framesubtitle{Loops merge}
 \begin{multicols}{2}
 	\begin{figure}
 		\includegraphics[width=0.3\textwidth]{imgs/clustering_ex_3_ps3.png}
@@ -603,7 +603,7 @@ We can assume
 \pause
 \pause
 \begin{block}{Keynote}
-	This mechanism is then used for phases detection.
+	This mechanism is used for phases detection.
 \end{block}
 \end{frame}
 
@@ -612,7 +612,7 @@ We can assume
 	\includegraphics[width=50px]{imgs/wi_4.png}
 \end{textblock*}
 \frametitle{Workflow}
-\framesubtitle{Pseudocode construction (i)}
+\framesubtitle{Pseudocode construction}
 \begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 \textbf{Input} Set of top level loops with rank conditional structures.\\
 \textbf{Output} Pseudocode representing the actual application structure.
@@ -634,7 +634,7 @@ We can assume
 %		\includegraphics[width=50px]{imgs/wi_4.png}
 %	\end{textblock*}
 %	\frametitle{Workflow}
-%	\framesubtitle{Pseudocode construction (ii)}
+%	\framesubtitle{Pseudocode construction}
 %	\begin{multicols}{3}
 %		\begin{figure}
 %			\includegraphics[width=0.3\textwidth]{imgs/workflow_pseudocode_1.png}
@@ -661,18 +661,18 @@ We can assume
 	\includegraphics[width=50px]{imgs/wi_4.png}
 \end{textblock*}
 \frametitle{Workflow}
-\framesubtitle{Pseudocode construction (ii)}
+\framesubtitle{Pseudocode construction}
 \begin{figure}
-	\includegraphics[width=0.8\textwidth]<1>{imgs/example_output_2.png}
-	\includegraphics[width=0.8\textwidth]<2>{imgs/example_output_2_2.png}
-	\includegraphics[width=0.8\textwidth]<3>{imgs/example_output_2_3.png}
-	\includegraphics[width=0.8\textwidth]<4>{imgs/example_output_2_4.png}
-	\includegraphics[width=0.8\textwidth]<5>{imgs/example_output_2.png}
+	\includegraphics[width=0.7\textwidth]<1>{imgs/example_output_2.png}
+	\includegraphics[width=0.7\textwidth]<2>{imgs/example_output_2_2.png}
+	\includegraphics[width=0.7\textwidth]<3>{imgs/example_output_2_3.png}
+	\includegraphics[width=0.7\textwidth]<4>{imgs/example_output_2_4.png}
+	\includegraphics[width=0.7\textwidth]<5>{imgs/example_output_2.png}
 	%\caption{Example console output}
 \end{figure}
 \pause
 \begin{figure}
-	\includegraphics[width=0.8\textwidth]<5>{imgs/interactive_shell_example.png}
+	\includegraphics[height=0.3\textheight]<5>{imgs/interactive_shell_example.png}
 \end{figure}
 \end{frame}
 
@@ -680,7 +680,7 @@ We can assume
 
 \begin{frame}
 	\frametitle{Best features analysis}
-	\framesubtitle{Motivation (i)}
+	\framesubtitle{Motivation}
 
 \textbf{Clustering aliasing} $\rightarrow$ Same behavior
 	\begin{multicols}{2}
@@ -708,13 +708,13 @@ We can assume
 
 \begin{frame}
 \frametitle{Best features analysis}
-\framesubtitle{Motivation (ii)}
-Both \textbf{solved}, but better if \textbf{avoid them}, so...
+\framesubtitle{Motivation}
+Both \textbf{solved}, but better to \textbf{avoid them}, so...
 \begin{itemize}
-	\item \textbf{Validate} our first intutition
+	\item \textbf{Validate} our first intuition
 	\item \textbf{Explore} alternative/additional features
 	\begin{itemize}
-		\item IPC, \%Loads, \%(Cond, Uncond, Total) branches \footnote{Strictly limited by available hardaware}
+		\item IPC, \%Loads, \%(Cond, Uncond, Total) branches \footnote{Strictly limited by available hardware}
 	\end{itemize}
 \end{itemize}
 \pause
@@ -723,7 +723,7 @@ Two steps:
 \begin{enumerate}
 	\item Data acquisition
 	\begin{itemize}
-		\item Extrae just can monitorize calls to shared libraries
+		\item Used tracing library (Extrae) is monitorizing calls to shared libraries
 		\item Loops monitors injection by \textbf{Mercurium}
 	\end{itemize}
 	\item Analyze results
@@ -746,15 +746,15 @@ Two steps:
 %\end{block}
 \end{frame}
 
-\section{Results}
+\section{Validation}
 \subsection{Lulesh 2.0}
 \begin{frame}
-	\frametitle{Results}
-	\framesubtitle{Lulesh 2.0 (i)}
+	\frametitle{Validation}
+	\framesubtitle{Lulesh 2.0}
 	\begin{multicols}{2}
 	Execution:
 	\begin{itemize}
-		\item 6014 code lines
+		\item 6014 code lines (C++)
 		\item 128 parallel processes
 		%\item 30 iterations
 		\item $\approx160MB$ tracefile
@@ -789,8 +789,8 @@ Two steps:
 \end{frame}
 
 \begin{frame}
-\frametitle{Results}
-\framesubtitle{Lulesh 2.0 (ii)}
+\frametitle{Validation}
+\framesubtitle{Lulesh 2.0}
 \begin{figure}
 	\includegraphics[width=0.8\textwidth]<1>{imgs/lulesh_trace_1.png}
 	\includegraphics[width=0.8\textwidth]<2>{imgs/lulesh_trace_1_cnt.png}
@@ -799,25 +799,36 @@ Two steps:
 \end{frame}
 
 \begin{frame}
-	\frametitle{Results}
-	\framesubtitle{Lulesh 2.0 (iii)}
+	\frametitle{Validation}
+	\framesubtitle{Lulesh 2.0}
 	\centering
 	%\begin{figure}
-		\includegraphics[width=0.6\textwidth]{imgs/result_val_10_bursts.png}\\
+	\includegraphics[width=0.8\textwidth]<1>{imgs/result_val_10_bursts_2.png}
+	\includegraphics[width=0.8\textwidth]<2>{imgs/result_val_10_bursts_2_s1.png}
+	\includegraphics[width=0.8\textwidth]<3>{imgs/result_val_10_bursts_2_s2.png}
+	\includegraphics[width=0.8\textwidth]<4>{imgs/result_val_10_bursts_2_s3.png}
+	\includegraphics[width=0.8\textwidth]<5>{imgs/result_val_10_bursts_2_s4.png}
+	\includegraphics[width=0.8\textwidth]<6>{imgs/result_val_10_bursts_2_s5.png}\\
 	%\end{figure}
+	\vfill
 	%\begin{figure}
-		\includegraphics[width=0.6\textwidth]{imgs/lulesh_trace_3.png}
+		\includegraphics[width=0.6\textwidth]<1>{imgs/lulesh_trace_3.png}
+		\includegraphics[width=0.6\textwidth]<2>{imgs/lulesh_trace_3_s1.png}
+		\includegraphics[width=0.6\textwidth]<3>{imgs/lulesh_trace_3_s2.png}
+		\includegraphics[width=0.6\textwidth]<4>{imgs/lulesh_trace_3_s3.png}
+		\includegraphics[width=0.6\textwidth]<5>{imgs/lulesh_trace_3_s4.png}
+		\includegraphics[width=0.6\textwidth]<6>{imgs/lulesh_trace_3_s5.png}
 	%\end{figure}
 \end{frame}
 
 \subsection{CG}
 \begin{frame}
-\frametitle{Results}
-\framesubtitle{CG Class A (i)}
+\frametitle{Validation}
+\framesubtitle{CG Class A}
 \begin{multicols*}{2}
 		Execution:
 		\begin{itemize}
-			\item $\approx2000$ code lines
+			\item $\approx2000$ code lines (Fortran)
 			\item 32 parallel processes
 			\item $\approx150MB$ tracefile
 		\end{itemize}
@@ -852,8 +863,8 @@ Two steps:
 \end{frame}
 
 \begin{frame}
-\frametitle{Results}
-\framesubtitle{CG Class A(ii)}
+\frametitle{Validation}
+\framesubtitle{CG Class A}
 	\begin{figure}
 		\includegraphics[height=0.2\textheight]{imgs/cg_32_validation_1.png}
 	\end{figure}
@@ -891,42 +902,51 @@ Two steps:
 	\end{mdframed}
 	\pause
 	\columnbreak
-	\centering
-	%\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_sp.png}\\
-	%\end{figure}
-	%\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_sp.png}\\
-	%\end{figure}
-	%\begin{figure}
-		\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_sp.png}\\
-	%\end{figure}
+%	\centering
+%	%\begin{figure}
+%		\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_sp.png}\\
+%	%\end{figure}
+%	%\begin{figure}
+%		\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_sp.png}\\
+%	%\end{figure}
+%	%\begin{figure}
+%		\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_sp.png}\\
+%	%\end{figure}
+%	\vfill
+%	\pause
+%	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
+%		The rest maintains its time even if increasing problem size.
+%	\end{mdframed}
 	\vfill
-	\pause
+	\begin{figure}
+		\includegraphics[width=0.4\textwidth,height=0.4\textheight]{imgs/plots/cg_red_and_trace.png}
+	\end{figure}
+	\vfill
 	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
-		The rest maintains its time even if increasing problem size.
+		Reduction step time is highly correlated with trace size.
 	\end{mdframed}
+	
 	\end{multicols}
 \end{frame}
 
-\begin{frame}
-	\frametitle{Scalability}
-	\begin{figure}
-		\includegraphics[width=0.7\textwidth]{imgs/plots/cg_red_and_trace.png}
-	\end{figure}
-	\begin{block}{Keynote}
-		Reduction time highly correlated with trace size
-	\end{block}
-\end{frame}
+%\begin{frame}
+%	\frametitle{Scalability}
+%	\begin{figure}
+%		\includegraphics[width=0.7\textwidth]{imgs/plots/cg_red_and_trace.png}
+%	\end{figure}
+%	\begin{block}{Keynote}
+%		Reduction time is highly correlated with trace size
+%	\end{block}
+%\end{frame}
 
 \section{Conclusions}
 \begin{frame}
 \frametitle{Conclusions}
 \begin{itemize}[<+->]
-	\vfill\item New approach has been explored.
-	\vfill\item That demonstrates that works well with HPC applications.
-	\vfill\item Iterations mean time and number of iterations demonstrates to be valuable features for classification
-	\vfill\item Execution time clearly dominated by Reduction step that presents linear complexity with trace size.
+	\vfill\item New approach for application structure detection has been explored.
+	\vfill\item Have demonstrated that it works well with HPC applications.
+	\vfill\item Number of iterations and iterations mean time has been identified as valuable features for loops classification.
+	\vfill\item Execution time is clearly dominated by Reduction step that presents linear complexity with the trace size.
 \end{itemize}
 \end{frame}
 
@@ -934,13 +954,13 @@ Two steps:
 \begin{frame}
 	\frametitle{Future work}
 	\begin{itemize}[<+->]
-		\vfill\item Improve memory usage by compress timestamps.
-		\vfill\item More research for select the best features set that avoids cluster aliasing/split.
-		\vfill\item Improve Reduce phase times by, e.g. Parallelize the reduction using for example well-known infrastructures like Hadoop.
+		\vfill\item Improve memory usage by timestamps compression.
+		\vfill\item More research for select the best features set for loops classification that avoids cluster aliasing/split.
+		\vfill\item Improve Reduce phase times by parallelizing the reduction using for example well-known infrastructures like Hadoop.
 %		\begin{itemize}
 %			\item Or alternatives like counting transitions between calls
 %		\end{itemize}
-		\vfill\item Exploring the possibility to use sampling techniques to get more detailed view of the structure of an application.
+		\vfill\item Explore the possibility to use sampling techniques to get more detailed structure of an application.
 		
 	\end{itemize}
 \end{frame}
@@ -971,7 +991,7 @@ All three \textbf{have been solved by looking to timestamps}.
 \end{frame}
 
 \begin{frame}
-	\frametitle{Proposal modifications (ii)}
+	\frametitle{Proposal modifications}
 	\framesubtitle{Cluster aliasing}
 	\begin{block}{Keynote}
 		Aliasing can be detected and solved \textbf{looking at timestamps}.
@@ -1085,7 +1105,7 @@ By ``reverse loop merging'' and times checking
 
 \begin{frame}
 \frametitle{Data analysis}
-\framesubtitle{Data acquisition (i)}
+\framesubtitle{Data acquisition}
 Desired data...\\
 \begin{itemize}
 \item PCA\footnote{Principal component analysis}: Set of observations with set of features, i.e. Set of loops with with \textbf{iteration-level aggregated features}. 
@@ -1107,7 +1127,7 @@ How to obtain it\\
 
 \begin{frame}
 \frametitle{Data analysis}
-\framesubtitle{Data acquisition (i)}
+\framesubtitle{Data acquisition}
 \begin{figure}
 \includegraphics[width=0.7\textwidth]{imgs/mercurium_internals.png}
 \caption{Mercurium internals overview}
@@ -1116,7 +1136,7 @@ How to obtain it\\
 
 \begin{frame}
 \frametitle{Data analysis}
-\framesubtitle{Data acquisition (ii)}
+\framesubtitle{Data acquisition}
 \begin{multicols}{2}
 \begin{pseudocode}{PCA}{ }
 MLoopInit(loop_{line}, loop_{file})\\
@@ -1155,15 +1175,15 @@ MLoopFini()
 
 \begin{frame}
 \frametitle{Data analysis}
-\framesubtitle{Analysis of results (i): \textbf{PCA}}
+\framesubtitle{Analysis of results: \textbf{PCA}}
 \begin{figure}
 	\includegraphics[height=0.9\textheight]{imgs/pcas_results.png}
 \end{figure}
 \end{frame}
 
 \begin{frame}
-\frametitle{Results}
-\framesubtitle{Lulesh 2.0 (iii)}
+\frametitle{Validation}
+\framesubtitle{Lulesh 2.0}
 \begin{figure}
 	\includegraphics[height=0.3\textheight]<1>{imgs/lulesh_comm_phase_1.png}
 	\includegraphics[height=0.3\textheight]<2>{imgs/lulesh_comm_phase_2.png}
@@ -1199,6 +1219,54 @@ MLoopFini()
 		\end{tabular}%
 	}
 \end{table}
+\end{frame}
+
+\section{Scalability}
+\begin{frame}
+\frametitle{Scalability}
+\begin{multicols}{2}
+	%\begin{figure}
+	\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_bd.png}\\
+	%\end{figure}
+	%\begin{figure}
+	\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_bd.png}\\
+	%\end{figure}
+	%\begin{figure}
+	\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_bd.png}\\
+	%\end{figure}
+	\vfill
+	\pause
+	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
+		Reduction step is clearly dominating the execution time.
+	\end{mdframed}
+	\pause
+	\columnbreak
+	\centering
+	%\begin{figure}
+	\includegraphics[height=0.2\textheight]{imgs/plots/cg_a_sp.png}\\
+	%\end{figure}
+	%\begin{figure}
+	\includegraphics[height=0.2\textheight]{imgs/plots/cg_b_sp.png}\\
+	%\end{figure}
+	%\begin{figure}
+	\includegraphics[height=0.2\textheight]{imgs/plots/cg_c_sp.png}\\
+	%\end{figure}
+	\vfill
+	\pause
+	\begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
+		The rest maintains its time even if increasing problem size.
+	\end{mdframed}
+\end{multicols}
+\end{frame}
+
+\begin{frame}
+\frametitle{Scalability}
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{imgs/plots/cg_red_and_trace.png}
+\end{figure}
+\begin{block}{Keynote}
+Reduction time is highly correlated with trace size
+\end{block}
 \end{frame}
 
 %\bibliography{bibliography}
