@@ -86,6 +86,14 @@
 \usepackage{graphics}
 \usepackage{appendixnumberbeamer}
 
+%\usepackage{algorithmicx}
+%\usepackage{algorithm}
+%\usepackage{algpseudocode}
+\usepackage{caption}
+
+\captionsetup[pseudocode]{labelformat=empty}
+
+
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{footline}[frame number]{}
 
@@ -142,7 +150,8 @@
 \AtBeginSection[]
 {
 	\begin{frame}<beamer>
-		\frametitle{Outline for section \thesection}
+		%\frametitle{Outline for section \thesection}
+		\frametitle{Outline}
 		\tableofcontents[currentsection]
 	\end{frame}
 }
@@ -162,8 +171,8 @@
 %----------------------------------------------------------------------------------------
 %	PRESENTATION SLIDES
 %----------------------------------------------------------------------------------------
-
-\section{Context}
+\section{Introduction}
+\subsection{Context}
 %\subsection{High Performance Computing}
 %\begin{frame}
 %\frametitle{High Performance Computing}
@@ -189,7 +198,6 @@
 %\end{textblock*}
 %\end{frame}
 
-\subsection{Performance Analysis}
 \begin{frame}
 \frametitle{Performance Analysis}
 \begin{itemize}
@@ -225,19 +233,19 @@
 %\end{multicols}
 \end{frame}
 
-\section{Motivations}
+\subsection{Motivations}
 \begin{frame}
 \frametitle{Motivations}
-\begin{block}{About improve understandability}
-	Providing application structure will lead to better understandability about what the application is doing.
+\begin{block}{About improving understandability}
+	Providing application structure will lead to better understanding about what the application is doing.
 \end{block}
 \pause
-\begin{block}{About improve reports}
-	Having the structure of the application the communication with developer can be improved
+\begin{block}{About improving reports}
+	Having the structure of the application, the communication between analyst and developer can be improved.
 \end{block}
 \end{frame}
 
-\section{Objectives}
+\subsection{Objectives}
 \begin{frame}
 \frametitle{Objective}
 	\begin{exampleblock}{The objective for this thesis is...}
@@ -245,7 +253,7 @@
 	\end{exampleblock}
 \end{frame}
 
-\section{State of the Art}
+\subsection{State of the Art}
 
 \begin{frame}
 \frametitle{State of the Art}
@@ -322,8 +330,8 @@ As a starting point ...
 \end{enumerate}
 \end{frame}
 
-\section{Implementation}
-\subsection{Workflow}
+\subsection{Implementation}
+%\subsubsection{Workflow}
 \begin{frame}
 \begin{textblock*}{5cm}(300px,10px) % {block width} (coords)
 	\includegraphics<+(1)->[width=50px]{imgs/wi_all.png}
@@ -360,34 +368,36 @@ As a starting point ...
 \end{mdframed}
 \vspace{10px}
 \begin{multicols}{2}
-	\begin{pseudocode}{ }{ }
-		\FOR 1 \text{ to } 50 \DO
-		\BEGIN
-			\FOR 1 \text{ to } 2 \DO
-			\BEGIN
-				MPI\_A \\
-			\END \\
-		MPI\_B\\
-		\END\\
-		\FOR 1 \text{ to } 100 \DO
-		\BEGIN
-			\FOR 1 \text{ to } 2 \DO
-			\BEGIN
-				\FOR 1 \text{ to } 2 \DO
-				\BEGIN
-					MPI\_C \\
-				\END\\
-				MPI\_D\\
-			\END \\
-			MPI\_E\\
-		\END
-	\end{pseudocode}
-	\begin{textblock*}{2cm}(127px,145px) % {block width} (coords)
+%	\begin{pseudocode}{ }{ }
+%		\FOR 1 \text{ to } 50 \DO
+%		\BEGIN
+%			\FOR 1 \text{ to } 2 \DO
+%			\BEGIN
+%				MPI\_A \\
+%			\END \\
+%		MPI\_B\\
+%		\END\\
+%		\FOR 1 \text{ to } 100 \DO
+%		\BEGIN
+%			\FOR 1 \text{ to } 2 \DO
+%			\BEGIN
+%				\FOR 1 \text{ to } 2 \DO
+%				\BEGIN
+%					MPI\_C \\
+%				\END\\
+%				MPI\_D\\
+%			\END \\
+%			MPI\_E\\
+%		\END
+%	\end{pseudocode}
+	\begin{figure}
+		\includegraphics[width=0.45\textwidth]{imgs/clustering_ex_3_ps3.png}
+	\end{figure}
+	\begin{textblock*}{2cm}(135px,130px) % {block width} (coords)
 		\includegraphics[width=10px]{imgs/mpi_b_shape.pdf}\\
 		\includegraphics[width=10px]{imgs/mpi_a_shape.pdf}
 	\end{textblock*}
 	\columnbreak
-	\null \vfill
 	\begin{figure}
 		\includegraphics[width=0.5\textwidth]<2>{imgs/reduce_example_1.pdf}
 		\includegraphics[width=0.5\textwidth]<3>{imgs/reduce_example_2.pdf}
@@ -395,7 +405,7 @@ As a starting point ...
 		\includegraphics[width=0.5\textwidth]<5->{imgs/reduce_example_4.pdf}
 	\end{figure}
 	\begin{figure}
-		\includegraphics[width=0.2\textwidth]<6>{imgs/reduce_example_5.pdf}
+		\includegraphics[width=0.15\textwidth]<6>{imgs/reduce_example_5.pdf}
 	\end{figure}
 	\vfill \null	
 \end{multicols}
@@ -420,7 +430,7 @@ As a starting point ...
 	\includegraphics[width=0.5\textwidth]{imgs/reduce_example_4.pdf}
 \end{figure}
 \begin{figure}
-	\includegraphics[width=0.2\textwidth]{imgs/reduce_example_5.pdf}
+	\includegraphics[width=0.15\textwidth]{imgs/reduce_example_5.pdf}
 \end{figure}	
 \end{multicols}
 \pause
@@ -479,31 +489,34 @@ As a starting point ...
 \framesubtitle{Loops identification}
 \begin{mdframed}[backgroundcolor=black!10,roundcorner=5pt,linewidth=0pt]
 	\textbf{Input} Set of unique MPI calls sites with attached information.\\
-	\textbf{Output} Set of sets of MPI calls $\rightarrow$ Loops
+	\textbf{Output} Set of clusters of MPI call sites $\rightarrow$ Loops
 \end{mdframed}
 \begin{multicols}{2}
-	\begin{pseudocode}{ }{ }
-		\FOR 1 \text{ to } 50 \DO
-		\BEGIN
-			\FOR 1 \text{ to } 2 \DO
-			\BEGIN
-				MPI\_A \\
-			\END \\
-			MPI\_B\\
-		\END\\
-		\FOR 1 \text{ to } 100 \DO
-		\BEGIN
-			\FOR 1 \text{ to } 2 \DO
-			\BEGIN
-				\FOR 1 \text{ to } 2 \DO
-				\BEGIN
-					MPI\_C \\
-				\END\\
-				MPI\_D\\
-			\END \\
-			MPI\_E\\
-		\END
-	\end{pseudocode}
+%	\begin{pseudocode}{ }{ }
+%		\FOR 1 \text{ to } 50 \DO
+%		\BEGIN
+%			\FOR 1 \text{ to } 2 \DO
+%			\BEGIN
+%				MPI\_A \\
+%			\END \\
+%			MPI\_B\\
+%		\END\\
+%		\FOR 1 \text{ to } 100 \DO
+%		\BEGIN
+%			\FOR 1 \text{ to } 2 \DO
+%			\BEGIN
+%				\FOR 1 \text{ to } 2 \DO
+%				\BEGIN
+%					MPI\_C \\
+%				\END\\
+%				MPI\_D\\
+%			\END \\
+%			MPI\_E\\
+%		\END
+%	\end{pseudocode}
+	\begin{figure}
+		\includegraphics[width=0.45\textwidth]{imgs/clustering_ex_3_ps3.png}
+	\end{figure}
 	\columnbreak
 	\begin{figure}
 	\includegraphics[width=0.5\textwidth]<1>{imgs/clustering_ex_3.png}
@@ -523,7 +536,7 @@ As a starting point ...
 \begin{multicols}{2}
 \begin{itemize}
 	\item Need for some classification algorithm
-	\item \textbf{DBSCAN} as clustering algorithm (preferrtfed to K-means)
+	\item \textbf{DBSCAN} as clustering algorithm (preferred to K-means)
 	\begin{itemize}
 		\item $\epsilon$ empirically set to 0.2 (in general)
 		\item minPts set to 1
@@ -558,7 +571,7 @@ As a starting point ...
 Intuition
 \begin{itemize}
 	\item Isolated loops are just \textbf{pieces of the overall puzzle}.
-	\item By discover its hierarchical relations \textbf{the structure of the application will be discovered}...
+	\item By discovering its hierarchical relations \textbf{the structure of the application will be revealed}...
 	\item As well as the different phases
 \end{itemize}
 \pause
@@ -676,20 +689,18 @@ We can assume
 \end{figure}
 \end{frame}
 
-\section{Best features analysis}
+\subsection{Refination}
 
 \begin{frame}
-	\frametitle{Best features analysis}
-	\framesubtitle{Motivation}
-
+	\frametitle{Refination}
 \textbf{Clustering aliasing} $\rightarrow$ Same behavior
 	\begin{multicols}{2}
 		\begin{figure}
-			\includegraphics[height=0.3\textheight]{imgs/aliasing_example_pse.png}
+			\includegraphics[height=0.25\textheight]{imgs/aliasing_example_pse.png}
 		\end{figure}
 		\columnbreak
 		\begin{figure}
-			\includegraphics[width=0.3\textwidth]{imgs/aliasing_ex_clustering.png}
+			\includegraphics[width=0.25\textwidth]{imgs/aliasing_ex_clustering.png}
 		\end{figure}
 	\end{multicols}
 \vfill
@@ -697,41 +708,58 @@ We can assume
 \textbf{Clustering split} $\rightarrow$ Data conditions
 	\begin{multicols}{2}
 		\begin{figure}
-			\includegraphics[height=60px]{imgs/split_example_2.png}
+			\includegraphics[height=0.20\textheight]{imgs/split_example_2.png}
 		\end{figure}
 		\columnbreak
 		\begin{figure}
-			\includegraphics[width=0.3\textwidth]{imgs/clustering_val_8.png}
+			\includegraphics[width=0.25\textwidth]{imgs/clustering_val_8.png}
 		\end{figure}
 	\end{multicols}
+\pause
+\begin{block}{Keynote}
+	Both \textbf{solved} but better to \textbf{avoid them}
+\end{block}
 \end{frame}
+
+\section{Best features analysis}
 
 \begin{frame}
 \frametitle{Best features analysis}
-\framesubtitle{Motivation}
-Both \textbf{solved}, but better to \textbf{avoid them}, so...
+
+Are the used features \textbf{the best}?\\
 \begin{itemize}
-	\item \textbf{Validate} our first intuition
-	\item \textbf{Explore} alternative/additional features
-	\begin{itemize}
-		\item IPC, \%Loads, \%(Cond, Uncond, Total) branches \footnote{Strictly limited by available hardware}
-	\end{itemize}
+	\item Number of repetitions and Mean time between repetitions
 \end{itemize}
 \pause
-\vfill
-Two steps:
-\begin{enumerate}
-	\item Data acquisition
-	\begin{itemize}
-		\item Used tracing library (Extrae) is monitorizing calls to shared libraries
-		\item Loops monitors injection by \textbf{Mercurium}
-	\end{itemize}
-	\item Analyze results
-	\begin{itemize}
-		\item Principal Components Analysis
-		\item Random Forest Variable Importance
-	\end{itemize}
-\end{enumerate}
+Can other \textbf{additional/alternative} features prevent clustering split/aliasing?\\
+\begin{itemize}
+	\item IPC, \%Loads, \%(Cond, Uncond, Total) branches \footnote{Strictly limited by available hardware}
+\end{itemize}
+\pause
+Used techniques:\\
+\begin{itemize}
+	\item Principal Component Analysis
+	\item Random Forest Variable Importance $\rightarrow$ Needs labeled MPI call sites with loop identification.
+\end{itemize}
+\pause
+Data acquisition:\\
+\begin{itemize}
+	\item Used tracing library (Extrae) is monitorizing calls to shared libraries
+	\item Loops monitors injection by \textbf{Mercurium}
+\end{itemize}
+%Two steps:
+%\begin{enumerate}
+%	\item Data acquisition
+%	\begin{itemize}
+%		\item Used tracing library (Extrae) is monitorizing calls to shared libraries
+%		\item Loops monitors injection by \textbf{Mercurium}
+%	\end{itemize}
+%	\item Analyze results
+%	\begin{itemize}
+%		\item Principal Components Analysis
+%		\item Random Forest Variable Importance
+%	\end{itemize}
+%\end{enumerate}
 \end{frame}
 
 \begin{frame}
@@ -754,14 +782,14 @@ Two steps:
 	\begin{multicols}{2}
 	Execution:
 	\begin{itemize}
-		\item 6014 code lines (C++)
-		\item 128 parallel processes
+		\item 6014 code lines (C++) (142 MPI calls)
+		\item 125 parallel processes 
 		%\item 30 iterations
 		\item $\approx160MB$ tracefile
 	\end{itemize}
 	Analysis:
 	\begin{itemize}
-		\item Filter all $\delta < 10\%$\\
+		\item Filter all $loops < 10\%$\\
 		\item CPU burst $time > 6ms$
 	\end{itemize}
 	\pause
@@ -794,7 +822,7 @@ Two steps:
 \begin{figure}
 	\includegraphics[width=0.8\textwidth]<1>{imgs/lulesh_trace_1.png}
 	\includegraphics[width=0.8\textwidth]<2>{imgs/lulesh_trace_1_cnt.png}
-	\caption{Lulesh 2.0 128 MPI ranks -- 30 iterations}
+	\caption{Lulesh 2.0 125 MPI ranks -- 30 iterations}
 \end{figure}
 \end{frame}
 
@@ -828,13 +856,13 @@ Two steps:
 \begin{multicols*}{2}
 		Execution:
 		\begin{itemize}
-			\item $\approx2000$ code lines (Fortran)
+			\item $\approx2000$ code lines (Fortran) (40 MPI calls)
 			\item 32 parallel processes
 			\item $\approx150MB$ tracefile
 		\end{itemize}
 		Analysis:
 		\begin{itemize}
-			\item Filter all $\delta < 10\%$\\
+			\item Filter all $loops < 10\%$\\
 			\item CPU burst $time > 100us$
 		\end{itemize}
 	\pause
@@ -955,7 +983,7 @@ Two steps:
 	\frametitle{Future work}
 	\begin{itemize}[<+->]
 		\vfill\item Improve memory usage by timestamps compression.
-		\vfill\item More research for select the best features set for loops classification that avoids cluster aliasing/split.
+		%\vfill\item More research for select the best features set for loops classification that avoids cluster aliasing/split.
 		\vfill\item Improve Reduce phase times by parallelizing the reduction using for example well-known infrastructures like Hadoop.
 %		\begin{itemize}
 %			\item Or alternatives like counting transitions between calls
