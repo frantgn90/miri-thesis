@@ -1,91 +1,76 @@
 
-\chapter{Scalable structure detection}
+\chapter{Scalable syntactic structure detection}
 
-On proposed methodology and further studies
+On proposed methodology basis and further studies
 
 \section{Application structure by
 classification}\label{s:app_structire_by_classification}
 
 \lettrine{T}{aking} into account the motivations, exposed in \ref{s:motivations}, and the
 previous works studied and discussed in \ref{related_work} the idea to introduce
-a new approach arise, even if as always based on previous foundations.  
+a new approach arise.
  
-Our intention is, in principle, just use information from MPI calls, mainly for 
+Our intention is just use information from MPI calls, mainly for 
 three reasons:
 \begin{enumerate*}[label=\roman*)]
   \item It does not needs to instrument the source code of the target
-    application since exploit the \texttt{LD\_PRELOAD} capabilities of extrae.
+    application so it can exploit the \texttt{LD\_PRELOAD} capabilities of extrae.
     It is a big deal since the source code is not always available to the
     analyst.
   \item trace size is small compared with traces with more information
-    like entry/exit from functions
-  \item and as have been argued in \ref{s:soa_discussion} monitoring the MPI 
+    like entry/exit from functions used on other approaches
+  \item and as it has been argued in \ref{s:soa_discussion} monitoring the MPI 
     calls is enough for having a clue about the general structure of the 
     application.
 \end{enumerate*}
 
 The proposal presented in this thesis is to explore a new way to detect the
- general structure of an application by applying clustering. 
+ syntactic structure of an application by applying clustering. 
 The essential point is that the problem has been converted into a classification 
-problem so instead of looking for these itemsets that are being
+problem so instead of looking for these events that are being
 repeated several times during the execution, close enough one each other, let's
 face the problem of arrange the MPI calls that belongs to the same loop to the
-same cluster. Then analyze the hierarchical arrangement of these clusters to
-detect superloops-subloops relations. Once done, the pseudo-code representation 
+same cluster. Then can analyze the hierarchical arrangement of these clusters to
+detect nesting between loops. Once done, the pseudo-code representation 
 construction becomes quite easy. The scalability of this method resides on the 
-fact that
-HPC applications are strongly repetitive over the time, so the number of unique
-MPI calls to cluster remains about constant despite the growth of the execution
-time, additionally clustering algorithm such that K-means presents an attractive 
-linear complexity and DBSCAN a quasi-lineal in general.
+fact that HPC applications are strongly repetitive over the time, so the number 
+of unique MPI calls to cluster remains about constant despite the growth of the 
+execution time, additionally clustering algorithm such that K-means presents an 
+attractive linear complexity and DBSCAN a quasi-lineal in general.
 
-The key point of the presented method is to clustering MPI calls into loops but
-what is actually identifying a loop? The answer is about to figure out what loop
-feature or features are able to identify then unequivocally or at least with
-less level of aliasing\footnote{Understanding as aliasing when two different
-loops are considered the same because impossibility to differentiate throw the
-selected metrics}. Without a lot of 
-effort we can think that its
-position on code, understanding as position the line and the file where the loop
-lies, is the feature that will give us more information but the reality is that 
-we do not have this information on trace. To have it we would need to insert
-some monitors on code or maybe use some sort of dynamic binary instrumentation
-like
-PIN\footnote{https://software.intel.com/en-us/articles/pin-a-dynamic-binary-instrumentation-tool}
-and it would drive to huge traces, a thing to be avoided so we just are going to
-rely on {\tt LD\_PRELOAD} that only trace MPI calls with additional
-information like its parameters, the call-path and some hardware metrics (even
-if it is true that there is also no information about loop iterations in trace,
-the MPI calls repetition can be considered as a proxy of iterations)
-Being aware of that, the next obvious metrics that in principle can characterize 
-a loop is the number of iterations it performs but for sure in an application 
-there used to be dozens of
-loops and is not ridiculous to think that clustering just with this metric will
-leads to a lot of aliasing. That would be true if we think in static number of
-iterations but lets think about dynamic number of iterations: The dynamic
-iterations of a given loop does not depends only on the number of iterations in
-its definition but also on the number of iterations on the definition of the
-parent loops such that if there are two loops having $n$ and $n$ iterations (so
-having aliasing on static number of iterations) being one nested on the other, 
-in the dynamic domain, they will have $n$ and $n^2$ iterations, undoing the aliasing.
-This is just an starting point, nested loops will be unambiguously identified so
-it is okay for most of the applications (the most simple) but there still some
-situations where we can have aliasing. The situation where two loops
-lies on the same loop nesting level and have the same number of static
-iterations will drive to aliasing. This situation is not so probable (at least
-on the NPB benchmarks that is the set of benchmarks used for validation) but
-since it has been detected in some cases it has to be covered. Further, the next
-metric that can identify a given loop is the work that does, i.e. the
-iteration time. Two different loops used to execute different work so it is
-likely to have a different duration per iteration. An appropriate metric for
-quantify this value is to take an aggregate of all iterations duration, i.e.
-the mean. So, in this first qualitative approach, the conclusion is we can 
-identify with high probability of 
-unambiguity the loops with two metrics:
-\begin{enumerate*}[label=\roman*)] 
+The key point of the presented method is to cluster MPI calls into loops so we
+have to figure out what loop
+feature or features are able to identify them in a better way. As have been said
+we only work with mpi calls so there is not actual information about loops
+available in trace, instead of that we perform a side-channel analysis by using
+mpi calls and the computation between them as a proxy of iterations information such
+that for example, number of iterations can be understood as number of times a
+given mpi call is being executed. From this definition it can be understood that
+the only loops this proposal is going to detect are those loops that contains
+mpi calls.
+
+The features that we are going to use are:
+\begin{enumerate}[label=\roman*)] 
   \item Number of dynamic iterations
   \item Iterations mean time
-\end{enumerate*}
+\end{enumerate}
+About the first,  we rely on dynamic number of iterations. 
+Iterations of a given loop does not depends only on the number of iterations in
+its definition but also on the number of iterations on the definition of the
+parent loops such that if there are two loops having $n$ and $n$ iterations
+being one nested on the other, in the dynamic domain, they will have $n$ and 
+$n^2$ iterations allowing to differentiate them. So by this first feature an
+arbitrary number of nested loops can be identified.
+Number of iterations will corresponds to the number of repetitions of a given 
+mpi call.
+The situation where two loops lies on the same nesting level and have the same 
+number of iterations will drive to identify both with same identification if we just rely on number of iterations. This situation is less 
+probable but since it has been detected in some cases it has to be 
+covered. Luckily even two loops have the same number of iterations they use to 
+perform different work. The way to measure the quantity of work a loop 
+does is by means of the iterations mean time, what is the second 
+selected metric. We consider the iteration time, to be the times that elapses 
+between two executions of the same mpi call.
 
 \section{Proposed methodology}
 
@@ -103,7 +88,9 @@ in most cases. The proposal consists on a three fundamental pipelined steps:
     loops.
   \item Loops merge: Once the calls are grouped into loops, the relationships
     between these loops have to be studied such that the actual structure of the
-    application in terms of superloop-subloop relations is showed up.
+    application in terms of nesting relations is showed up.
+  \item Inter-rank reduction: Where same calls from different mpi ranks are
+    merged.
   \item Pseudocode construction: Final step is about building up a
     representation of the detected structure such a way it ease the
     interpretation of data. The chosen format have been pseudo-code with
@@ -136,7 +123,9 @@ two MPI calls
 results to be equal if and only if have the same signature. In our case the
 signature is defined by the entire callstack, i.e. a sequence of pairs 
 $(file, line)$ that unambiguously will define the dynamic position in code of a
-given MPI call. Additionally contains the rank-id.
+given MPI call. Additionally contains the rank-id what means that even if two
+mpi calls have the same call path if they have been executed by different
+processes will not be considered the same.
 
 We can define $T$ as the sequence of mpi calls ordered by time and $|T|$ the 
 total number of mpi calls that is strongly related with the size of the input trace. 
@@ -154,28 +143,42 @@ on $\Omega$ space similar to $T(\omega)$.
 
 Once the reduction is finished next step is to perform the aggregation and
 derivation. Aggregation consists on aggregate the features
-belonging to those scattered calls, generally the arithmetic mean on for example
-the size of the messages, duration of the call and so on. Derivation 
-consist on extract these needed information that is not
-explicit in trace so needs some sort of calculation. On previous sections 
-it has been introduced that number of iterations and
-iteration mean time among others iteration level information are good features 
-to classify for loops. On production traces there is no any information about
-loops and iterations boundaries so this information should be gathered from a
-different source. For sure, this source are the MPI calls, as also has been previously
-introduced they act as the fundamental pillars for the general structure
-recognition, so they will act as a proxy for these iterations boundaries. What
-it means is that we are going to consider number of iterations same think as the
-number of repetitions of a given MPI call, and all the iteration-level
-information all the information in between two instances of the same MPI call,
-for example iteration time will be the time passed between two consecutive
-instances of the same call. It can be defined as (and similarly with other
-features $\lambda \in \Lambda$): 
-$$
-\forall \omega \in \Omega : it(\omega)=\frac{\sum\limits_{i=1}^{|T(\omega)|-1} t_{i+1}-t_{i}}{|T(\omega)|-1}
-$$
+belonging to those scattered calls, generally the arithmetic mean and standard
+deviation on for example the size of the messages, duration of the call 
+and so on. This process is not
+done at reduction time because some metrics needs the entire series like
+for example the standard deviation. Derivation 
+consist on extract the need information that is not
+explicit in trace so needs some sort of calculation. On previous section 
+it has been introduced that number of repetitions and
+mean time between repetitions are the used features to classify mpi calls. Since the
+number of a given mpi call is repeated has been already calculated in reduction phase, the
+data to be derived is the iteration mean time that is represented by performing
+a mean over all elapsed times between two consecutive calls to the same mpi call.
+The information that is obtained from trace are the timestamps so mean
+time between repetitions (expresed as $imt(\omega)$) is calculated with formula 
+\ref{eq:imt_formila} (and similarly with other features $\lambda \in \Lambda$).
 
-Being $it(\omega)$ the mean iteration time.
+\begin{equation}
+\forall \omega \in \Omega : imt(\omega)=\frac{\sum\limits_{i=1}^{|T(\omega)|-1} t_{i+1}-t_{i}}{|T(\omega)|-1}
+\label{eq:imt_formila}
+\end{equation}
+
+Once the the entire phase is finished, the information that have been 
+stored for every unique mpi is:
+\begin{enumerate}[label=\roman*)]
+  \item Number of repetitions and mean time between repetitions: This will be
+    the used data for the clustering
+  \item The entire call path and mpi call identification: These data have been
+    used for the reduction but it is still needed for the pseudo-code
+    representation
+  \item Performance information of just previous cpu burst: This information is
+    used to enrich the outputted pseudo-code with performance information
+    about the computational phases between mpi calls.
+  \item Some configurable hardware counters not just from the previous cpu burst
+    but from all cpu burst between two executions of the same mpi call.
+  \item All timestamps are also stored for future analysis.
+\end{enumerate}
 
 The algorithm developed for this first step is quite intuitive. It basically
 consists on traverse the tracefile sequentially and every time an MPI call is
@@ -184,14 +187,16 @@ with the same signature exists is checked out, if no it is added to the
 $\Omega$ set but if yes it is merged with the already existing. Even if the
 fundamental idea is quite simple, implementing it, in a relatively efficient
 way, for paraver traces is a little bit tricky because two factors.
-\begin{enumerate*}[label=\roman*)]
+\begin{enumerate}[label=\roman*)]
   \item Communication information for p2p operations like size or partner are different events from
     MPI call events so communications have to be matched with the actual calls
-  \item and in order to avoid overflows on hardware counter numbers, extrae 
-    reset to 0 the these counters every time it is fire to trace, so for example to
-    calculate number of instructions from one instance of an MPI call to its
-    nexts is not as direct as calculate the difference.
-\end{enumerate*}
+  \item and extrae does not fire the absolute number for hardware counters but a
+    delta, i.e. Every time an event is fired to trace it resets the every
+    hardware counter. The reason is because the relative value use to be more
+    useful for the analysis. It means that for example to
+    calculate number of instructions from one instance of an MPI call to the
+    consecutive is not as direct as calculate the difference.
+\end{enumerate}
 
 Lets define $\Sigma = T \cup \Psi \cup \Delta$ being $\Psi$ the set with
 all communications in execution and $\Delta$ all the hardware counters values
@@ -218,8 +223,7 @@ have been decided to move this sort of considerations to future work.
 
 Reduction step is the key point for 
 the scalability of the methodology since $|T| >> |\Omega|$ because the executions 
-used to present a lot of repetitions so in next step, the clustering is done over a very 
-reduced version of the input trace.
+used to present a lot of repetitions so in next step, the clustering is done over a very reduced version of the input trace.
 
 \begin{pseudocode}{Reduction algorithm}{\Sigma}
 \label{pc:reduction_phase}
@@ -288,6 +292,20 @@ reduced version of the input trace.
     \RETURN \Omega
 \end{pseudocode}
 
+Additionally, in order to reduce even more the items to cluster for the next
+step a filtering can be done. This filter consist on remove these mpi calls that
+represents the execution of short loops. The filtering use the value that can be
+calculated by the formula in equation \ref{eq:delta_calculation} what 
+fulfills $0 < \delta <= 1$.
+
+\begin{equation}
+  \delta(\upsilon)=\frac{it(call)*imt(call)}{T_{exe}}
+  \label{eq:delta_calculation}
+\end{equation}
+
+Being $it(call)$ the number of repetitions and $imt(call)$ the mean time between
+repetitions.
+
 \subsection{Loops clustering}\label{ss:loops_clustering}
 
 This is the key step of the this thesis proposal because the quality of the
@@ -319,14 +337,13 @@ its linear complexity but have an important drawback, it needs the number of
 clusters $K$ in advance that is not trivial when no prior knowledge is
 available.
 
-About the last Density-based methods assume that the points that belongs to
+About the second, Density-based methods assume that the points that belongs to
 each cluster are
 drawn from a specific probability distribution. The overall distribution of data
-is assumed to be a mixture of several distributions. This methods are designed
+is assumed to be a mixture of several distributions. These methods are designed
 for discovering clusters of arbitrary shape. The idea is to continue growing the
-given cluster as long as the density in the neighborhood exceeds some threshold,
-namely, the neighborhood of a given radius has to contain at least a minimum
-number of objects. A particular algorithm that follows these ideas is the
+given cluster as long as the density in the neighborhood exceeds some threshold.
+A particular algorithm that follows these ideas is the
 Density-based scan that discovers clusters of arbitrary shapes and is efficient
 for large spatial databases. The advantage respect K-means is that it does not
 need the previous specification of the number of clusters but needs other two
@@ -338,25 +355,25 @@ parameters:
     region.
 \end{enumerate*}
 Its complexity is in the general case $\theta(nlog(n))$ with number of instances
-even if it can degrade to $O(n^{2})$ when bad decision on the $eps$ parameter
-value that could end up retrieving all instances when looking for neighbors for
-every instance scan.
+even if it can degrade to $O(n^{2})$ when all instances are retrieved when looking
+for neighbors for every instance scan. It could happen when instances are really
+close one each other of because a bad decision on the $eps$ parameter.
 
-DBSCAN seems to be the most suitable algorithm for this step because two main
-reasons:
-\begin{enumerate}[label=\roman*)]
-  \item The number of clusters can not be a-priori known, so K-means should be
-    discarded for this step.
-  \item Iteration-level features follows, presumably, Gaussian distribution
-    because the stable executions, what it means is that for example in case of
-    iteration mean duration, is natural to think  that it will slightly differ
-    when it is measured from one MPI call point of view or from other,
-    so a certain variation should be assumed. It fulfills with the assumption 
-    of ``each cluster are drawn from a specific
-    probability distribution''.
-\end{enumerate}
+DBSCAN is the most suitable algorithm for this step because the number of clusters 
+can not be a-priori known, so K-means should be discarded for this step.
 
-Fixing DBSCAN algorithm as the algorithm to be used, the next discussion is
+%\begin{enumerate}[label=\roman*)]
+%  \item 
+%  \item Iteration-level features follows, presumably, Gaussian distribution
+%    because the stable executions, what it means is that for example in case of
+%    iteration mean duration, is natural to think  that it will slightly differ
+%    when it is measured from one MPI call point of view or from other,
+%    so a certain variation should be assumed. It fulfills with the assumption 
+%    of ``each cluster are drawn from a specific
+%    probability distribution''.
+%\end{enumerate}
+
+Next discussion is
 about how to set up the two parameters that it needs in order to end up with
 optimal results. About the $minPts$ it allows to set when to decide whether an
 accumulation of instances is considered as a cluster or not, it is a threshold
@@ -366,7 +383,8 @@ loosing information about the application structure so no one should be
 discarded. Imagine a loop where there is a single mpi call, if $minPts$ is above
 1, it will be discarded and it will not be shown to the user. In conclusion:
 $minPts=1$. In the case of $eps$ is not as easy. It has been set to a value that
-empirically have demonstrated is working well for the majority of the cases. 
+empirically have demonstrated is working well for the majority of the cases.
+This value is $0.2$ in general.
 They key point here is that all data in all dimensions of the clustering have been 
 previously normalized, so $eps$ is about relative distances between instances
 instead of absolute.
@@ -377,15 +395,13 @@ c(\omega) = \upsilon$. Being $\Upsilon$ the loops set. $|\Upsilon|$ is upper
 bounded by $|\Omega|$ because in the worst case every loop will have just one
 mpi call, but the general case is $|\Omega| > |\Upsilon|$ so it is also
 contributing to decrease the complexity of the next phase that is the loops
-merge. Additionally, on section \ref{ss:loops_merge} there is explained the 
-mechanism to even reduce more the complexity of this clustering by filtering
-the less representative loops.
+merge. 
 
 \subsection{Loops merge}\label{ss:loops_merge}
 
 Since now we were concerned about what loops do we have on the trace, that are
 indeed pieces of the overall puzzle of the structure of the application but not
-the structure by itself. This next to last step is about rearrange these pieces 
+the structure by itself. This step is about rearrange these pieces 
 in a way that actual structure of the application emerge explaining the 
 hierarchical relations between the different loops. 
 
@@ -406,25 +422,25 @@ What empirically we have seen is that most applications use to have an
 initialization phase, a body, where the actual application is working and 
 sometimes a finalization phase. One mechanism to differentiate them is looking
 at loops time boundaries. Additionally since the body is always larger than the
-other phases (assuming large enough input sizes) another the mechanism to 
-differentiate them is to check out how many time of the application every loop
+other phases (assuming large enough input sizes) another mechanism to 
+differentiate them is to check out how much time of the application every loop
 can explain. 
 
-A naive first algorithm was to sort all loops by number of iterations in a
+A naive first algorithm was to sort all loops, by number of iterations in a
 descending fashion. Then get the first loop in the list an try to merge with the
 next, if not possible, try with the other one. Note that this algorithm have a
 complexity in the worst case of $O(\frac{n^{2}+n}{2}) \approx O(n^{2})$ with
 $|\Upsilon|$. In order to improve it we decided to shrink the search space by
-classify loops by how many time of the application can explain, it is a way to
-classify loops by phase. The feature has been named $\delta$ and is defined as
-$$
-\delta(\upsilon)=\frac{it(\upsilon)*imt(\upsilon)}{T_{exe}}
-$$
+classify loops by how many time of the application can explain since nested
+loops will share this value with parent loops. Remember that
+this value has been used before for filter mpi calls before the clustering (equation
+\ref{eq:delta_calculation}) so all mpi calls already have it. At cluster level it
+can be calculated as the mean of the deltas of all mpi calls.
 
-So a new DBSCAN is performed over the set of loops and every one of the clusters
-are the different phases of the execution, so now, the search space for every
-loop is just among loops that forms part of the same phase. The same algorithm
-is now executed on every phase.
+A new DBSCAN is performed over the set of loops and every one of the clusters
+are the different phases of the execution. Now, the search space is just among 
+loops that forms part of the same phase. The same algorithm is now executed 
+on every phase.
 
 This concept of different phases can be better understood from a geometrical
 point of view. Having the program depicted in pseudocode
@@ -433,7 +449,7 @@ already reduced mpi calls in dimensions number of iterations vs. iteration mean
 time we will have the plot in figure \ref{fig:delta_classification_1}.
 
 \begin{multicols}{2}
-  \begin{pseudocode}{Delta example}{ }
+  \begin{pseudocode}{App example}{ }
   \label{pc:delta_classification_example}
       \COMMENT{Short initialization}\\
       \FOR 1 \text{ to } 10 \DO 
@@ -479,9 +495,9 @@ related with the previous step not with this last explained delta clustering)
 and classified into two delta groups. The two groups are depicted by these two,
 black and yellow curves. So one cluster belongs to one delta if it lies over 
 the curve. These curves are described by the function:
-$$
+\begin{equation}
 f(x)=\frac{\delta*T_{exe}}{x} \text{ being }  0 < \delta \leq 1
-$$
+\end{equation}
 
 Value of $\delta$ is always upper bounder per $1$. It is obvious since one loop
 can not have been executed during more time that the entire application time.
@@ -535,7 +551,7 @@ correct on pseudocode
 \ref{fig:delta_classification_2}.
 
 \begin{multicols}{2}
-  \begin{pseudocode}{Delta example 2}{ }
+  \begin{pseudocode}{App example 2}{ }
   \label{pc:delta_classification_example_2}
       \FOR 1 \text{ to } 10 \DO 
       \BEGIN 
@@ -604,9 +620,6 @@ what we have are the top level loops, defined by:
     \forall a \in \delta, \nexists b \in \delta: a \mapsto b
 \end{equation}
 
-Next step is about representing this information in such a way is easily
-understandable to the analyst.
-
 \subsection{Inter-rank reduction}
 
 Until now mpi calls with same call path have been considered different if they 
@@ -668,19 +681,20 @@ calls/paths that are executed by the same set of processes. Every time a new
 call/loop presents to be executed by a different set of processes a new
 conditional block is built up.
 
+Next step is about representing this information in such a way is easily
+understandable to the analyst.
+
 \subsection{Pseudo-code construction}
 
 The last step is about representation of the analysis. It is the interface with
-the user so is mandatory to provide a way to be as clear as possible. The
-information that we want to show is not just an static representation where the
-position in code is quite clear but not the order on time, neither just a
-temporal representation of the events but a mix of both. We want to show a
-temporal representation of events, so its dynamic aspect with clear information
-about its possition on code. Additionally we want to attach performance
-information for the transitions between mpi calls that are indeed the actual
-computation. The alternative that we have found have been represent the
-application structure by means of a pseudocode. A toy example is depicted 
-in figure \ref{fig:console_gui_example_1}.
+the user so is mandatory to provide a way to be as clear as possible. We want to 
+show not just an static representation of the structure like in profilers but
+also loops structures that allow to understand the dynamic aspect of the
+execution. The structure also is enriched with information about its location 
+on code performance information for the transitions between mpi calls that 
+are indeed the actual computation. The alternative that we have found have been 
+represent the application structure by means of a pseudocode. A toy example is 
+depicted in figure \ref{fig:console_gui_example_1}.
 
 \begin{figure}[]
   \centering
@@ -691,33 +705,34 @@ in figure \ref{fig:console_gui_example_1}.
 
 In this example it can be seen that the output consists on 7 columns: 
 \begin{description}
-  \item \texttt{FILE} Indicates the file from the call of the same line have
-    been taken place.
-  \item \texttt{LINE} Indicates the precise position in \texttt{FILE} where the
-    call in same line have been taken place.
+  \item \texttt{FILE} and \texttt{LINE} Indicates the location from where the
+    function on pseudocode in same line have been called.
   \item \texttt{PSEUDOCODE} The actual representation of the structure of the
     application. Here you can see the loops and conditional structures when
     there is a divergence among ranks executions. Additionally it can be seen
     the call path taken for every mpi call. About mpi calls there is information
-    about partner ranks in the parenthesis.
+    about partner ranks in the parenthesis for p2p communications and the
+    communicator id for collectives.
   \item \texttt{E(time)} Is the mean time in every mpi call.
   \item \texttt{E(size)} Is the mean size of the messages sended/recieved for
     every mpi call
   \item \texttt{E(IPC)} Mean IPC both inside and outside mpi calls. In case of
     figure \ref{fig:console_gui_example_1} there is not information about cpu
-    burst in between mpis, in next examples it will be shown.
+    burst in between mpi calls. You can see an example of how it looks like in
+    figure \ref{fig:result_val_10}.
 \end{description}
 
-Additionally an interactive shell have been developed, it allows you to perform
+Additionally an interactive shell have been developed, it allows the user to perform
 actions like show the cpu burst metrics, filter them by a given thresshold,
-filter information by mpi rank, show up the clustering plot and even communicate
-with Paraver for show up a trace segment that corresponds to a given iteration
-of a given loop. 
+filter information by mpi rank and show up the clustering plot
+%and even communicate
+%with Paraver for show up a trace segment that corresponds to a given iteration
+%of a given loop. 
 
-The process of transform the internal representation of the structure to the
-pseudocode is quite direct. First steps is about remove repetitive information
+The process to transform the internal representation of the structure to the
+pseudocode is quite direct. First step is about removing repetitive information
 by means of functions \texttt{extractCommonCallstacks} and
-\texttt{hideContiguousCallstacks}. The former is about remove the common
+\texttt{hideContiguousCallstacks}. The former is about removing the common
 callstack shared by all calls/subloops belonging to the same conditional block
 or loop. Even if it can remove most of the repetitive information, there are
 cases where there is still information that is repeated but not common to the
@@ -814,35 +829,48 @@ every loop and finally over every mpi call as is depicted in pseudocodes
 
 Until now we have been working from a simplistic point of view, in this section
 we are going to consider two main problems that have been arise that
-are specially harmful for the model described above. The first one is the possibility 
-to have aliasing. Can happen 
+are specially harmful for the model described above. The first one is the 
+possibility to have aliasing. Can happen 
 that two different loops are behaving in the same way in terms of the space
-described by iterations vs. iteration mean time, i.e. the model will consider 
-two different loops as the same. The second
-is that also can be possible that the same loop is split into several clusters
-because some data conditions, e.g. Imagine a situation where there is a loop of
-10 iterations and a given mpi call is only executed on pair (or odd) iterations.
-In this situation we will have one ``loop'' with half of number of iterations
-and double of iteration mean time. 
+described by iterations vs. iteration mean time, i.e. the model will detect mpi
+calls that belongs to two different loops are behaving equal so they will lie on
+the same cluster, considering them as part of the same loop. The second
+is that also can be possible that the same loop have mpi calls behaving in a
+different ways such that the model will detect more than one cluster of mpi calls
+that actually belongs to same loop. This behaviour can appear when the execution
+of an mpi call is conditioned by some data. For example imagine a situation where 
+there is a loop of 10 iterations and a given mpi call is only executed on pair 
+(or odd) iterations.
 
-In order to overcome with these problems have been considered to try to find out
-an alternative features to perform the clustering. This work is described in
-next section \ref{ss:loops_characterzation}. Since the results were not much
-satisfactory, some modifications of the basic methodology have been developed.
-They are described in section \ref{ss:methodology_modifications}.
+In order to overcome with these problems a data analysis on different loops
+features has been done looking for alternative or additional features to 
+perform the clustering. This work is described in section 
+\ref{ss:loops_characterzation}. Since these analysis results did not end up with
+a better features set but just confirms our intuition enforcing the use of the
+current features set, some modifications of
+the basic methodology have been developed. They are described in section 
+\ref{ss:methodology_modifications}.
 
 \subsection{Loops feature selection}\label{ss:loops_characterzation}
 
 Additionally to the qualitative discussion done in section
 \ref{s:app_structire_by_classification} about what features can unambiguously
 identify a loop, it is crucial to drive also a 
-quantitative analysis. In order to do so, several features, the described 
-before and some others are collected from several executions and a data analysis
-is then done by means of two well-known methods \footnote{Feature selection is
-the process of selection a subset of relevant features for use in the model
-construction.}. 
+quantitative analysis. In order to do so, several loops iteration-level 
+features have been collected from several executions and an analysis
+is then done over this data by means of two well-known methods 
+\footnote{Feature selection is the process of selection a subset of relevant 
+features for use in the model construction.}. Until now we were working just
+with mpi calls, in this section extra instrumentation of code is done in order
+to gather actual loops information, it is widely described in section
+\ref{ss:data_acquisition}. 
 
-The first used technique is PCA analysis that permit to get hints 
+The main objective for both techniques is to 
+confirms or reject our intuition about number of iterations and iteration 
+mean time, and to find out other possible features that can help on the task 
+of identify loops by means of classification.
+
+The first used technique is Principal Components analysis that allows to get hints 
 about how features are related between them and with principal components. What
 we want to know with this technique is what loop features can better define
 them understanding as better features these subset of features that can explain
@@ -851,30 +879,29 @@ With poor correlation. To do so we present to the PCA algorithm a set of
 observations with several features every one, these observations are all the loops
 of the analyzed application. 
 
-Last used technique is 
+The second technique is 
 Variable Importance analysis using Random Forest method. This technique can
-determine what features are the most important. In this case what we
-present to the algorithm is the same data that is used by our proposed
-methodology but in this case labeled, so with information about to what loop
-every mpi call belongs to. The motivation is the same as before but with a 
-different approach.
+determine what features are the most important for classification. 
+In this case what we
+present to the algorithm is the same data that is outputted by the reduction phase,
+i.e. mpi calls but in this case with unambiguously information about to what
+loop every one of them belongs, i.e. to what cluster. It can be understood as 
+a training data for supervised learning method.   
 
-The main objective for both techniques is to confirms or reject our intuition about 
-number of iterations and iteration mean time, and to find out other possible features that
-can help on the task of identify loops by means of classification.
-  
+\subsubsection{Data acquisition}\label{ss:data_acquisition}
 
-\subsubsection{Data acquisition}
-
-Previously have been discussed how number of dynamic iterations and iterations 
-mean time can be used for classify mpi calls into loops. Additionally to these information
+Previously it has been discussed how mpi call number of repetitions and mean time
+between repetitions can be used for classify mpi calls into loops since they are 
+a good proxy for number of iterations and iteration mean time so in order to
+assess this intuition these information will be gathered. 
+Additionally
 \begin{enumerate*}[label=\roman*)]
     \item IPC 
     \item and some instruction types counters 
 \end{enumerate*}
 will be also gathered.
 About the former, we would need mean number of instructions and mean number of 
-cycles per loop. The reason is that they maybe can contribute because some 
+cycles per iteration. The reason is that they maybe can contribute because some 
 differences in the performance between loops. The intuition says that
 hardly can help for this purposes because, among other reasons, it depends a lot
 on other factors than the application. Remember in previous sections have been argued
@@ -942,11 +969,10 @@ of class B:
 \begin{enumerate*}[label=\roman*)]
   \item BT (121 ranks),
   \item CG,
-  \item EP,
   \item FT,
-  \item IS,
   \item LU,
-  \item and MG,
+  \item MG,
+  \item SP
 \end{enumerate*}
 IS and EP have not been included because the former just have one loop and so
 can not have aliasing problems and the second does not present repetitive
@@ -965,8 +991,8 @@ expressed in principal components that are sorted by the amount of variance
 that can explain and are orthogonal between them. It allows to identify patterns 
 in data and expressing the data in such a way to highlight their similarities 
 and differences. Once these patterns are found data can be compressed by reducing 
-the number of dimensions with not much loss of information.  For improve
-understandability of the PCA, Variable factor map is used: It
+the number of dimensions with not much loss of information.  To improve
+the understandability of the PCA, Variable factor map is used: It
 presents a view of the projection of the observed variables projected into the
 plane spanned by the first two principal components. This shows us the
 structural relationship between the variables and the components. The projection
@@ -992,51 +1018,49 @@ trivial, being the total number of iterations described by equation
 Being $\alpha$ the probability to be instrumented and $\beta$ the nesting level
 of the loop.
 
-After apply PCA over the gathered data, on image \ref{fig:pca_results} the
+After apply PCA over the gathered data, on next figure the
 results can be seen. First principal component can explain the majority of the 
-variance having a value from about 70\% to above 80\% for the EP case 
-(\ref{fig:ep_pcv_hwc1}). It means that almost all data variance can be observed
-in the variable factor map. Following more detailed analysis have to been done.
+variance having a value of about 80\% . It means that almost all data variance 
+can be observed in the variable factor map. 
 
 \begin{figure}
     \label{fig:pca_results}
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{pcas/bt_A_4_varmap01.png}
         \caption{BT}
         \label{fig:bt_pcv_hwc1}
     \end{subfigure}
     \quad
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{pcas/cg_A_4_varmap01.png}
         \caption{CG}
         \label{fig:cg_pcv_hwc1}
     \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{pcas/ep_A_4_varmap01.png}
-        \caption{EP}
-        \label{fig:ep_pcv_hwc1}
-    \end{subfigure}
+%    \begin{subfigure}[b]{0.3\textwidth}
+%        \includegraphics[width=\textwidth]{pcas/ep_A_4_varmap01.png}
+%        \caption{EP}
+%        \label{fig:ep_pcv_hwc1}
+%    \end{subfigure}
     
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{pcas/ft_A_4_varmap01.png}
         \caption{FT}
         \label{fig:ft_pcv_hwc1}
     \end{subfigure}
     \quad
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{pcas/lu_A_4_varmap01.png}
         \caption{LU}
         \label{fig:lu_pcv_hwc1}
     \end{subfigure}
-    \quad
-    \begin{subfigure}[b]{0.3\textwidth}
+
+    \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{pcas/mg_A_4_varmap01.png}
         \caption{MG}
         \label{fig:mg_pcv_hwc1}
     \end{subfigure}
-
-    \begin{subfigure}[b]{0.3\textwidth}
+    \quad
+    \begin{subfigure}[b]{0.45\textwidth}
         \includegraphics[width=\textwidth]{pcas/sp_A_4_varmap01.png}
         \caption{SP}
         \label{fig:sp_pcv_hwc1}
@@ -1049,10 +1073,9 @@ the very beginning of this section are reinforced by this results or not.
 About total number of
 iterations it can be seen that is the variable better correlated to the 
 second principal component in \ref{fig:bt_pcv_hwc1}, \ref{fig:cg_pcv_hwc1},
-\ref{fig:ft_pcv_hwc1} and \ref{fig:lu_pcv_hwc1}. In case of
-\ref{fig:ep_pcv_hwc1} it is important for first and second PC. About mean 
+\ref{fig:ft_pcv_hwc1} and \ref{fig:lu_pcv_hwc1}. About mean 
 iteration time it can be seen is highly correlated with first component in
-\ref{fig:cg_pcv_hwc1}, \ref{fig:ep_pcv_hwc1} and with the second in
+\ref{fig:cg_pcv_hwc1} and with the second in
 \ref{fig:ft_pcv_hwc1} and \ref{fig:mg_pcv_hwc1}. Both seems to be quite
 important in general so the first intuition was not bad at all. The bad news are
 that both metrics used to maintain a high correlation between them, in general
@@ -1070,7 +1093,7 @@ avoiding aliasing of the other. It have two lectures:
     they are containing those subloops.
 \end{enumerate*}
 Nevertheless there are some situations where this correlation is not like in
-\ref{fig:cg_pcv_hwc1} and \ref{fig:ep_pcv_hwc1}  where they are orthogonal. The
+\ref{fig:cg_pcv_hwc1} where they are orthogonal. The
 conclusion is that these two metrics can explain a quite good amount of
 variability and can avoid aliasing but just in some cases.
 
@@ -1084,7 +1107,7 @@ about IPC metric is fuzzy so more analysis needs to be done.
 
 Lastly for PCA, it needs to check out how the instructions types counters are
 behaving. About branch instruction counters (PAPI\_BR\_UCN\_REL,
-PAPI\_BR\_UCN\_REL and PAPI\_BR\_UCN\_REL) it can be said that in general they
+PAPI\_BR\_CN\_REL and PAPI\_BR\_INS\_REL) it can be said that in general they
 are strong positive correlated between them, presents a strong
 correlation with first component and is used to be orthogonal with iteration
 time mean and total number of iterations in cases when they are strongly
@@ -1137,8 +1160,8 @@ executions reinforce it since number of iterations and iteration mean time are
 the most important features for BT (\ref{fig:bt_varimp}), CG
 (\ref{fig:cg_varimp}), LU (\ref{fig:lu_varimp}) and for SP
 (\ref{fig:sp_varimp}). So it can be considered as a validation of the first
-intuition. There is one case where these two variables are specially irrelevant
-for MG (\ref{fig:mg_varimp}) and FT (\ref{fig:ft_varimp}). In first case the
+intuition. In MG (\ref{fig:mg_varimp}) and FT (\ref{fig:ft_varimp}) cases 
+these variables are specially irrelevant. About MG case the
 reason is because there are quite a lot of subloops doing 3 iterations. This
 pattern is used for communicate among the three dimensions of the model. 
 
@@ -1252,9 +1275,8 @@ clear feature that have a good behaviour in general.
 %    \end{subfigure}
 % 
 
-Summing up, clear improvements can not be achieved for these two analysis. PCA
-analysis have demonstrate how different features are related between them and so
-also can be kind of a valuable analysis for other purposes. It demonstrates how
+Summing up, clear improvements can not be achieved from these two analysis. PCA
+analysis have demonstrates how
 number of iterations and iteration mean time is good enough for some executions
 because can explain a lot of variability but not so good in other cases. Also
 there is no a clear sustitute or a clear additional feature to be used
@@ -1271,12 +1293,14 @@ features and to do so we have driven data analysis explained in section
 \ref{s:further_considerations}. The results were not as good as we wanted,
 they have validate our first intuitions but can not provide extra or alternative
 features that can better drive the clustering. The features search have been 
-left as a bottleneck to be solved in future works. Alternatively, in order to
+left as a bottleneck to be solved in future works. 
+
+In order to
 deal with problematics that can not be solved from clustering, some measures
 have been taken. Such a harmful phenomena like aliasing or cluster splitting 
 have drive to some modifications on the proposed tool. These modifications are 
-basically extra checks that are capable of identify the problems previously 
-mentioned and solve them. In this section also is going to be explained a new 
+basically extra checks that are capable of identify and solve these problems.
+In this section also is going to be explained a new 
 problem that is not related with the clustering and therefore can not be 
 overcome by improving it, we are talking about the ``hidden superloop'' problem.
 
@@ -1294,21 +1318,22 @@ aspect will be $A,A,A,A,B,B,B,B$. The way to detect it consist on three
 different phases:
 \begin{enumerate}[label=\roman*)]
   \item Construct a matrix where rows are the different mpi calls in a cluster
-    to being analyzed and calls are all its timestamps. Rows are sorted by call
-    path, i.e. Mpi calls are sorted by program order.
+    to being analyzed and cols are all its timestamps. Rows are sorted by call
+    path, i.e. Mpi calls are sorted by program order and rows by timestamp value
+    in ascending fashion.
   \item The matrix is transformed by adding voids on cells in such a way it
     fulfills that, traversing the matrix first by row and second by column, the
     next timestamp is always greater.
   \item If the matrix contains different loops, some voids have been added on
     previous point. This last step is about identify what we called
     ``submatrixes'' that are set of positions that are togheter with no voids
-    between them, what indicates indeed the actual loops in the cluster.
+    between them, what indicates indeed the actual aliased loops in the cluster.
 \end{enumerate}
 
 In can be better understood driving an example: Imagine we have the program
 depicted by pseudocode \ref{ps:aliasing_example} the constructed matrix is
 depicted by table \ref{tb:matrix_1}. For simplicity instead of timestamps we are
-using the order of execution, but he meaning is exactly the same. Then,
+using the order of execution, but the meaning is exactly the same. Then,
 following the second step, this matrix is transformed to what is depicted in
 table \ref{tb:matrix_2}. The last step is about identify and retrieve the
 submatrixes. In this case there are two: \{1,2,3,4\},
@@ -1363,8 +1388,8 @@ that makes one mpi call to be executed in some iterations but no in others. An
 example can be seen in pseudocode \ref{ps:split_example}. In this case the
 number of iterations reported by the $MPI\_A$ call will be 5 instead 10 also the
 iteration mean time will be doubled because there is a call to this mpi call
-every two loop iterations, what it means is that MPI\_A even if in other
-cluster it still lies in same $\delta$.
+every two loop iterations. What it means is that the MPI\_A call will lie in
+different cluster but it still lies in same phase.
 
 \begin{pseudocode}{Split example}{ }
     \label{ps:split_example}
@@ -1382,7 +1407,7 @@ This situation has been solved in a very straightforward way. In section
 iterations loops to few iterations because subloops will for sure have more
 iterations than the superloops. In the scenario we are already discussing this
 is not true anymore becase data conditions. The implemented solution have been
-first try to merge loops in a given delta from few to most iterations loops, the
+first try to merge loops in a given phase from few to most iterations loops, the
 so called ``reverse loop mergin'' performing a similar times checking as in 
 $isSubloop$ function depicted in \ref{pc:issubloop_function}. Once it is done,
 the actual loops merging is performed.
@@ -1418,8 +1443,9 @@ structure of the application, so it is a wrong output.
 
 The solution is just add one more step to the solution presented for clustering
 aliasing in \ref{ss:cluster_aliasing}. Now if we analyze the timestamps of mpi
-calls in example \ref{ps:hidden_superloop_2} and apply the three steps we will
-end up with the matrix in table \ref{tb:matrix_2}. Since same mpi call can not 
+calls in example \ref{ps:hidden_superloop_2} we will obtain matrix
+\ref{tb:matrix_3} and then apply the three steps we will
+end up with the matrix in table \ref{tb:matrix_4}. Since same mpi call can not 
 belongs to more than one loop, then the split is done on the vertical axis. In 
 this case two subloops have been detected. The additional step is about
 counting how many submatrixes every detected subloop have, this number is the
@@ -1445,7 +1471,7 @@ number of the iterations of the ``hidden superloop''.
 \begin{table}[]
 \centering
 \caption{Matrix construction}
-\label{tb:matrix_1}
+\label{tb:matrix_3}
 \begin{tabular}{lllll}
 MPI\_A & 1 & 3 & 9  & 11 \\
 MPI\_B & 2 & 4 & 10 & 12 \\
@@ -1457,7 +1483,7 @@ MPI\_D & 6 & 8 & 14 & 16
 \begin{table}[]
 \centering
 \caption{Matrix after step 2}
-\label{tb:matrix_2}
+\label{tb:matrix_4}
 \begin{tabular}{lllllllll}
 MPI\_A & 1 & 3 &   &   & 9  & 11 &    &    \\
 MPI\_B & 2 & 4 &   &   & 10 & 12 &    &    \\

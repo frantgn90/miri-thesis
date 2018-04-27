@@ -28,9 +28,11 @@ Copyright © 2018 Juan Francisco Martínez Vera <juan.martinez[AT]bsc.es>
 *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 *****************************************************************************
 '''
-
+import sys
+sys.path.insert(0,'/home/jmartinez/BSC/master/git/parser')
 from trace import *
 from callstack import call, callstack
+import copy
 
 class callstacks_parser(object):
     def __init__(self, tracefile):

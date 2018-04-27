@@ -132,11 +132,11 @@ class console_gui(gui):
             self.iterations = iterations
             self.first_col = ""
             self.second_col = " "
-            self.third_col = "FOR 1 TO {0} [id={1}]".format(
-                    self.iterations,
-                    str(misc))
-            #self.third_col = "FOR 1 TO {0}".format(
-            #        self.iterations)
+            #self.third_col = "FOR 1 TO {0} [id={1}]".format(
+            #        self.iterations,
+            #        str(misc))
+            self.third_col = "FOR 1 TO {0}".format(
+                    self.iterations)
             self.metric = ""
 
     class console_for_end(console_line):
@@ -172,7 +172,9 @@ class console_gui(gui):
                         / float(my_loop.original_iterations)
 
                 if ratio < 1:
-                    self.third_col += (" [{0}]".format(round(ratio,2)))
+                    self.third_col = ("{0}% => {1}"
+                            .format(round(ratio,2)*100,self.third_col))
+                    #self.third_col += (" [{0}]".format(round(ratio,2)))
 
                 ''' Showing metrics '''
                 metrics_dict = self.call.my_callstack.metrics
@@ -204,9 +206,13 @@ class console_gui(gui):
                 msg_size_unit = ["B","KB","MB","GB"]
                 if self.call.mpi_call_coll:
                     self.third_col = "{0}(CommId:{1})".format(self.call.call,
-                            metrics_dict["global_50100004_merged_mean"])
+                            int(metrics_dict["global_50100004_merged_mean"]))
                     msg_size_send = metrics_dict["global_50100001_merged_mean"]
                     msg_size_recv = metrics_dict["global_50100002_merged_mean"]
+
+                    if ratio < 1:
+                        self.third_col = ("{0}% => {1}"
+                                .format(round(ratio,2)*100,self.third_col))
                     
                     if msg_size_send == 0 and msg_size_recv == 0:
                         metric_3 = "-"

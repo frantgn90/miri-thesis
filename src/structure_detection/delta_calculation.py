@@ -117,7 +117,7 @@ def calcule_deltas_clustering(callstacks, total_time):
         data.append(cs.private_delta)
 
     X=numpy.array(data).reshape(-1,1)
-    db = DBSCAN(eps=0.05, min_samples=1).fit(X)
+    db = DBSCAN(eps=0.1, min_samples=1).fit(X)
     core_samples_mask = numpy.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels=db.labels_

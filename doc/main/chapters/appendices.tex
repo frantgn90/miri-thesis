@@ -390,7 +390,7 @@ sequences mining for avoid candidate generation.
 
 \chapter{Automatic code instrumentation}\label{ann:automatic_code_instr}
 
-\lettrine{L}{oops} characterization and validation phases of this thesis motivates the development
+\lettrine{L}{oops} characterization phase of this thesis motivates the development
 of an automatization of the user source code instrumentation. It is for sure an
 important piece of this thesis but since it is not the main development have been
 decided to include it as annex.
@@ -400,8 +400,8 @@ source-to-source compiler infrastructure by adding a new phase on the
 source-to-source compilation workflow and it basically consists on inject 
 calls to the Extrae API in order to fire events that
 \begin{enumerate*}[label=\roman*)]
-    \item determine the loops boundaries for the validation
-    \item and additionally fire iteration-level metrics to trace for loops characterization
+    \item determine the loops boundaries 
+    \item and additionally fire iteration-level metrics to trace
 \end{enumerate*}
 
 \begin{figure}
@@ -434,8 +434,8 @@ concerned about loops we just need to look for loops (for, while, do
 while,\ldots), for this purpose Mercurium infrastructure provides a useful
 mechanism that traverse the tree and gives you a way to program callbacks that 
 will be called every time the structure you are aware on is encountered. These
-callbacks transforms the AST such a way calls that will monitor loops are
-injected. For simplify the transformations, these calls are not done directly to
+callbacks are programmed in such a way that inject monitors to loops
+For simplify the transformations, these calls are not done directly to
 the trace library but to an intermediate helper library that will do all stuff
 and just expose simple calls.
 

@@ -224,7 +224,7 @@ class tmatrix(object):
 #                    j = jj
 #                i = maxii
 #
-#            self.__look_for_superloop(subm)
+            self.__look_for_superloop(subm)
 
             # Now group submatrixes into loops
             if len(subm) > 1:

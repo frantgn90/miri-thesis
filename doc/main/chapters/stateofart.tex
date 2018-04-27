@@ -62,6 +62,19 @@ drawbacks of this approach is that the complexity of intra-node compression
 can be of $O(n^2)$ nevertheless they are avoiding this by
 limiting the algorithm search (first step) with a windows size. They claim that
 with a windows of 500 events is used to be enough. 
+Additionally they introduce useful concepts as:
+\begin{enumerate}[label=\roman*)]
+  \item Calling sequence identification used for unambiguously identify
+    different MPI calls that lie on different code positions. It is an important
+    matter because if we do not take into account we would end up having aliasing
+    problems, different calls would seems the same. 
+  \item Recursion folding signatures for dealing with recursion. If an MPI call 
+    is called recursively, the signature based on the callstack would identify
+    same call as different. The proposal is to fold the same call on the call
+    stack, e.g. $A\rightarrow A \rightarrow A \rightarrow MPI$ will be $A
+    \rightarrow MPI$.
+\end{enumerate}
+
 
 In \cite{aguilar2014mpi} they present the Event Flow Graphs (EFG). EFG are
 weighted directed graphs where every node is an MPI call and edges the
@@ -136,11 +149,7 @@ Traces have several information but the most important is the enter and exit
 from methods that allows to derive the call-graphs. These call-graphs are saved
 as a linked list of caller-callee relations. Following, to facilitate the
 grammar induction step, the data is simplified by remove some repetitive and
-fine-grain details such that low-level methods. Note
-the difference in this point, we rely on the analysis of repetitive patterns as
-a source for infer the internal structure while they identify loops repetitions
-as a phenomena that do not contribute to the structural feature. It can be
-explained taking into account the different targeted kind of software. The
+fine-grain details such that low-level methods. The
 result of trace preprocessing feeds the grammar induction step that rely on
 VEGGIE (Visual Environment for Graph Grammars: Induction and Engineering). 
 Induction algorithm iteratively finds common substructures from a
@@ -180,11 +189,12 @@ explained in that same section. Additionally to the classical temporal sequence
 mining they introduce the definition of cycles as \textit{``When an itemset  occurs over 
 a set of transactions and the distance between any two consecutive transactions 
 is constant''} and periodic pattern as \textit{``a set of consecutive cycles over the
-same itemset and the same period''}. One of the interesting concepts that is a
-bit out of the scope of this thesis is that another of the goals of this paper
-is to recognize the gaps, i.e. the disruptions into the periodicity of a
-pattern. They have these information because trace information is not just from
-application point of view but from a whole SoC point of view. 
+same itemset and the same period''}. 
+%One of the interesting concepts that is a
+%out of the scope of this thesis is that another of the goals of this paper
+%is to recognize the gaps, i.e. the disruptions into the periodicity of a
+%pattern. They have these information because trace information is not just from
+%application point of view but from a whole SoC point of view. 
 
 The mining consists on a four step algorithm where the first one is the
 responsible of find out all the cycles of all possible periods (from 1 to \#transactions / min. support) containing a selected item. The rest of steps are
@@ -199,9 +209,7 @@ interest automatically from an execution trace, understanding as points of
 interest these iterations that
 behave different from the majority. The first phase is a post-mortem analysis of
 a given trace. This analysis is about finding patterns of events that are
-repeated, i.e. folding loops that has been unfolded during the
-tracing\footnote{Unfolding in the sense that tracing process represent loops as
-a sequence of a repeated set of events.}. Their algorithm is about finding short
+repeated. Their algorithm is about finding short
 repeated sequences of events and try to expand the pattern. After detect the
 intern structure of an application, the analysis of durations of the
 different iterations of the detected loops is an arbitrary construction, once
@@ -252,15 +260,15 @@ claim compression ratio about 200 can be achieved with this approach.
 This approach improves profiling in the sense that same function with same call
 path and different time behaviour is exposed to analyst but still presents a lack 
 of information on the order of the execution of the different graph paths so
-application structure is exposed just partially. The cost of this algorithm is 
-lineal since no back search is needed. It is
-because the entry and exit function information is actually on the trace. If it
-were not, the only manner to be sure if the next event belongs to the same
-iteration or to the next is by means of a back search similarly to the presented
-in \cite{noeth2009scalatrace} and as have been argued before it can lead to
-quadratic costs. The fact of having the entry/exit information in traces adds a
-non negligible overhead what implies the poor scalability of this
-method in terms of tracing.
+application structure is exposed just partially. 
+%The cost of this algorithm is lineal since no back search is needed. It is
+%because the entry and exit function information is actually on the trace. If it
+%were not, the only manner to be sure if the next event belongs to the same
+%iteration or to the next is by means of a back search similarly to the presented
+%in \cite{noeth2009scalatrace} and as have been argued before it can lead to
+%quadratic costs. The fact of having the entry/exit information in traces adds a
+%non negligible overhead what implies the poor scalability of this
+%method in terms of tracing.
 
 %% TODO: Talk about Cube???
 
@@ -310,10 +318,7 @@ timing plus some representative cuts of the original trace.
 
 In \cite{gonzalez2013application} propose a
 technique to identify the different execution phases using clustering 
-techniques. Different parts of the
-execution are considered as the same phase depending on the behavior,
-so an analysis using some hardware metrics is
-performed. The units to be cluster are segments of the execution to be defined,
+techniques. The units to be cluster are segments of the execution to be defined,
 i.e. execution bursts that takes place between a given events such as MPI
 functions or events fired by the user to trace. The first step is about reducing 
 the complexity of the clustering by filtering the less relevant of these 
@@ -343,35 +348,17 @@ paths.
 
 \section{Discussion}\label{s:soa_discussion}
 
-The syntactic structure proposals (in \ref{ss:syntactic_structure}) have been 
-divided into two subsections because has been considered they belongs to a 
-different scenario and so different approaches were proposed. The
-first is about those algorithms that works online with the execution of the
-target software. These algorithms are not dealing with the entire trace but they
-are constantly feed by the instrumentation package that is currently monitoring 
-the application. They are discovering the patterns by means of a sort of
-aggregative mechanism. On the first paper explained they are aggregating
-incoming sets of events with current detected patterns, the second papers they
-are aggregating the events and also the transitions. Additionally on
-\cite{noeth2009scalatrace} they introduce useful concepts as:
-\begin{enumerate}[label=\roman*)]
-  \item Calling sequence identification used for unambiguously identify
-    different MPI calls that lie on different code positions. It is an important
-    matter because if we do not take into account we would end up having aliasing
-    problems, different calls would seems the same. 
-  \item Recursion folding signatures for dealing with recursion. If an MPI call 
-    is called recursively, the signature based on the callstack would identify
-    same call as different. The proposal is to fold the same call on the call
-    stack, e.g. $A\rightarrow A \rightarrow A \rightarrow MPI$ will be $A
-    \rightarrow MPI$.
-\end{enumerate}
-A clear limitation of this approach is the use of the windows workaround
-that limits the recognition of large patterns. In \cite{aguilar2016event}
+About syntactic structure literature, a clear limitation of the first approach
+presented in \cite{noeth2009scalatrace} is the complexity is about $O(n^2)$ and
+for that reason they propose the use of a windows that will limit the search.
+Even if they are preventing for this high complexity it has a lateral effect
+since they are limiting the recognition of large patterns. In \cite{aguilar2016event}
 they propose to use graphs for application structure inspection. After collect
 and build up the tEFG, they apply a DFS-analysis in order to give to the user
 a hierarchical graph where the structure is revealed but what they no say (and
-it seems to be because the figure they show) is that this derived graph loss
-temporal information, so it can be considered a limitation of the methodology
+it seems to be because the figure they show) is that this derived graph there is
+a lack of temporal information, so it can be considered a limitation 
+of the methodology
 (also we have to say that this is not the main goal of the proposal). From both
 papers there is a valuable information (most in the second one) about the
 idiosyncrasy of HPC applications in what this thesis rely.
@@ -391,7 +378,7 @@ is in fact the approaches what shares more things with our objectives. The
 dominant algorithms here are the sequential pattern mining algorithms with
 variations for every case. Because the importance of these algorithms for this
 field, a previous study of them have been driven. If you want more details go to
-\ref{pattern_mining}. Even if the structure of the applications can be
+annex \ref{pattern_mining}. Even if the structure of the applications can be
 betrayed successfully, the sequential pattern mining, particularly for candidate 
 generation-and-test techniques, and when low support is used, performance can 
 degrade dramatically. In apriori algorithm presented in \ref{ss:apriori_based} 
@@ -409,7 +396,7 @@ application structure at level of entry/exit functions, and as they talk it can
 leads to a high complex structures that needs post-process, for them 
 pattern mining algorithms is the natural choice. In \cite{trahay2015selecting}
 they talk about find patterns of events that are both, MPI calls and function
-calls in general and following the former, rely on pattern mining. 
+calls in general and following the work of paragraph above, rely on pattern mining. 
 \cite{noeth2009scalatrace} also use some sort of sequential pattern mining but 
 the feeling is that their needs drivers to a more simple algorithm. Finally in
 \cite{aguilar2016event} they just perform a directed graph building because they

@@ -198,10 +198,24 @@ class sdshell(cmd.Cmd):
             self.paraver_int.close()
 
 
+    def help_pseudocode(self):
+        print("pseudocode commands:")
+        print(PSEUDOCODE_NO_CS + ": Do not show call paths")
+        print(PSEUDOCODE_SHOW_BURST + ": Show CPU burst information")
+        print(PSEUDOCODE_BURST_TH + ": Show burst above thresshold")
+        print(PSEUDOCODE_DEFAULT + ": Default information")
+        print(PSEUDOCODE_RANKS_FILTER + ": Show pseudocode just for rank")
+
+    def help_clustering(self):
+        print("Show clustering")
+
     def help_paraver(self):
         print("Paraver commands")
 
     def help_quit(self):
+        print("Just finnish program")
+
+    def help_q(self):
         print("Just finnish program")
     
 def parse(arg):

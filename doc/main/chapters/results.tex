@@ -1,6 +1,7 @@
 \chapter{Results}
 
-\lettrine{A}{ll} the ideas exposed on previous chapter have been put into practice in order
+\lettrine{A}{ll} the ideas exposed on previous chapter have been put into 
+practice in order
 to assess the quality of the results. The resulting piece of
 software does not intend to be pretty polished and well-designed software,
 neither to be very refined in terms of performance but just to be a prototype.
@@ -16,7 +17,7 @@ Validation consists on check out if the actual results happen to meet with what
 was expected. In our case we expect the resulting pseudocode can represent the
 general structure of the target application. The strategy followed for
 validation will be starting with some toy examples in order to validate concrete
-cases and then perform a validation in real cases.
+cases and then perform a validation in a real world application.
 
 \subsection{Specific capabilities validation}
 
@@ -37,8 +38,8 @@ loops. In figure \ref{fig:clustering_val_2} you can see the clustering performed
 for the two nested loops example, meanwhile in figure
 \ref{fig:clustering_val_3} there is the clustering for the three levels of
 nested loops. In these figures it can be seen how there is the
-same number of clusters as loops and in both cases all of them belongs to the
-same delta, i.e. Explains the same amount of time of the application, what in our
+same number of clusters as loops and in both cases all of them belonging to the
+same phase, i.e. Explains the same amount of time of the application, what in our
 model indicates that could be a hierarchical relationship between them that will
 be discovered on the loops merge step. Looking on this plots, the loops merge
 step is done in a bottom-right to top-left fashion.
@@ -83,7 +84,7 @@ number of nested loops (just 3 levels have been shown here for space reasons).
 Have been claimed that the proposed model can detect different phases of the
 execution, i.e. Different loops with no hierarchical relationship that explains
 different parts of the execution. In this section there is going to be validated
-if it is can be done in an scenario with arbitrary different phases having an
+if it can be done in an scenario with arbitrary number of different phases having an
 arbitrary nested level on every one of them. For space reasons the experiment
 done is just for 3 phases, explaining different amount of time, with two nested 
 levels on every phase.
@@ -96,11 +97,9 @@ see on pseudocode. Taking into account that in this example every iteration
 takes the same amount of time (with a certain variability), the first loop
 executes $\frac{50}{350} \approx 15\%$ of the iterations, second loop 
 $\frac{200}{350} \approx 57\%$ and the third $\frac{100}{350} \approx 29\%$.
-Those values are strongly related with the deltas seen before, they are slightly
-above because always there is a certain amount of time for initializations
-before the actual execution of the loops. Additionally for every phase it can be
-seen two different clusters that are merged in the same way as explained for the
-``nesting loops'' example.
+Those values are strongly related with the deltas seen in the clustering. 
+Additionally for every phase it can be seen two different clusters that are 
+merged in the same way as explained for the ``nesting loops'' example.
 
 With this example the multiple phases detection is demonstrated to work
 correctly also together with multiple nesting loops.
@@ -124,7 +123,7 @@ correctly also together with multiple nesting loops.
 The two previous tests were without taking into account the aliasing that could
 appear in some cases so in order to assess the modifications introduced in
 section \ref{ss:methodology_modifications} works well, some tests have been
-prepared. This test consists con assess the detection of arbitrary nested
+prepared. This test consists on assess the detection of arbitrary nested
 aliased loops. So there is a superloop with mpi calls, in order to detect it,
 with some aliased subloops in its body. For space reasons, two examples are
 done with two and three nested aliased loops respectively.
@@ -183,7 +182,8 @@ satisfactory as you can see on outputted pseudo-codes \ref{fig:result_val_5} and
 Additionally has been tested the ``hidden superloop'' detection just by
 removing the \texttt{MPI\_Barrier} in line 17. It will cause the top-left
 cluster representing the outer loop disappear as you can see on clustering in
-figure \ref{fig:clustering_val_7}. This superloop have been detected because the
+figure \ref{fig:clustering_val_7} and the results on figure
+\ref{fig:result_val_7}. This superloop have been detected because the
 additional modifications introduced in section \ref{ss:hidden_superloop_det}.
 
 \subsubsection{Data conditions}
@@ -199,14 +199,14 @@ First of them will show how in some situations
 even if there an mpi call under a data condition, the model can solve it without
 the extra checks introduced in \ref{ss:cluster_split} building up a valid
 representation of the applications' structure. It will consist on a mpi call at
-the beginning of the loop body that is executed just in pair iterations, then
+the beginning of the loop body that is executed just in odd iterations, then
 after that a typical send for odd ranks and recv for pair ranks is executed. The
 results can be seen in figure \ref{fig:result_val_8}. Even if the original code
 was one single loop of 100 iterations with the \texttt{MPI\_Barrier} being
 executed just for odd iterations, the representation outputted by the model is 
 one outer loop of 50 iterations and one inner loop of 2 iterations. This is
-completely valid representation that can be seen if we look at the dynamic
-aspect of both loops. 
+completely valid representation that can be seen if we compare the dynamic
+aspect of both the original and the outputted loop. 
 
 \begin{figure}[H]
     \centering
@@ -215,14 +215,14 @@ aspect of both loops.
     \label{fig:result_val_8}
 \end{figure}
 
-Second example there is about when the extra check mechanism must act. In shares
+Second example is about when the extra check mechanism must act. It shares
 about the same structure of the first example but with additional communications
 executed before the conditioned mpi call. The key point is that now the
 conditioned call is surrounded by non conditioned calls. You can see the result
 for this second example on figure \ref{fig:result_val_9}. Since we do not have
-information about to over what data the execution of a given mpi call is
+information about to with what data the execution of a given mpi call is
 conditioned, the way to depict a given call is being executed under a data
-condition is by means of what if can be seen in line 24 of the result. It
+condition is by means of what it can be seen in line 24 of the result. It
 represents the probability to be executed. Have the knowledge about in what
 iterations are these kind of mpi calls executed could be a big deal so future
 developments in this sense have to be done.
@@ -238,10 +238,10 @@ developments in this sense have to be done.
 
 The proposal explained in this thesis is devoted to deal with real world
 applications so the last step of validation is to assess the correctness of the
-analysis for them. For time reasons just one application has been analyzed and
+analysis for them. For time reasons just one application has been analyzed
 for medium size execution.
 
-There are three ways to assess the quality of the results in this case:
+There are two ways to assess the quality of the results in this case:
 \begin{enumerate}[label=\roman*)]
   \item Inspecting manually the source code of the application looking for the
     general structure. 
@@ -252,12 +252,10 @@ There are three ways to assess the quality of the results in this case:
 %    consists on check out if all mpi calls in same cluster have the same label.
 \end{enumerate}
 
-The first of them presents to be very tough and error prone when dealing with
+The first presents to be very tough and error prone when dealing with
 huge source codes so it is discarded. Using paraver is a good alternative since
 the general structure can be easily visualized and for sure the performance
 information. 
-
-One applications have been analyzed:
 
 \subsubsection{Lulesh 2.0}
 
@@ -269,8 +267,8 @@ elements defined by a mesh\footnote{https://codesign.llnl.gov/lulesh.php}.
 The execution have been done with 128 mpi ranks and for 30 iterations. On figure
 \ref{fig:clustering_val_10} you can see the clustering. It seems a quite simple
 application since just appears one cluster. It would mean that there is just one
-loop with no nesting loops but also could means there is some aliasing here. 
-Moving on, in figure \ref{fig:result_val_10} there is the outputted pseudocode.
+loop with no nesting loops. 
+In figure \ref{fig:result_val_10} there is the outputted pseudocode.
 For space reasons, this code have been previously filter in order to only show
 the structure for rank 0. Since Lulesh is a SPMD program we can expect the
 pseudo-code for all the 128 ranks to be quite similar so only the presented one
@@ -338,7 +336,7 @@ detailed view for a given iteration. The times for the different phases have
 been taken from the rank 0 even if in trace there are shown all ranks. This is
 because by this way is much easier to visualize the structure of the iteration. There
 are five long computational phases and if we perform a comparison between the
-computational phases detected by our prototype and the phases on trace we
+computational phases detected by our tool and the phases on trace we
 can realize they are the same and in the same order so have been demonstrated
 the structure detected is correct. We can perform the same comparison for the
 IPC with same result. Additionally for assess the mpi calls are
@@ -362,13 +360,14 @@ computational phases does.
 \end{figure}
 
 By analyzing the trace have been demonstrated how the developed tool can
-satisfactorily detect the internal structure of a well-known real application.
+satisfactorily detect the internal structure of a well-known real application,
+in this case, Lulesh.
 
 
 \section{Scalability}\label{s:scalability}
 
-One of the motivations for this work is to be scalable since the sizes of traces
-is increasing dramatically. In this section we have been drive a little analysis
+One of the motivations for this work is to be scalable or at least more scalable
+than the current state of the art. In this section we have driven a little analysis
 about scalability. 
 
 As has been explained previously, the key point of the proposal done in this
@@ -381,7 +380,7 @@ dramatically. We have argued that since the HPC applications used to be very
 repetitive, the number of mpi calls to clusterize will remain almost constant
 despite the size of the execution. 
 
-In order to assess our assumptions, a qualitative analysis have been done by
+In order to assess our assumptions, a quantitative analysis have been done by
 executing NPB benchmarks for A,B and C classes and for 8, 16 and 32 ranks (9,16
 and 36 for special cases of BT and SP that restrict the number of ranks to
 squared values, i.e. $1^{2}, 2^{2}, 3^{2}, \cdots$). For every execution first
@@ -390,13 +389,13 @@ the number of unique mpi calls have been calculated, remember we consider two
 same call path calls to be different if they have been performed by different
 processes. This information is plotted
 in figure \ref{fig:scalability_results}. For every benchmark you can see a
-matrix where columns are the size of the input and rows number of processes, the
+matrix where columns are the size of the problem and rows number of processes, the
 colors indicates the relative quantity of mpi calls, being the darker the
 greater (for see the numbers go to \ref{s:nunique_mpi_calls}) . 
 
 By a quick peek it can be seen the number of mpi calls remains despite the
 growing size of the execution time, so the assumption about repetitivity has 
-been demonstrated. On the other axis the trend is quite different size there is
+been demonstrated. On the other axis the trend is quite different since there is
 an increment on mpi calls number. This phenomena is obvious since we are not
 merging calls from different processes on first step, so at least they are
 incrementing with the same factor as the increment of the number of processes.
@@ -466,7 +465,7 @@ the results on images \ref{fig:scalability_results_cg} for CG and
 
 In both cases can be seen how the overall execution time is highly dominated
 by the Reduction phase being the responsible for about the 100\% of the time for
-CG (figure \ref{fig:cg_stdrec_rel} and about 90\% of the time for the analysis
+CG (figure \ref{fig:cg_stdrec_rel}) and about 90\% of the time for the analysis
 of MG traces (figure \ref{fig:mg_stdrec_rel}). 
 About strong scaling, i.e. When the number of processes are being
 increased but the size of the problem remains the same, it can be seen
@@ -474,12 +473,19 @@ how time grows linearly with number of ranks in MG
 (figure \ref{fig:mg_strdec_abs}) but seems to grow faster in case of CG (figure
 \ref{fig:cg_strdec_abs}). As can be seen on first table in section \ref{s:nunique_mpi_calls} the
 number of mpi calls are just doubling every time scaling on ranks so this is not
-the reason for this super-linear growth. More analysis should be done here.
+the reason for this super-linear growth. 
 When scaling the problem size, the execution time of the
-structure detector grows slowly, it can be said in a logarithmic fashion. The
-reason is because the number of unique mpi calls remains the same (as
-has been demonstrated in figure \ref{fig:scalability_results}) and seems that
-merge mpi calls is cheaper in time than create and store new.
+structure detector grows slowly, it can be said in a logarithmic fashion. 
+
+The fundamental reason that explains the Reduction phase times is the size of
+the input traces as can be seen on \ref{fig:trace_sizes} so as has been
+introduced in previous chapters, the reduction phase complexity is linear with 
+trace size.
+
+Additionally can be seen how the merge step is much bigger in case of MG than in
+CG, the reason is that MG has much more nested loops but the manly reason is
+that since reduction phase is much smaller, the relative weight of the rest of
+the phases is bigger.
 
 \begin{figure}
     \centering
@@ -513,4 +519,21 @@ merge mpi calls is cheaper in time than create and store new.
     \end{subfigure}
     \caption{Structure detection times for MG application}
     \label{fig:scalability_results_mg}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{scalability/mg_tracesize.png}
+        \caption{MG Trace sizes}
+        \label{fig:mg_trace_size}
+    \end{subfigure}
+    \medspace
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{scalability/cg_tracesize.png}
+        \caption{CG Trace size}
+        \label{fig:cg_trace_size}
+    \end{subfigure}
+    \caption{Trace sizes}
+    \label{fig:trace_sizes}
 \end{figure}

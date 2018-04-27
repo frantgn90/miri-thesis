@@ -18,9 +18,9 @@ about the 90\% of the time. Improve this phase is then a big deal. For sure
 there should be some improvements to do in the current version, that reads
 sequentially the whole trace but the real business is on parallelize this
 process. The sequential read of the trace is not critical for our purposes since
-every event have a timestamp attached to the order can be reconstructed whenever
+every event have a timestamp attached o the order can be reconstructed whenever
 we want. One possible proposal is to split trace into several files and then
-parse every one of the independently in parallel, once done the partial results 
+parse every one of them independently in parallel, once done the partial results 
 could be merged. Additionally a possible solution could be to work with some
 big data frameworks like Hadoop what can provide all the reduction
 infrastructure.
@@ -28,11 +28,13 @@ infrastructure.
 The exposed methodology relies on the mpi calls clustering for extract the
 applications' structure, so it is a key piece of the overall proposal. The fact
 of select the best features set to perform this clustering is a difficult
-business. Our first proposal have been to use number of dynamic iterations and
-iterations mean time but as has been explained, in some applications this
+business. Our first proposal have been to use number mpi call repetitions and
+mean time between consecutive mpi calls but as has been explained, 
+in some applications this
 features leads to aliasing so additional checks have been developed in order to
-detect them. Having this drawback in mind we have driven an analysis of different
-features that could improve the behaviour but without positives. More work have 
+detect and solve them. Having this drawback in mind we have driven an analysis 
+of different
+features that could improve the behaviour but without positives results. More work have 
 to be done in this sense trying to reduce the cases where aliasing appears by
 means of analyze in a deeper way new features to use.
 
@@ -44,6 +46,11 @@ have been discarded because we taken a conservative point of view so
 just in case same mpi call in different processes behave different but
 since our approach is very focused on SPMD applications can be assumed they will
 behave similar.
+
+In this proposal only loops with mpi calls in their body can be detected, in
+order to obtain a more detailed structure, the use of sampling techniques that
+provides information for these other parts of the executions where no MPI is
+executed could be explored.
 
 Finally something to explore is to improve the output by developing a graphical
 user interface that allow to interact with the results in a more natural way.
@@ -61,18 +68,13 @@ focused on HPC applications so we decided to exploit their
 idiosyncrasy that have leads to a sort of ad-hoc methodology for HPC applications 
 that allows to decrease the complexity and so improve the scalability.  
 
-The correctness of its results have been demonstrated for the studied cases.
-Additionally scalability study have demonstrated how the applications scales in
-terms of unique mpi calls. The conclusion is that when the execution is scaled
-in terms of problem size, the number of unique mpi calls remains the same. The
-reason is because the application is just executing more iterations of the most
-outer loop. When the application is scaling in terms of processes the number of
-unique mpi calls grows at least with the same factor as the number of processes.
-These results allows us to say the method is not only correct but also scalable.
-
 To conclude, even if some aspects of the proposal needs to be depurated and more
-research has to be done in others, in general it have been satisfactory.
+research has to be done in others, in general the results are satisfactory.
 
 \section{Acknowledgments}
 
-
+At first I would like to be thankful to Prof. Jes\'us Labarta to bring me the 
+opportunity to do this master thesis at BSC. Specially I want to mention
+Judit Gimenez, who have provided an important support for the accomplishment of this
+work. Finally I am thankful to every person from BSC tools team that did not
+hesitate to aid me during this research.
